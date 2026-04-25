@@ -7,7 +7,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: Guide, 2: Report
 
-  const tiers = [9.9, 49.9, 99.9, 500];
+  const tiers = [9.9, 45, 90, 500];
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -70,7 +70,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
                       cursor: 'pointer'
                     }}
                   >
-                    ¥{t} ({t === 9.9 ? 1000 : t === 49.9 ? 6000 : t === 99.9 ? 15000 : t * 10}积分)
+                    ¥{t} ({t === 9.9 ? 100 : t === 45 ? 500 : t === 90 ? 1000 : t * 10}积分)
                   </button>
                 ))}
               </div>

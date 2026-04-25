@@ -15,9 +15,9 @@ def apply_recharge(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    if data.money_amount < 10:
+    if data.money_amount < 1:
         from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="最低充值金额为 10 元")
+        raise HTTPException(status_code=400, detail="充值金额无效")
     
     return recharge_crud.create_recharge_apply(
         db, 

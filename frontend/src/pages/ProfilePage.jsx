@@ -11,7 +11,9 @@ import {
   User, 
   Lock, 
   ClipboardList,
-  Copy
+  Copy,
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 
 const ProfilePage = () => {
@@ -42,6 +44,20 @@ const ProfilePage = () => {
     if (userInfo?.uid) {
       navigator.clipboard.writeText(userInfo.uid);
       alert('UID 已复制到剪贴板');
+    }
+  };
+
+  const handleResetTasks = async () => {
+    if (!window.confirm('此操作将强制清理您当前正在排队的任务状态。仅建议在任务长时间卡死（超过1分钟）时使用。确认重置吗？')) return;
+    setLoading(true);
+    try {
+      await request.post('/image/reset');
+      alert('任务锁已成功清理，您可以重新尝试生图。');
+      fetchData();
+    } catch (err) {
+      alert('重置失败: ' + (err.response?.data?.detail || '网络错误'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,6 +148,24 @@ const ProfilePage = () => {
             >
               <LogOut size={16} strokeWidth={2} /> 退出当前账号
             </button>
+
+            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #eee' }}>
+              <button 
+                onClick={handleResetTasks}
+                disabled={loading}
+                style={{ 
+                  width: '100%', padding: '10px', borderRadius: '8px', 
+                  border: '1px solid #faad14', color: '#faad14', background: 'transparent', 
+                  cursor: loading ? 'not-allowed' : 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' 
+                }}
+              >
+                <RefreshCw size={16} strokeWidth={2} className={loading ? 'loading-spin' : ''} /> 
+                {loading ? '正在清理...' : '清理挂起任务'}
+              </button>
+              <p style={{ fontSize: '11px', color: '#999', marginTop: '8px', textAlign: 'center', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
+                <AlertTriangle size={12} /> 仅用于任务卡死时手动解锁
+              </p>
+            </div>
           </div>
 
           <div className="card" style={{ padding: '24px' }}>
@@ -241,6 +275,10 @@ const ProfilePage = () => {
           }}
         />
       )}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loading-spin { animation: spin 1s linear infinite; }
+      `}} />
     </div>
   );
 };

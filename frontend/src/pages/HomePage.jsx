@@ -11,18 +11,28 @@ import {
   Sparkles, 
   Zap, 
   Palette,
-  Layout
+  Layout,
+  Diamond,
+  Crown
 } from 'lucide-react';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
   const [prompt, setPrompt] = useState('');
-  const [quality, setQuality] = useState('low');
+  const [quality, setQuality] = useState('standard');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [numImages, setNumImages] = useState(1);
+
+  // 积分计算矩阵 (V1.3 激进定价)
+  const PRICING_MAP = {
+    'standard': 5,
+    'hd': 10,
+    'master': 15
+  };
 
   useEffect(() => {
     fetchUserInfo();
@@ -55,15 +65,63 @@ const HomePage = () => {
   const handleGenerate = async () => {
     if (!prompt) return;
     setLoading(true);
+    setProgress(0);
     setResult(null);
+    
+    // 模拟进度条
+    const timer = setInterval(() => {
+      setProgress(old => {
+        if (old >= 95) return old;
+        return old + Math.floor(Math.random() * 10);
+      });
+    }, 1000);
+
     try {
-      const data = await request.post('/image/generate', { prompt, quality, aspectRatio, numImages });
-      setResult(data.image_url);
-      setUserInfo(prev => ({ ...prev, points: data.remaining_points }));
+      const res = await request.post('/image/generate', { prompt, quality });
+      const taskId = res.id;
+      setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
+      
+      // 开始轮询
+      let pollCount = 0;
+      const pollTimer = setInterval(async () => {
+        pollCount++;
+        try {
+          const statusRes = await request.get(`/image/status/${taskId}`);
+          if (statusRes.status === 'success') {
+            clearInterval(pollTimer);
+            clearInterval(timer);
+            setProgress(100);
+            setResult(statusRes.image_url);
+            setLoading(false);
+          } else if (statusRes.status === 'failed') {
+            clearInterval(pollTimer);
+            clearInterval(timer);
+            setProgress(0);
+            setLoading(false);
+            alert(`生成失败: ${statusRes.error || '未知错误'}`);
+          }
+        } catch (err) {}
+
+        // 3分钟超时
+        if (pollCount > 60) {
+          clearInterval(pollTimer);
+          clearInterval(timer);
+          setLoading(false);
+          alert('任务已转入后台处理，请稍后在“我的创作”中查看');
+        }
+      }, 3000);
     } catch (err) {
-      alert('生成失败: ' + (err.response?.data?.detail || '网络错误'));
-    } finally {
+      clearInterval(timer);
+      setProgress(0);
       setLoading(false);
+      const detail = err.response?.data?.detail || '提交失败，请重试';
+      if (err.response?.status === 403) {
+        if (window.confirm(`${detail}\n\n是否前往充值页面？`)) {
+          navigate('/pricing');
+        }
+      } else {
+        alert(detail);
+      }
     }
   };
 
@@ -143,34 +201,54 @@ const HomePage = () => {
             }}
           />
 
-          <div style={{ marginTop: '20px', opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
-            <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '600' }}>输出数量</label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {[1, 2, 4, 8].map(n => (
+          <div style={{ marginTop: '24px', opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
+            <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>创作规格 (计费档位)</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              {[
+                { id: 'standard', name: '标准版', pts: 5, icon: <Zap size={20} />, color: '#e66b33' },
+                { id: 'hd', name: '高清版', pts: 10, icon: <Diamond size={20} />, color: '#3b82f6' },
+                { id: 'master', name: '大师版', pts: 15, icon: <Crown size={20} />, color: '#8b5cf6' }
+              ].map(item => (
                 <button 
-                  key={n}
-                  onClick={() => setNumImages(n)}
-                  style={{ flex: 1, padding: '8px', borderRadius: '8px', border: numImages === n ? '2px solid #e66b33' : '1px solid #ddd', background: '#fff', cursor: 'pointer' }}
+                  key={item.id}
+                  onClick={() => setQuality(item.id)}
+                  style={{ 
+                    padding: '16px 8px', borderRadius: '12px', 
+                    border: quality === item.id ? `2px solid ${item.color}` : '1px solid #eee', 
+                    background: quality === item.id ? `${item.color}08` : '#fff', 
+                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: quality === item.id ? `0 4px 12px ${item.color}20` : 'none',
+                    transform: quality === item.id ? 'translateY(-2px)' : 'none'
+                  }}
                 >
-                  {n}
+                  <div style={{ 
+                    color: quality === item.id ? item.color : '#999',
+                    transition: 'all 0.2s'
+                  }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: quality === item.id ? '#333' : '#666' }}>{item.name}</span>
+                    <span style={{ fontSize: '11px', color: '#999' }}>{item.pts} 积分/张</span>
+                  </div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div style={{ marginTop: '20px', opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
-            <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '600' }}>长宽比</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-              {['1:1', '3:4', '4:3', '16:9', '9:16', 'Auto'].map(r => (
-                <button 
-                  key={r}
-                  onClick={() => setAspectRatio(r)}
-                  style={{ padding: '8px', borderRadius: '8px', border: aspectRatio === r ? '2px solid #e66b33' : '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: '13px' }}
-                >
-                  {r}
-                </button>
-              ))}
+          <div style={{ marginTop: '20px', padding: '15px', background: '#fffaf8', borderRadius: '12px', border: '1px dashed #f3a481' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: '#666' }}>本次消耗预估：</span>
+              <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#e66b33' }}>
+                🪙 {PRICING_MAP[quality]} 积分
+              </span>
             </div>
+            {quality === 'master' && (
+              <div style={{ fontSize: '11px', color: '#f3a481', marginTop: '6px' }}>
+                ✨ 包含 Vivid 色彩增强与高密度细节处理
+              </div>
+            )}
           </div>
 
           <button 
@@ -197,38 +275,23 @@ const HomePage = () => {
         {/* 右侧：结果展示区 */}
         <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '600px', background: '#fbfbfb', position: 'relative', overflow: 'hidden' }}>
           {loading ? (
-            <div className="creation-loader" style={{ textAlign: 'center' }}>
-              <div className="loader-sphere"></div>
-              <div style={{ marginTop: '20px', position: 'relative', zIndex: 1 }}>
-                <h4 style={{ margin: '0 0 10px', color: '#333', fontSize: '18px' }}>正在捕捉灵感...</h4>
-                <p style={{ margin: 0, color: '#999', fontSize: '14px' }}>AI 正在为您精心渲染每一处细节</p>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
+                width: '100px', height: '100px', borderRadius: '50%', 
+                border: '4px solid #f3f3f3', borderTop: '4px solid #e66b33',
+                animation: 'spin 1s linear infinite', margin: '0 auto 20px'
+              }}></div>
+              <div style={{ color: '#333', fontSize: '18px', fontWeight: 'bold' }}>正在捕获灵感... {progress}%</div>
+              <div style={{ color: '#999', fontSize: '14px', marginTop: '8px' }}>AI 正在为您精心渲染每一处细节</div>
+              
+              {/* 进度条底槽 */}
+              <div style={{ width: '200px', height: '6px', background: '#eee', borderRadius: '3px', margin: '20px auto', overflow: 'hidden' }}>
+                <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #e66b33, #f3a481)', transition: 'width 0.5s ease' }}></div>
               </div>
               <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes sphere-pulse {
-                  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 107, 51, 0.4); }
-                  70% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(230, 107, 51, 0); }
-                  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 107, 51, 0); }
-                }
-                @keyframes float {
-                  0%, 100% { transform: translateY(0); }
-                  50% { transform: translateY(-10px); }
-                }
-                .loader-sphere {
-                  width: 80px;
-                  height: 80px;
-                  background: linear-gradient(135deg, #e66b33 0%, #f3a481 100%);
-                  border-radius: 50%;
-                  margin: 0 auto;
-                  animation: sphere-pulse 2s infinite, float 3s ease-in-out infinite;
-                }
-                .loading-pulse {
-                  animation: pulse 1.5s infinite;
-                }
-                @keyframes pulse {
-                  0% { opacity: 1; }
-                  50% { opacity: 0.7; }
-                  100% { opacity: 1; }
-                }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                .loading-pulse { animation: pulse 1.5s infinite; }
+                @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
               `}} />
             </div>
           ) : result ? (
