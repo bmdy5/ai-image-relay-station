@@ -81,6 +81,11 @@ const HistoryPage = () => {
     }
   };
 
+  const handleReuse = (prompt) => {
+    sessionStorage.setItem('pending_prompt', prompt);
+    navigate('/');
+  };
+
   return (
     <div className="history-container">
       {/* 顶部导航栏 (保持风格统一) */}
@@ -128,6 +133,16 @@ const HistoryPage = () => {
                   <div className="gallery-info">
                     <div className="gallery-prompt">{img.prompt}</div>
                     <div className="gallery-date">{new Date(img.created_at).toLocaleString()}</div>
+                    <button 
+                      className="reuse-btn-mini"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReuse(img.prompt);
+                      }}
+                      title="立即复用此 Prompt"
+                    >
+                      ✨ 复用
+                    </button>
                   </div>
                 </div>
               ))}
@@ -167,6 +182,13 @@ const HistoryPage = () => {
                 onClick={() => handleDownload(selectedImage.image_url)}
               >
                 {downloading ? '⏳ 正在准备...' : '📥 高清下载'}
+              </button>
+              <button 
+                className="btn-primary" 
+                style={{ background: '#e66b33' }}
+                onClick={() => handleReuse(selectedImage.prompt)}
+              >
+                ✨ 立即复用此 Prompt
               </button>
               <button 
                 className="btn-primary" 

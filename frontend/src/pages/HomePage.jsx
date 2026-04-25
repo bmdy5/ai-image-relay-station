@@ -14,7 +14,24 @@ const HomePage = () => {
 
   useEffect(() => {
     fetchUserInfo();
+    checkPendingPrompt();
   }, []);
+
+  const checkPendingPrompt = () => {
+    const pending = sessionStorage.getItem('pending_prompt');
+    if (pending) {
+      setPrompt(pending);
+      sessionStorage.removeItem('pending_prompt');
+      // 延迟一会确保 DOM 已更新后聚焦
+      setTimeout(() => {
+        const textarea = document.querySelector('textarea');
+        if (textarea) {
+          textarea.focus();
+          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+      }, 100);
+    }
+  };
 
   const fetchUserInfo = async () => {
     try {

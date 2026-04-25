@@ -71,6 +71,24 @@
   margin-top: 5px;
 }
 
+.reuse-btn-mini {
+  margin-top: 8px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #e66b33;
+  background: #fff;
+  color: #e66b33;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reuse-btn-mini:hover {
+  background: #e66b33;
+  color: #fff;
+}
+
 /* Modal Styling */
 .modal-overlay {
   position: fixed;
