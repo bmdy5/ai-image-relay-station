@@ -13,12 +13,21 @@ const HistoryPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [keyword, setKeyword] = useState('');
   const LIMIT = 20;
 
   useEffect(() => {
     fetchUserInfo();
     fetchHistory();
   }, []);
+
+  // 监听关键词变化，执行防抖搜索
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchHistory(false, keyword);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [keyword]);
 
   const fetchUserInfo = async () => {
     try {
@@ -27,13 +36,14 @@ const HistoryPage = () => {
     } catch (err) {}
   };
 
-  const fetchHistory = async (isLoadMore = false) => {
+  const fetchHistory = async (isLoadMore = false, searchKeyword = keyword) => {
     if (isLoadMore) setLoadingMore(true);
     else setLoading(true);
     
     try {
       const currentSkip = isLoadMore ? skip + LIMIT : 0;
-      const data = await request.get(`/image/history?skip=${currentSkip}&limit=${LIMIT}`);
+      const url = `/image/history?skip=${currentSkip}&limit=${LIMIT}${searchKeyword ? `&keyword=${encodeURIComponent(searchKeyword)}` : ''}`;
+      const data = await request.get(url);
       
       if (isLoadMore) {
         setImages(prev => [...prev, ...data]);
@@ -43,11 +53,7 @@ const HistoryPage = () => {
         setSkip(0);
       }
       
-      if (data.length < LIMIT) {
-        setHasMore(false);
-      } else {
-        setHasMore(true);
-      }
+      setHasMore(data.length === LIMIT);
     } catch (err) {
       console.error('Failed to fetch history', err);
     } finally {
@@ -110,12 +116,24 @@ const HistoryPage = () => {
       </header>
 
       <main>
-        <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
           <div>
             <h1 style={{ fontSize: '28px', marginBottom: '8px' }}>我的创作</h1>
             <p style={{ color: '#666', fontSize: '14px' }}>回溯您的艺术灵感，管理已生成的精美图片。</p>
           </div>
-          <button className="btn-primary" onClick={() => navigate('/')}>✨ 开始新创作</button>
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input 
+                type="text" 
+                placeholder="搜索提示词..." 
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+              {keyword && <span className="clear-btn" onClick={() => setKeyword('')}>✕</span>}
+            </div>
+            <button className="btn-primary" onClick={() => navigate('/')}>✨ 开始新创作</button>
+          </div>
         </div>
 
         {loading ? (

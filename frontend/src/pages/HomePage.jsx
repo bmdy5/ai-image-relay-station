@@ -104,10 +104,15 @@ const HomePage = () => {
             placeholder="一只可爱的橘猫坐在樱花树下..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            style={{ width: '100%', height: '150px', border: '1px solid #ddd', borderRadius: '12px', padding: '15px', resize: 'none', fontSize: '14px' }}
+            disabled={loading}
+            style={{ 
+              width: '100%', height: '150px', border: '1px solid #ddd', borderRadius: '12px', 
+              padding: '15px', resize: 'none', fontSize: '14px',
+              opacity: loading ? 0.6 : 1, transition: 'all 0.3s'
+            }}
           />
 
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: '20px', opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
             <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '600' }}>输出数量</label>
             <div style={{ display: 'flex', gap: '10px' }}>
               {[1, 2, 4, 8].map(n => (
@@ -122,7 +127,7 @@ const HomePage = () => {
             </div>
           </div>
 
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: '20px', opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
             <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px', fontWeight: '600' }}>长宽比</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
               {['1:1', '3:4', '4:3', '16:9', '9:16', 'Auto'].map(r => (
@@ -138,19 +143,56 @@ const HomePage = () => {
           </div>
 
           <button 
-            className="btn-primary" 
+            className={`btn-primary ${loading ? 'loading-pulse' : ''}`} 
             onClick={handleGenerate} 
-            disabled={loading}
-            style={{ width: '100%', marginTop: '30px', height: '50px' }}
+            disabled={loading || !prompt.trim()}
+            style={{ 
+              width: '100%', marginTop: '30px', height: '50px', 
+              background: loading ? '#f3a481' : '#e66b33',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
           >
-            {loading ? '🚀 正在创作...' : '✨ 生成图片'}
+            {loading ? '🚀 正在创作中...' : '✨ 生成图片'}
           </button>
         </div>
 
         {/* 右侧：结果展示区 */}
-        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '600px', background: '#fbfbfb' }}>
+        <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '600px', background: '#fbfbfb', position: 'relative', overflow: 'hidden' }}>
           {loading ? (
-            <div className="loading-spinner"></div>
+            <div className="creation-loader" style={{ textAlign: 'center' }}>
+              <div className="loader-sphere"></div>
+              <div style={{ marginTop: '20px', position: 'relative', zIndex: 1 }}>
+                <h4 style={{ margin: '0 0 10px', color: '#333', fontSize: '18px' }}>正在捕捉灵感...</h4>
+                <p style={{ margin: 0, color: '#999', fontSize: '14px' }}>AI 正在为您精心渲染每一处细节</p>
+              </div>
+              <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes sphere-pulse {
+                  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 107, 51, 0.4); }
+                  70% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(230, 107, 51, 0); }
+                  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 107, 51, 0); }
+                }
+                @keyframes float {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-10px); }
+                }
+                .loader-sphere {
+                  width: 80px;
+                  height: 80px;
+                  background: linear-gradient(135deg, #e66b33 0%, #f3a481 100%);
+                  border-radius: 50%;
+                  margin: 0 auto;
+                  animation: sphere-pulse 2s infinite, float 3s ease-in-out infinite;
+                }
+                .loading-pulse {
+                  animation: pulse 1.5s infinite;
+                }
+                @keyframes pulse {
+                  0% { opacity: 1; }
+                  50% { opacity: 0.7; }
+                  100% { opacity: 1; }
+                }
+              `}} />
+            </div>
           ) : result ? (
             <div style={{ width: '100%' }}>
               <img src={result} alt="Result" style={{ width: '100%', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />

@@ -89,6 +89,49 @@
   color: #fff;
 }
 
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 0 15px;
+  width: 300px;
+  height: 40px;
+  transition: all 0.3s;
+}
+
+.search-box:focus-within {
+  border-color: #e66b33;
+  box-shadow: 0 0 0 3px rgba(230, 107, 51, 0.1);
+}
+
+.search-box input {
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+}
+
+.search-icon {
+  font-size: 16px;
+  color: #999;
+}
+
+.clear-btn {
+  cursor: pointer;
+  color: #ccc;
+  font-size: 12px;
+  padding: 5px;
+}
+
+.clear-btn:hover {
+  color: #666;
+}
+
 /* Modal Styling */
 .modal-overlay {
   position: fixed;

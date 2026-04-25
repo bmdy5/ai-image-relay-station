@@ -107,11 +107,12 @@ async def generate_image(
 async def get_history(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
+    keyword: str = Query(None, description="搜索关键词"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     """获取用户历史生图记录"""
-    logs = image_crud.get_user_image_logs(db, current_user.id, skip=skip, limit=limit)
+    logs = image_crud.get_user_image_logs(db, current_user.id, skip=skip, limit=limit, keyword=keyword)
     return logs
 
 @router.get("/download")
