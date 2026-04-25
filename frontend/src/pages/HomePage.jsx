@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
+import { 
+  Images, 
+  Coins, 
+  ShieldCheck, 
+  BookOpen, 
+  LogOut, 
+  User, 
+  Sparkles, 
+  Zap, 
+  Palette,
+  Layout
+} from 'lucide-react';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -62,12 +74,20 @@ const HomePage = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e66b33' }}>GPT Image 2</div>
           <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
-            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/history')}>🖼 我的创作</span>
-            <span style={{ cursor: 'pointer' }}>💰 价格</span>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/history')}>
+              <Images size={18} strokeWidth={1.75} /> 我的创作
+            </span>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Coins size={18} strokeWidth={1.75} /> 价格
+            </span>
             {userInfo?.is_admin && (
-              <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600' }} onClick={() => navigate('/admin')}>🛠 管理后台</span>
+              <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/admin')}>
+                <ShieldCheck size={18} strokeWidth={1.75} /> 管理后台
+              </span>
             )}
-            <span style={{ cursor: 'pointer' }}>📖 使用指南</span>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <BookOpen size={18} strokeWidth={1.75} /> 使用指南
+            </span>
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -77,15 +97,24 @@ const HomePage = () => {
           <button 
             onClick={() => navigate('/profile')}
             title="个人中心"
-            style={{ background: '#eee', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer' }}
+            style={{ 
+              background: '#eee', border: 'none', borderRadius: '50%', 
+              width: '32px', height: '32px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#666'
+            }}
           >
-            👤
+            <User size={18} strokeWidth={1.75} />
           </button>
           <button 
             onClick={logout}
-            style={{ background: 'transparent', border: '1px solid #ddd', borderRadius: '6px', padding: '5px 12px', fontSize: '13px', cursor: 'pointer' }}
+            style={{ 
+              background: 'transparent', border: '1px solid #ddd', borderRadius: '6px', 
+              padding: '5px 12px', fontSize: '13px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px', color: '#666'
+            }}
           >
-            退出
+            <LogOut size={14} strokeWidth={1.75} /> 退出
           </button>
         </div>
       </header>
@@ -99,7 +128,9 @@ const HomePage = () => {
             <button style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px', color: '#666' }}>编辑图片</button>
           </div>
 
-          <label style={{ display: 'block', marginBottom: '10px', fontWeight: '600' }}>✨ 描述您的创意</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontWeight: '600' }}>
+            <Sparkles size={18} strokeWidth={1.75} color="#e66b33" /> 描述您的创意
+          </label>
           <textarea
             placeholder="一只可爱的橘猫坐在樱花树下..."
             value={prompt}
@@ -149,10 +180,17 @@ const HomePage = () => {
             style={{ 
               width: '100%', marginTop: '30px', height: '50px', 
               background: loading ? '#f3a481' : '#e66b33',
-              cursor: loading ? 'not-allowed' : 'pointer'
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
             }}
           >
-            {loading ? '🚀 正在创作中...' : '✨ 生成图片'}
+            {loading ? (
+              '🚀 正在创作中...'
+            ) : (
+              <>
+                <Zap size={18} strokeWidth={1.75} fill="currentColor" /> 生成图片
+              </>
+            )}
           </button>
         </div>
 
@@ -202,8 +240,10 @@ const HomePage = () => {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: '#999' }}>
-              <div style={{ fontSize: '40px', marginBottom: '20px' }}>🎨</div>
+            <div style={{ textAlign: 'center', color: '#ccc' }}>
+              <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+                <Palette size={64} strokeWidth={1.5} color="#eee" />
+              </div>
               <p>在左侧输入创意，开始您的艺术之旅</p>
             </div>
           )}

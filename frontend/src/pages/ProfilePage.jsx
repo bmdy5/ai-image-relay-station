@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
+import { 
+  ShieldCheck, 
+  Images, 
+  ArrowLeft, 
+  LogOut, 
+  Wallet, 
+  User, 
+  Lock, 
+  ClipboardList,
+  Copy
+} from 'lucide-react';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -60,10 +71,16 @@ const ProfilePage = () => {
         <h1 style={{ fontSize: '28px' }}>个人中心</h1>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
           {userInfo?.is_admin && (
-            <button onClick={() => navigate('/admin')} style={{ background: '#fff7e6', border: '1px solid #ffd591', color: '#e66b33', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>🛠 管理后台</button>
+            <button onClick={() => navigate('/admin')} style={{ background: '#fff7e6', border: '1px solid #ffd591', color: '#e66b33', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ShieldCheck size={14} strokeWidth={2} /> 管理后台
+            </button>
           )}
-          <button onClick={() => navigate('/history')} style={{ background: 'transparent', border: 'none', color: '#e66b33', cursor: 'pointer', fontWeight: '500' }}>🖼 我的创作</button>
-          <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer' }}>← 返回首页</button>
+          <button onClick={() => navigate('/history')} style={{ background: 'transparent', border: 'none', color: '#e66b33', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Images size={16} strokeWidth={2} /> 我的创作
+          </button>
+          <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <ArrowLeft size={16} strokeWidth={2} /> 返回首页
+          </button>
         </div>
       </div>
 
@@ -71,7 +88,9 @@ const ProfilePage = () => {
         {/* 左侧：用户信息与修改密码 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
           <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ marginBottom: '20px' }}>账户概览</h3>
+            <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <User size={20} strokeWidth={2} color="#e66b33" /> 账户概览
+            </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#666' }}>用户名</span>
@@ -99,20 +118,26 @@ const ProfilePage = () => {
             <button 
               className="btn-primary"
               onClick={() => setShowRecharge(true)}
-              style={{ width: '100%', marginTop: '20px', padding: '10px' }}
+              style={{ width: '100%', marginTop: '20px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              充值积分
+              <Wallet size={18} strokeWidth={2} /> 充值积分
             </button>
             <button 
               onClick={logout}
-              style={{ width: '100%', marginTop: '12px', padding: '10px', borderRadius: '8px', border: '1px solid #ff4d4f', color: '#ff4d4f', background: 'transparent', cursor: 'pointer', fontSize: '13px' }}
+              style={{ 
+                width: '100%', marginTop: '12px', padding: '10px', borderRadius: '8px', 
+                border: '1px solid #ff4d4f', color: '#ff4d4f', background: 'transparent', 
+                cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' 
+              }}
             >
-              退出当前账号
+              <LogOut size={16} strokeWidth={2} /> 退出当前账号
             </button>
           </div>
 
           <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ marginBottom: '20px' }}>修改密码</h3>
+            <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Lock size={20} strokeWidth={2} color="#e66b33" /> 修改密码
+            </h3>
             <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <input 
                 type="password" 
@@ -157,7 +182,9 @@ const ProfilePage = () => {
 
         {/* 右侧：消费明细 */}
         <div className="card" style={{ padding: '24px' }}>
-          <h3 style={{ marginBottom: '20px' }}>积分明细 (生图记录)</h3>
+          <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ClipboardList size={20} strokeWidth={2} color="#e66b33" /> 积分明细 (生图记录)
+          </h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>

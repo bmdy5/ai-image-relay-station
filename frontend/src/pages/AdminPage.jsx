@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import request from '../api/request';
+import { CheckCircle2, XCircle, ShieldCheck, UserPlus, ListChecks } from 'lucide-react';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('audit'); // 'recharge' or 'audit'
   const [targetUsername, setTargetUsername] = useState('');
   const [amount, setAmount] = useState(100);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState({ type: '', text: '' });
   const [pendingLogs, setPendingLogs] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -41,10 +42,10 @@ const AdminPage = () => {
     e.preventDefault();
     try {
       const res = await request.post(`/admin/recharge?target_username=${targetUsername}&amount=${amount}`);
-      setMessage(`✅ ${res.message}`);
+      setMessage({ type: 'success', text: res.message });
       setTargetUsername('');
     } catch (err) {
-      setMessage(`❌ ${err.response?.data?.detail || '操作失败'}`);
+      setMessage({ type: 'error', text: err.response?.data?.detail || '操作失败' });
     }
   };
 
@@ -55,15 +56,15 @@ const AdminPage = () => {
       <div style={{ display: 'flex', gap: '20px', marginBottom: '30px', borderBottom: '1px solid #eee' }}>
         <div 
           onClick={() => setActiveTab('audit')}
-          style={{ padding: '10px 20px', cursor: 'pointer', borderBottom: activeTab === 'audit' ? '2px solid #e66b33' : 'none', color: activeTab === 'audit' ? '#e66b33' : '#666' }}
+          style={{ padding: '10px 20px', cursor: 'pointer', borderBottom: activeTab === 'audit' ? '2px solid #e66b33' : 'none', color: activeTab === 'audit' ? '#e66b33' : '#666', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          待处理审核 ({pendingLogs.length})
+          <ListChecks size={18} strokeWidth={1.75} /> 待处理审核 ({pendingLogs.length})
         </div>
         <div 
           onClick={() => setActiveTab('recharge')}
-          style={{ padding: '10px 20px', cursor: 'pointer', borderBottom: activeTab === 'recharge' ? '2px solid #e66b33' : 'none', color: activeTab === 'recharge' ? '#e66b33' : '#666' }}
+          style={{ padding: '10px 20px', cursor: 'pointer', borderBottom: activeTab === 'recharge' ? '2px solid #e66b33' : 'none', color: activeTab === 'recharge' ? '#e66b33' : '#666', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          手动强充积分
+          <UserPlus size={18} strokeWidth={1.75} /> 手动强充积分
         </div>
       </div>
 
@@ -87,9 +88,17 @@ const AdminPage = () => {
               required
               style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
             />
-            <button type="submit" className="btn-primary" style={{ padding: '12px' }}>确认充值</button>
+          <button type="submit" className="btn-primary" style={{ padding: '12px' }}>确认充值</button>
           </form>
-          {message && <p style={{ marginTop: '1.5rem', fontSize: '14px' }}>{message}</p>}
+          {message.text && (
+            <p style={{ 
+              marginTop: '1.5rem', fontSize: '14px', color: message.type === 'success' ? '#52c41a' : '#ff4d4f',
+              display: 'flex', alignItems: 'center', gap: '8px'
+            }}>
+              {message.type === 'success' ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+              {message.text}
+            </p>
+          )}
         </div>
       ) : (
         <div className="card" style={{ padding: '24px' }}>

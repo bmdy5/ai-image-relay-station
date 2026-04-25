@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
+import { 
+  Images, 
+  Coins, 
+  ShieldCheck, 
+  User, 
+  LogOut, 
+  Search, 
+  X, 
+  RefreshCw, 
+  Download, 
+  ClipboardCopy, 
+  RotateCcw,
+  Sparkles,
+  ArrowLeft
+} from 'lucide-react';
 import './HistoryPage.css';
 
 const HistoryPage = () => {
@@ -99,10 +114,16 @@ const HistoryPage = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e66b33', cursor: 'pointer' }} onClick={() => navigate('/')}>GPT Image 2</div>
           <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
-            <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600' }}>🖼 我的创作</span>
-            <span style={{ cursor: 'pointer' }}>💰 价格</span>
+            <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Images size={18} strokeWidth={1.75} /> 我的创作
+            </span>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Coins size={18} strokeWidth={1.75} /> 价格
+            </span>
             {userInfo?.is_admin && (
-              <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600' }} onClick={() => navigate('/admin')}>🛠 管理后台</span>
+              <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/admin')}>
+                <ShieldCheck size={18} strokeWidth={1.75} /> 管理后台
+              </span>
             )}
           </nav>
         </div>
@@ -110,8 +131,26 @@ const HistoryPage = () => {
           <div style={{ background: '#f5f5f5', padding: '6px 12px', borderRadius: '20px', fontSize: '13px' }}>
             🪙 {userInfo?.points || 0}
           </div>
-          <button onClick={() => navigate('/profile')} style={{ background: '#eee', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer' }}>👤</button>
-          <button onClick={logout} style={{ background: 'transparent', border: '1px solid #ddd', borderRadius: '6px', padding: '5px 12px', fontSize: '13px', cursor: 'pointer' }}>退出</button>
+          <button 
+            onClick={() => navigate('/profile')} 
+            style={{ 
+              background: '#eee', border: 'none', borderRadius: '50%', 
+              width: '32px', height: '32px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666'
+            }}
+          >
+            <User size={18} strokeWidth={1.75} />
+          </button>
+          <button 
+            onClick={logout} 
+            style={{ 
+              background: 'transparent', border: '1px solid #ddd', borderRadius: '6px', 
+              padding: '5px 12px', fontSize: '13px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '6px', color: '#666'
+            }}
+          >
+            <LogOut size={14} strokeWidth={1.75} /> 退出
+          </button>
         </div>
       </header>
 
@@ -123,16 +162,18 @@ const HistoryPage = () => {
           </div>
           <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
             <div className="search-box">
-              <span className="search-icon">🔍</span>
+              <span className="search-icon"><Search size={16} strokeWidth={1.75} /></span>
               <input 
                 type="text" 
                 placeholder="搜索提示词..." 
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
               />
-              {keyword && <span className="clear-btn" onClick={() => setKeyword('')}>✕</span>}
+              {keyword && <span className="clear-btn" onClick={() => setKeyword('')}><X size={14} strokeWidth={2} /></span>}
             </div>
-            <button className="btn-primary" onClick={() => navigate('/')}>✨ 开始新创作</button>
+            <button className="btn-primary" onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={18} strokeWidth={1.75} /> 开始新创作
+            </button>
           </div>
         </div>
 
@@ -151,16 +192,17 @@ const HistoryPage = () => {
                   <div className="gallery-info">
                     <div className="gallery-prompt">{img.prompt}</div>
                     <div className="gallery-date">{new Date(img.created_at).toLocaleString()}</div>
-                    <button 
-                      className="reuse-btn-mini"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReuse(img.prompt);
-                      }}
-                      title="立即复用此 Prompt"
-                    >
-                      ✨ 复用
-                    </button>
+                      <button 
+                        className="reuse-btn-mini"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReuse(img.prompt);
+                        }}
+                        title="立即复用此 Prompt"
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <RotateCcw size={12} strokeWidth={2} /> 复用
+                      </button>
                   </div>
                 </div>
               ))}
@@ -198,26 +240,26 @@ const HistoryPage = () => {
                 className="btn-primary" 
                 disabled={downloading}
                 onClick={() => handleDownload(selectedImage.image_url)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                {downloading ? '⏳ 正在准备...' : '📥 高清下载'}
+                {downloading ? '⏳ 正在准备...' : <><Download size={18} strokeWidth={1.75} /> 高清下载</>}
               </button>
               <button 
                 className="btn-primary" 
-                style={{ background: '#e66b33' }}
+                style={{ background: '#e66b33', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => handleReuse(selectedImage.prompt)}
               >
-                ✨ 立即复用此 Prompt
+                <RotateCcw size={18} strokeWidth={1.75} /> 立即复用此 Prompt
               </button>
               <button 
                 className="btn-primary" 
-                style={{ background: '#444' }}
+                style={{ background: '#444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={() => {
-                  // 可以在此处实现复制 Prompt 功能
                   navigator.clipboard.writeText(selectedImage.prompt);
                   alert('Prompt 已复制');
                 }}
               >
-                📋 复制 Prompt
+                <ClipboardCopy size={18} strokeWidth={1.75} /> 复制 Prompt
               </button>
             </div>
             <div style={{ marginTop: '20px', color: '#ccc', textAlign: 'center', fontSize: '14px' }}>
