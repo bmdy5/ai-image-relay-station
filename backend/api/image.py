@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import httpx
 import os
@@ -37,10 +38,7 @@ async def generate_image(
 
     # 2. 消费熔断校验 (Task 6.3)
     today = date.today()
-    total_spent = db.query(func.sum(models.ImageLog.cost_points)).filter(
-        func.date(models.ImageLog.created_at) == today,
-        models.ImageLog.status == "success"
-    ).scalar() or 0
+    total_spent = image_crud.get_daily_total_points(db, today)
     
     if total_spent >= DAILY_POINTS_LIMIT:
         raise HTTPException(
@@ -104,3 +102,41 @@ async def generate_image(
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"系统内部错误: {str(e)}")
+
+@router.get("/history")
+async def get_history(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """获取用户历史生图记录"""
+    logs = image_crud.get_user_image_logs(db, current_user.id, skip=skip, limit=limit)
+    return logs
+
+@router.get("/download")
+async def download_image(
+    url: str = Query(..., description="要下载的图片URL"),
+    current_user: models.User = Depends(get_current_user)
+):
+    """代理下载图片，解决跨域问题"""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(url)
+            if response.status_code != 200:
+                raise HTTPException(status_code=400, detail="无法获取远程图片")
+            
+            # 从 URL 或 Content-Type 推断扩展名
+            content_type = response.headers.get("Content-Type", "image/png")
+            ext = content_type.split("/")[-1] if "/" in content_type else "png"
+            filename = f"creation_{int(datetime.now().timestamp())}.{ext}"
+            
+            return StreamingResponse(
+                content=response.aiter_bytes(),
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}"
+                }
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"下载失败: {str(e)}")

@@ -62,6 +62,7 @@ const ProfilePage = () => {
           {userInfo?.is_admin && (
             <button onClick={() => navigate('/admin')} style={{ background: '#fff7e6', border: '1px solid #ffd591', color: '#e66b33', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>🛠 管理后台</button>
           )}
+          <button onClick={() => navigate('/history')} style={{ background: 'transparent', border: 'none', color: '#e66b33', cursor: 'pointer', fontWeight: '500' }}>🖼 我的创作</button>
           <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer' }}>← 返回首页</button>
         </div>
       </div>

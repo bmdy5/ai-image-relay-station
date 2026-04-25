@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
+import HistoryPage from './pages/HistoryPage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
@@ -19,6 +20,14 @@ function App() {
           element={
             <PrivateRoute>
               <AdminPage />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/history" 
+          element={
+            <PrivateRoute>
+              <HistoryPage />
             </PrivateRoute>
           } 
         />

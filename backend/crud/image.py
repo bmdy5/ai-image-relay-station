@@ -25,7 +25,15 @@ def create_image_log(
     db.refresh(db_log)
     return db_log
 
-def get_user_image_logs(db: Session, user_id: int, limit: int = 10):
+def get_user_image_logs(db: Session, user_id: int, skip: int = 0, limit: int = 10):
     return db.query(models.ImageLog).filter(
-        models.ImageLog.user_id == user_id
-    ).order_by(models.ImageLog.created_at.desc()).limit(limit).all()
+        models.ImageLog.user_id == user_id,
+        models.ImageLog.status == "success"
+    ).order_by(models.ImageLog.created_at.desc()).offset(skip).limit(limit).all()
+
+def get_daily_total_points(db: Session, day):
+    from sqlalchemy import func
+    return db.query(func.sum(models.ImageLog.cost_points)).filter(
+        func.date(models.ImageLog.created_at) == day,
+        models.ImageLog.status == "success"
+    ).scalar() or 0
