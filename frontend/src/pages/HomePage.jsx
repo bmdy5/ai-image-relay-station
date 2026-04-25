@@ -68,50 +68,60 @@ const HomePage = () => {
     setProgress(0);
     setResult(null);
     
-    // 模拟进度条
-    const timer = setInterval(() => {
-      setProgress(old => {
-        if (old >= 95) return old;
-        return old + Math.floor(Math.random() * 10);
-      });
-    }, 1000);
-
     try {
       const res = await request.post('/image/generate', { prompt, quality });
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
       
-      // 开始轮询
+      alert('🚀 任务已提交，AI 正在为您精心创作！\n\n您可以留在本页等待结果，也可以前往“我的创作”查看进度。');
+
+      // 开始轮询 (Task 3.0: 真实状态驱动进度)
       let pollCount = 0;
+      let internalProgress = 0;
+      
       const pollTimer = setInterval(async () => {
         pollCount++;
         try {
           const statusRes = await request.get(`/image/status/${taskId}`);
-          if (statusRes.status === 'success') {
+          
+          // 根据后端真实状态分段映射进度
+          let targetProgress = internalProgress;
+          if (statusRes.status === 'pending') {
+            targetProgress = Math.min(internalProgress + 2, 20);
+          } else if (statusRes.status === 'generating') {
+            targetProgress = Math.min(internalProgress + 1, 80);
+            if (internalProgress < 20) targetProgress = 20;
+          } else if (statusRes.status === 'storing') {
+            targetProgress = Math.min(internalProgress + 5, 99);
+            if (internalProgress < 80) targetProgress = 80;
+          } else if (statusRes.status === 'success') {
             clearInterval(pollTimer);
-            clearInterval(timer);
             setProgress(100);
             setResult(statusRes.image_url);
             setLoading(false);
+            return;
           } else if (statusRes.status === 'failed') {
             clearInterval(pollTimer);
-            clearInterval(timer);
             setProgress(0);
             setLoading(false);
             alert(`生成失败: ${statusRes.error || '未知错误'}`);
+            return;
           }
+
+          internalProgress = targetProgress;
+          setProgress(Math.floor(internalProgress));
+
         } catch (err) {}
 
         // 3分钟超时
         if (pollCount > 60) {
           clearInterval(pollTimer);
-          clearInterval(timer);
           setLoading(false);
           alert('任务已转入后台处理，请稍后在“我的创作”中查看');
         }
       }, 3000);
+
     } catch (err) {
-      clearInterval(timer);
       setProgress(0);
       setLoading(false);
       const detail = err.response?.data?.detail || '提交失败，请重试';
@@ -149,8 +159,13 @@ const HomePage = () => {
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ background: '#f5f5f5', padding: '6px 12px', borderRadius: '20px', fontSize: '13px' }}>
-            🪙 {userInfo?.points || 0}
+          <div style={{ background: '#f5f5f5', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', display: 'flex', gap: '8px' }}>
+            <span>🪙 {userInfo?.points || 0}</span>
+            {userInfo?.frozen_points > 0 && (
+              <span style={{ color: '#999', borderLeft: '1px solid #ddd', paddingLeft: '8px' }} title="生图中冻结的积分">
+                🔒 {userInfo.frozen_points}
+              </span>
+            )}
           </div>
           <button 
             onClick={() => navigate('/profile')}

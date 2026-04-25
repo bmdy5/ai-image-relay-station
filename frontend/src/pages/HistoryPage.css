@@ -190,3 +190,55 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Pending Card Styling (Task 3.1) */
+.pending-card {
+  height: 300px;
+  background: linear-gradient(135deg, #f3a48122 0%, #e66b3311 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 1px dashed #f3a481;
+}
+
+.glass-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.pulse-text {
+  animation: pulse 2s infinite;
+  color: #e66b33;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 15px;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.lqip-img {
+  filter: blur(10px);
+  transition: filter 0.5s ease, opacity 0.5s ease;
+}
+
+.lqip-img.loaded {
+  filter: blur(0);
+}

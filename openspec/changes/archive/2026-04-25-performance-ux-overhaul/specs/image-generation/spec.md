@@ -1,8 +1,5 @@
-# image-generation Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change v1-launch-relay-station. Update Purpose after archive.
-## Requirements
 ### Requirement: 极速生图接口
 系统必须支持通过调用 OpenAI GPT-Image 2 接口进行绘图。为了提升用户体验，该过程 SHALL 异步处理。
 
@@ -13,4 +10,3 @@ TBD - created by archiving change v1-launch-relay-station. Update Purpose after 
 #### Scenario: 数据库连接优化
 - **WHEN** 后台任务调用耗时较长的 AI 接口期间
 - **THEN** 系统 SHALL 释放当前数据库连接，直到 AI 接口返回结果后再重新获取连接更新状态
-
