@@ -45,3 +45,22 @@ def login(user: user_schema.UserCreate, db: Session = Depends(get_db)):
 @router.get("/me", response_model=user_schema.UserInfo)
 def get_me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+@router.post("/change-password")
+def change_password(
+    data: user_schema.PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # 1. 验证旧密码
+    if not security.verify_password(data.old_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="旧密码错误"
+        )
+    
+    # 2. 更新新密码
+    hashed_password = security.get_password_hash(data.new_password)
+    user_crud.update_user_password(db, current_user.id, hashed_password)
+    
+    return {"message": "密码修改成功"}

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import request from '../api/request';
+import { useNavigate } from 'react-router-dom';
+import request, { logout } from '../api/request';
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [quality, setQuality] = useState('low');
@@ -43,18 +45,29 @@ const HomePage = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e66b33' }}>GPT Image 2</div>
           <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
-            <span>🖼 我的创作</span>
-            <span>💰 价格</span>
-            <span>📝 提示词</span>
-            <span>📖 使用指南</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => navigate('/history')}>🖼 我的创作</span>
+            <span style={{ cursor: 'pointer' }}>💰 价格</span>
+            <span style={{ cursor: 'pointer' }}>📝 提示词</span>
+            <span style={{ cursor: 'pointer' }}>📖 使用指南</span>
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <button className="btn-primary" style={{ padding: '8px 20px', fontSize: '14px' }}>立即创作</button>
           <div style={{ background: '#f5f5f5', padding: '6px 12px', borderRadius: '20px', fontSize: '13px' }}>
             🪙 {userInfo?.points || 0}
           </div>
-          <button style={{ background: '#eee', border: 'none', borderRadius: '50%', width: '32px', height: '32px' }}>👤</button>
+          <button 
+            onClick={() => navigate('/profile')}
+            title="个人中心"
+            style={{ background: '#eee', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer' }}
+          >
+            👤
+          </button>
+          <button 
+            onClick={logout}
+            style={{ background: 'transparent', border: '1px solid #ddd', borderRadius: '6px', padding: '5px 12px', fontSize: '13px', cursor: 'pointer' }}
+          >
+            退出
+          </button>
         </div>
       </header>
 

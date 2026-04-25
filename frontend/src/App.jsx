@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
+import ProfilePage from './pages/ProfilePage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
@@ -18,6 +19,14 @@ function App() {
           element={
             <PrivateRoute>
               <AdminPage />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <PrivateRoute>
+              <ProfilePage />
             </PrivateRoute>
           } 
         />

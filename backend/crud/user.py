@@ -21,9 +21,17 @@ def create_user(db: Session, user: user_schema.UserCreate, password_hash: str, i
     return db_user
 
 def update_user_points(db: Session, user_id: int, points: int):
-    db_user = get_user_id(db, user_id)
+    db_user = get_user_by_id(db, user_id)
     if db_user:
         db_user.points += points
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
+def update_user_password(db: Session, user_id: int, new_password_hash: str):
+    db_user = get_user_by_id(db, user_id)
+    if db_user:
+        db_user.password_hash = new_password_hash
         db.commit()
         db.refresh(db_user)
     return db_user
