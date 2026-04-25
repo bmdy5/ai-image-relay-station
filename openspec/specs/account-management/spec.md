@@ -1,7 +1,20 @@
-## ADDED Requirements
+# account-management Specification
+
+## Purpose
+负责用户个人账户信息的维护，包括安全设置（密码修改）、资产明细展示以及唯一身份标识（UID）的管理。
+
+## Requirements
+
+### Requirement: 易读随机 UID
+系统必须生成一个 6 位大写字母/数字 UID。
+
+#### Scenario: 字符排除
+- **WHEN** 生成 UID 时
+- **THEN** 不应包含 I, O, L, 0, 1 等易混淆字符
 
 ### Requirement: 修改密码校验
 用户必须提供正确的旧密码才能设置新密码。
+...
 
 #### Scenario: 成功修改密码
 - **WHEN** 用户提供正确的旧密码和符合强度要求的正新密码

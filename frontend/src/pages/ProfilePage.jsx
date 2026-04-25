@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
+import RechargeModal from '../components/RechargeModal';
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const ProfilePage = () => {
   const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
+  const [showRecharge, setShowRecharge] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -23,6 +25,13 @@ const ProfilePage = () => {
       setUserInfo(user);
       setHistory(logs);
     } catch (err) {}
+  };
+
+  const handleCopyUID = () => {
+    if (userInfo?.uid) {
+      navigator.clipboard.writeText(userInfo.uid);
+      alert('UID 已复制到剪贴板');
+    }
   };
 
   const handlePasswordChange = async (e) => {
@@ -49,7 +58,12 @@ const ProfilePage = () => {
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h1 style={{ fontSize: '28px' }}>个人中心</h1>
-        <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer' }}>← 返回首页</button>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          {userInfo?.is_admin && (
+            <button onClick={() => navigate('/admin')} style={{ background: '#fff7e6', border: '1px solid #ffd591', color: '#e66b33', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}>🛠 管理后台</button>
+          )}
+          <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer' }}>← 返回首页</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px' }}>
@@ -62,6 +76,16 @@ const ProfilePage = () => {
                 <span style={{ color: '#666' }}>用户名</span>
                 <span style={{ fontWeight: '600' }}>{userInfo?.username}</span>
               </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#666' }}>UID</span>
+                <span 
+                  onClick={handleCopyUID}
+                  style={{ fontWeight: '600', color: '#e66b33', cursor: 'pointer', borderBottom: '1px dashed #e66b33' }}
+                  title="点击复制"
+                >
+                  {userInfo?.uid}
+                </span>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#666' }}>当前积分</span>
                 <span style={{ fontWeight: '600', color: '#e66b33' }}>🪙 {userInfo?.points}</span>
@@ -72,8 +96,15 @@ const ProfilePage = () => {
               </div>
             </div>
             <button 
+              className="btn-primary"
+              onClick={() => setShowRecharge(true)}
+              style={{ width: '100%', marginTop: '20px', padding: '10px' }}
+            >
+              充值积分
+            </button>
+            <button 
               onClick={logout}
-              style={{ width: '100%', marginTop: '20px', padding: '10px', borderRadius: '8px', border: '1px solid #ff4d4f', color: '#ff4d4f', background: 'transparent', cursor: 'pointer' }}
+              style={{ width: '100%', marginTop: '12px', padding: '10px', borderRadius: '8px', border: '1px solid #ff4d4f', color: '#ff4d4f', background: 'transparent', cursor: 'pointer', fontSize: '13px' }}
             >
               退出当前账号
             </button>
@@ -172,6 +203,16 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+      {showRecharge && (
+        <RechargeModal 
+          uid={userInfo?.uid} 
+          onClose={() => setShowRecharge(false)} 
+          onSuccess={() => {
+            alert('报备提交成功，请等待审核');
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 };

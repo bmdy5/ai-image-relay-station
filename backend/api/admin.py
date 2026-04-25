@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..models.database import get_db
 from ..models import models
-from ..crud import user as user_crud
-from ..crud import recharge as recharge_crud
+from ..crud import user as user_crud, recharge as recharge_crud
+from ..schemas import user as user_schema
 from ..core.deps import get_current_user
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -39,3 +39,25 @@ def recharge_points(
     
     db.commit()
     return {"message": f"成功为 {target_username} 充值 {amount} 积分", "new_balance": user.points}
+
+@router.get("/recharge/pending")
+def list_pending_recharges(
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(admin_required)
+):
+    return recharge_crud.get_pending_recharges(db)
+
+@router.post("/recharge/audit/{log_id}")
+def audit_recharge_request(
+    log_id: int,
+    data: user_schema.RechargeAudit,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(admin_required)
+):
+    return recharge_crud.audit_recharge(
+        db, 
+        log_id=log_id, 
+        admin_id=admin.id, 
+        approved=data.approved, 
+        admin_note=data.admin_note
+    )

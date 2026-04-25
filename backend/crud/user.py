@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from ..models import models
 from ..schemas import user as user_schema
 
+from ..core.utils import generate_unique_uid
+
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
@@ -13,7 +15,8 @@ def create_user(db: Session, user: user_schema.UserCreate, password_hash: str, i
         username=user.username,
         password_hash=password_hash,
         fingerprint=user.fingerprint,
-        last_ip=ip
+        last_ip=ip,
+        uid=generate_unique_uid(db)
     )
     db.add(db_user)
     db.commit()

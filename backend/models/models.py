@@ -11,6 +11,7 @@ class User(Base):
     password_hash = Column(String)
     fingerprint = Column(String)
     points = Column(Integer, default=10)  # 默认赠送 10 积分
+    uid = Column(String(20), unique=True, index=True)
     last_ip = Column(String)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -39,7 +40,11 @@ class RechargeLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    amount = Column(Integer)
+    amount = Column(Integer)  # 对应积分
+    money_amount = Column(Integer)  # 实际金额 (元)
+    screenshot_url = Column(String)  # 截图 URL
+    status = Column(String, default="pending")  # pending / success / rejected
+    admin_note = Column(String)  # 管理员理由
     operator_id = Column(Integer)  # 操作管理员的 ID
     created_at = Column(DateTime, default=datetime.utcnow)
 

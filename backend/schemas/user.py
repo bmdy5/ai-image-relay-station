@@ -11,6 +11,7 @@ class UserCreate(UserBase):
 
 class UserInfo(UserBase):
     id: int
+    uid: Optional[str] = None
     points: int
     is_admin: bool
     created_at: datetime
@@ -28,3 +29,11 @@ class TokenData(BaseModel):
 class PasswordChange(BaseModel):
     old_password: str
     new_password: str
+
+class RechargeApply(BaseModel):
+    money_amount: int
+    screenshot_url: Optional[str] = None
+
+class RechargeAudit(BaseModel):
+    approved: bool
+    admin_note: Optional[str] = None

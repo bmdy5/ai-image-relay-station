@@ -47,7 +47,9 @@ const HomePage = () => {
           <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
             <span style={{ cursor: 'pointer' }} onClick={() => navigate('/history')}>🖼 我的创作</span>
             <span style={{ cursor: 'pointer' }}>💰 价格</span>
-            <span style={{ cursor: 'pointer' }}>📝 提示词</span>
+            {userInfo?.is_admin && (
+              <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600' }} onClick={() => navigate('/admin')}>🛠 管理后台</span>
+            )}
             <span style={{ cursor: 'pointer' }}>📖 使用指南</span>
           </nav>
         </div>
