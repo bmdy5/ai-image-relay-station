@@ -123,9 +123,15 @@ const ProfilePage = () => {
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#666' }}>当前积分</span>
+                <span style={{ color: '#666' }}>可用积分</span>
                 <span style={{ fontWeight: '600', color: '#e66b33' }}>🪙 {userInfo?.points}</span>
               </div>
+              {userInfo?.frozen_points > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#999' }}>
+                  <span style={{ fontSize: '13px' }}>生图中锁定</span>
+                  <span style={{ fontSize: '13px' }}>🔒 {userInfo?.frozen_points}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#666' }}>注册时间</span>
                 <span>{userInfo?.created_at && new Date(userInfo.created_at).toLocaleDateString()}</span>
@@ -246,11 +252,22 @@ const ProfilePage = () => {
                         padding: '2px 8px', 
                         borderRadius: '4px', 
                         fontSize: '12px',
-                        background: item.status === 'success' ? '#f6ffed' : '#fff1f0',
-                        color: item.status === 'success' ? '#52c41a' : '#ff4d4f',
-                        border: `1px solid ${item.status === 'success' ? '#b7eb8f' : '#ffa39e'}`
+                        background: 
+                          item.status === 'success' ? '#f6ffed' : 
+                          item.status === 'failed' ? '#fff1f0' : '#fff7e6',
+                        color: 
+                          item.status === 'success' ? '#52c41a' : 
+                          item.status === 'failed' ? '#ff4d4f' : '#faad14',
+                        border: `1px solid ${
+                          item.status === 'success' ? '#b7eb8f' : 
+                          item.status === 'failed' ? '#ffa39e' : '#ffe58f'
+                        }`
                       }}>
-                        {item.status === 'success' ? '成功' : '失败'}
+                        {item.status === 'success' && '成功'}
+                        {item.status === 'failed' && '失败'}
+                        {item.status === 'pending' && '等待中'}
+                        {item.status === 'generating' && '生成中'}
+                        {item.status === 'storing' && '保存中'}
                       </span>
                     </td>
                   </tr>

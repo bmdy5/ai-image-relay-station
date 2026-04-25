@@ -11,6 +11,7 @@ class User(Base):
     password_hash = Column(String)
     fingerprint = Column(String)
     points = Column(Integer, default=10)  # 默认赠送 10 积分
+    frozen_points = Column(Integer, default=0)  # 冻结积分
     uid = Column(String(20), unique=True, index=True)
     last_ip = Column(String)
     is_admin = Column(Boolean, default=False)
