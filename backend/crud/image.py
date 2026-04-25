@@ -27,8 +27,7 @@ def create_image_log(
 
 def get_user_image_logs(db: Session, user_id: int, skip: int = 0, limit: int = 10, keyword: str = None):
     query = db.query(models.ImageLog).filter(
-        models.ImageLog.user_id == user_id,
-        models.ImageLog.status == "success"
+        models.ImageLog.user_id == user_id
     )
     if keyword:
         query = query.filter(models.ImageLog.prompt.ilike(f"%{keyword}%"))
