@@ -6,6 +6,8 @@ import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import HistoryPage from './pages/HistoryPage';
+import PricingPage from './pages/PricingPage';
+import GuidePage from './pages/GuidePage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
@@ -36,6 +38,22 @@ function App() {
           element={
             <PrivateRoute>
               <ProfilePage />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/pricing" 
+          element={
+            <PrivateRoute>
+              <PricingPage />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/guide" 
+          element={
+            <PrivateRoute>
+              <GuidePage />
             </PrivateRoute>
           } 
         />

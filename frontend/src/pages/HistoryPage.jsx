@@ -117,7 +117,7 @@ const HistoryPage = () => {
             <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Images size={18} strokeWidth={1.75} /> 我的创作
             </span>
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/pricing')}>
               <Coins size={18} strokeWidth={1.75} /> 价格
             </span>
             {userInfo?.is_admin && (

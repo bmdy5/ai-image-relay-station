@@ -1,0 +1,19 @@
+# pricing-transparency Specification
+
+## Purpose
+TBD - created by archiving change pricing-and-guide-pages. Update Purpose after archive.
+## Requirements
+### Requirement: 积分消耗透明化 (SHALL)
+系统 SHALL 在价格页面清晰公示不同生成质量（标准/高清/超清）所对应的积分单价。
+
+#### Scenario: 查看消费规则
+- **WHEN** 用户导航至 `/pricing` 页面
+- **THEN** 系统展示一个包含“画质等级”与“积分消耗”对比的表格或列表
+
+### Requirement: 套餐化充值引导 (MUST)
+系统 MUST 在价格页面提供至少 3 种预设充值套餐，并支持点击后直接发起充值流程。
+
+#### Scenario: 从套餐发起充值
+- **WHEN** 用户在价格页面点击“¥49.9 进阶版”卡片
+- **THEN** 系统弹出充值报备弹窗，且“金额”输入框已预填为 49.9
+

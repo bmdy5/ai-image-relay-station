@@ -77,7 +77,7 @@ const HomePage = () => {
             <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/history')}>
               <Images size={18} strokeWidth={1.75} /> 我的创作
             </span>
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/pricing')}>
               <Coins size={18} strokeWidth={1.75} /> 价格
             </span>
             {userInfo?.is_admin && (
@@ -85,7 +85,7 @@ const HomePage = () => {
                 <ShieldCheck size={18} strokeWidth={1.75} /> 管理后台
               </span>
             )}
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/guide')}>
               <BookOpen size={18} strokeWidth={1.75} /> 使用指南
             </span>
           </nav>
