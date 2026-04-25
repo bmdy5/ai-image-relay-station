@@ -3,7 +3,7 @@ from typing import Optional
 
 class ImageCreate(BaseModel):
     prompt: str
-    quality: str = "low"  # low, mid, high
+    quality: str = "standard"  # standard, hd, master
 
 class ImageLogInfo(BaseModel):
     id: int

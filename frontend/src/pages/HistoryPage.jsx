@@ -77,11 +77,10 @@ const HistoryPage = () => {
     }
   };
 
-  const handleDownload = async (url) => {
+  const handleDownload = async (id) => {
     setDownloading(true);
     try {
-      // 通过后端代理下载，解决跨域问题
-      const response = await fetch(`/api/image/download?url=${encodeURIComponent(url)}`, {
+      const response = await fetch(`/api/image/download?id=${id}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -90,7 +89,7 @@ const HistoryPage = () => {
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      const filename = `creation_${new Date().getTime()}.png`;
+      const filename = `creation_${id}_${new Date().getTime()}.png`;
       link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
@@ -188,7 +187,12 @@ const HistoryPage = () => {
             <div className="gallery-grid">
               {images.map(img => (
                 <div key={img.id} className="gallery-item" onClick={() => setSelectedImage(img)}>
-                  <img src={img.image_url} alt={img.prompt} loading="lazy" />
+                  <img 
+                    src={`/api/image/view/${img.id}`} 
+                    alt={img.prompt} 
+                    loading="lazy" 
+                    style={{ minHeight: '200px', objectFit: 'cover', background: '#f5f5f5' }}
+                  />
                   <div className="gallery-info">
                     <div className="gallery-prompt">{img.prompt}</div>
                     <div className="gallery-date">{new Date(img.created_at).toLocaleString()}</div>
@@ -234,12 +238,12 @@ const HistoryPage = () => {
         <div className="modal-overlay" onClick={() => setSelectedImage(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setSelectedImage(null)}>&times;</button>
-            <img src={selectedImage.image_url} alt="Full Preview" />
+            <img src={`/api/image/view/${selectedImage.id}`} alt="Full Preview" />
             <div className="modal-actions">
               <button 
                 className="btn-primary" 
                 disabled={downloading}
-                onClick={() => handleDownload(selectedImage.image_url)}
+                onClick={() => handleDownload(selectedImage.id)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
                 {downloading ? '⏳ 正在准备...' : <><Download size={18} strokeWidth={1.75} /> 高清下载</>}

@@ -41,3 +41,34 @@ def get_daily_total_points(db: Session, day):
         func.date(models.ImageLog.created_at) == day,
         models.ImageLog.status == "success"
     ).scalar() or 0
+
+def count_active_tasks(db: Session, user_id: int):
+    return db.query(models.ImageLog).filter(
+        models.ImageLog.user_id == user_id,
+        models.ImageLog.status == "pending"
+    ).count()
+
+def reset_active_tasks(db: Session, user_id: int):
+    # 查找所有挂起的任务
+    pending_tasks = db.query(models.ImageLog).filter(
+        models.ImageLog.user_id == user_id,
+        models.ImageLog.status == "pending"
+    ).all()
+    
+    if not pending_tasks:
+        return
+        
+    # 计算需要退还的总积分
+    total_refund = sum(task.cost_points for task in pending_tasks)
+    
+    # 执行退费
+    db.query(models.User).filter(models.User.id == user_id).update(
+        {models.User.points: models.User.points + total_refund}
+    )
+    
+    # 标记任务为失败
+    for task in pending_tasks:
+        task.status = "failed"
+        task.error_msg = "User manually reset task lock"
+    
+    db.commit()

@@ -5,8 +5,11 @@ import {
   Zap, 
   Check, 
   Coins, 
-  ShieldCheck,
-  Star
+  Star,
+  Diamond,
+  Crown,
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import RechargeModal from '../components/RechargeModal';
 import request from '../api/request';
@@ -22,9 +25,31 @@ const PricingPage = () => {
   }, []);
 
   const tiers = [
-    { name: '初探版', price: 9.9, points: 1000, features: ['快速生成', '基础支持', '永久有效'] },
-    { name: '进阶版', price: 49.9, points: 6000, features: ['优先生成队列', '高清无水印', '赠送 1000 积分', '专属技巧指导'], recommended: true },
-    { name: '专业版', price: 99.9, points: 15000, features: ['全速生成通道', '商业授权支持', '赠送 3000 积分', '1对1 技术支持'] }
+    { 
+      name: '初探版', 
+      price: 9.9, 
+      points: 100, 
+      color: '#e66b33',
+      icon: <Zap size={24} />,
+      features: ['可生成 20 张标准图', '或 6 张大师级艺术图', '永久有效', '基础技术支持'] 
+    },
+    { 
+      name: '进阶版', 
+      price: 45, 
+      points: 500, 
+      color: '#3b82f6',
+      icon: <Diamond size={24} />,
+      features: ['可生成 100 张标准图', '或 33 张大师级艺术图', '优先生成队列', '专属技巧指导'], 
+      recommended: true 
+    },
+    { 
+      name: '专业版', 
+      price: 90, 
+      points: 1000, 
+      color: '#8b5cf6',
+      icon: <Crown size={24} />,
+      features: ['可生成 200 张标准图', '或 66 张大师级艺术图', '全速商业通道', '1对1 技术专家支持'] 
+    }
   ];
 
   const handleRecharge = (amount) => {
@@ -52,13 +77,16 @@ const PricingPage = () => {
         </h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
           {[
-            { label: '标准生成', cost: 10, desc: '极速预览，适合初稿' },
-            { label: '高清生成', cost: 30, desc: '细节丰富，适合展示' },
-            { label: '超清生成', cost: 50, desc: '印刷品质，极致细节' }
+            { label: '标准生成', cost: 5, desc: '日常练手、极速草图', icon: <Zap size={18} />, color: '#e66b33' },
+            { label: '高清生成', cost: 10, desc: '细腻光影、高保真细节', icon: <Diamond size={18} />, color: '#3b82f6' },
+            { label: '大师生成', cost: 15, desc: '极致色彩、AI 画质增强', icon: <Crown size={18} />, color: '#8b5cf6' }
           ].map(item => (
-            <div key={item.label} style={{ padding: '15px', borderLeft: '3px solid #e66b33', background: '#fff' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{item.label}</div>
-              <div style={{ color: '#e66b33', fontSize: '24px', fontWeight: 'bold', margin: '5px 0' }}>{item.cost} <span style={{ fontSize: '14px' }}>积分/张</span></div>
+            <div key={item.label} style={{ padding: '20px', borderRadius: '12px', border: '1px solid #eee', background: '#fff', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: item.color }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: item.color, marginBottom: '10px' }}>
+                {item.icon} <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{item.label}</span>
+              </div>
+              <div style={{ color: '#333', fontSize: '28px', fontWeight: '900', margin: '5px 0' }}>{item.cost} <span style={{ fontSize: '14px', color: '#999', fontWeight: 'normal' }}>积分/张</span></div>
               <div style={{ color: '#999', fontSize: '12px' }}>{item.desc}</div>
             </div>
           ))}
@@ -78,26 +106,34 @@ const PricingPage = () => {
               zIndex: tier.recommended ? 2 : 1
             }}
           >
-            {tier.recommended && (
-              <div style={{ position: 'absolute', top: '-15px', left: '50%', transform: 'translateX(-50%)', background: '#e66b33', color: '#fff', padding: '4px 15px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Star size={12} fill="#fff" /> 最受欢迎
-              </div>
-            )}
-            <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>{tier.name}</h2>
-            <div style={{ color: '#e66b33', fontSize: '40px', fontWeight: 'bold', marginBottom: '5px' }}>{tier.points} <span style={{ fontSize: '16px' }}>积分</span></div>
-            <div style={{ color: '#666', fontSize: '18px', marginBottom: '30px' }}>¥ {tier.price}</div>
+            <div style={{ 
+              display: 'flex', justifyContent: 'center', alignItems: 'center', 
+              width: '50px', height: '50px', borderRadius: '12px', background: `${tier.color}15`, 
+              color: tier.color, margin: '0 auto 20px' 
+            }}>
+              {tier.icon}
+            </div>
+            <h2 style={{ fontSize: '22px', marginBottom: '8px', fontWeight: '800' }}>{tier.name}</h2>
+            <div style={{ color: tier.color, fontSize: '42px', fontWeight: '900', marginBottom: '0px' }}>{tier.points} <span style={{ fontSize: '16px', fontWeight: 'normal' }}>积分</span></div>
+            <div style={{ color: '#999', fontSize: '16px', marginBottom: '30px' }}>
+              售价 ¥ {tier.price} <span style={{ textDecoration: 'line-through', fontSize: '12px', marginLeft: '5px' }}>¥ {tier.points / 10}</span>
+            </div>
             
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', textAlign: 'left', display: 'inline-block' }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {tier.features.map(f => (
-                <li key={f} style={{ fontSize: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px', color: '#555' }}>
-                  <Check size={16} color="#52c41a" /> {f}
+                <li key={f} style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px', color: '#555' }}>
+                  <Sparkles size={14} color={tier.color} /> {f}
                 </li>
               ))}
             </ul>
 
             <button 
               className="btn-primary" 
-              style={{ width: '100%', padding: '12px', background: tier.recommended ? '#e66b33' : '#444' }}
+              style={{ 
+                width: '100%', padding: '14px', 
+                background: tier.recommended ? `linear-gradient(135deg, ${tier.color} 0%, #000 100%)` : '#333',
+                borderRadius: '12px', border: 'none', fontWeight: 'bold', boxShadow: tier.recommended ? `0 10px 20px ${tier.color}30` : 'none'
+              }}
               onClick={() => handleRecharge(tier.price)}
             >
               立即获取
