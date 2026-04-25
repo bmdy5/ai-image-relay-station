@@ -17,6 +17,7 @@ export const useLoginController = () => {
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.detail || '登录失败');
+      setPassword('');
     }
   };
 

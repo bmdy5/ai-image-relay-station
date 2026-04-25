@@ -1,24 +1,15 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import request from '../api/request';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import { useRegisterController } from '../controllers/useRegisterController';
 
 const RegisterPage = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    try {
-      const fingerprint = btoa(navigator.userAgent).substring(0, 32);
-      await request.post('/auth/register', { username, password, fingerprint });
-      alert('注册成功！');
-      navigate('/login');
-    } catch (err) {
-      setError(err.response?.data?.detail || '注册失败');
-    }
-  };
+  const {
+    username, setUsername,
+    password, setPassword,
+    showPassword, setShowPassword,
+    error, handleRegister
+  } = useRegisterController();
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
@@ -37,14 +28,31 @@ const RegisterPage = () => {
             required
             style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
           />
-          <input
-            type="password"
-            placeholder="设置密码"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="设置密码"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', boxSizing: 'border-box', paddingRight: '40px' }}
+            />
+            <div 
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+                color: '#999',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </div>
+          </div>
           {error && <p style={{ color: '#ff4d4f', fontSize: '14px' }}>{error}</p>}
           <button type="submit" className="btn-primary" style={{ width: '100%' }}>确认注册</button>
         </form>

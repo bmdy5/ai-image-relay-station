@@ -32,10 +32,16 @@ def register(user: user_schema.UserCreate, request: Request, db: Session = Depen
 @router.post("/login", response_model=user_schema.Token)
 def login(user: user_schema.UserCreate, db: Session = Depends(get_db)):
     db_user = user_crud.get_user_by_username(db, username=user.username)
-    if not db_user or not security.verify_password(user.password, db_user.password_hash):
+    if not db_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="用户名或密码错误",
+            detail="账号不存在！",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not security.verify_password(user.password, db_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="密码错误！",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
