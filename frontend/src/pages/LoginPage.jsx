@@ -1,23 +1,15 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import request from '../api/request';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import { useLoginController } from '../controllers/useLoginController';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const data = await request.post('/auth/login', { username, password });
-      localStorage.setItem('token', data.access_token);
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.detail || '登录失败');
-    }
-  };
+  const {
+    username, setUsername,
+    password, setPassword,
+    showPassword, setShowPassword,
+    error, handleLogin
+  } = useLoginController();
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
@@ -33,14 +25,31 @@ const LoginPage = () => {
             required
             style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
           />
-          <input
-            type="password"
-            placeholder="密码"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-          />
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="密码"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', boxSizing: 'border-box', paddingRight: '40px' }}
+            />
+            <div 
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+                color: '#999',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </div>
+          </div>
           {error && <p style={{ color: '#ff4d4f', fontSize: '14px' }}>{error}</p>}
           <button type="submit" className="btn-primary" style={{ width: '100%' }}>立即登录</button>
         </form>
