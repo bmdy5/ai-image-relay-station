@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+
 from backend.api import auth, image, admin, user, feedback
 
 app = FastAPI()
