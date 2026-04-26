@@ -3,7 +3,7 @@ import request from '../api/request';
 import { CreditCard, MessageSquare, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react';
 
 const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
-  const [money, setMoney] = useState(initialAmount || 9.9);
+  const [money, setMoney] = useState(initialAmount || 10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: Choose Method, 2: Manual Guide, 3: Manual Report, 4: Online Processing
@@ -11,7 +11,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   const [payStatus, setPayStatus] = useState('pending'); // pending, success
   const pollTimer = useRef(null);
 
-  const tiers = [9.9, 45, 90, 500];
+  const tiers = [10, 45, 90, 500];
 
   // 清除轮询
   useEffect(() => {
@@ -75,7 +75,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   };
 
   const getPoints = (val) => {
-    if (val === 9.9) return 100;
+    if (val === 10) return 100;
     if (val === 45) return 500;
     if (val === 90) return 1000;
     if (val === 500) return 8000;
