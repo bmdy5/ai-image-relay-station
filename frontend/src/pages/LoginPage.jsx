@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLoginController } from '../controllers/useLoginController';
+import Captcha from '../components/Captcha';
 
 const LoginPage = () => {
   const {
@@ -11,12 +12,30 @@ const LoginPage = () => {
     error, handleLogin
   } = useLoginController();
 
+  const [captchaValid, setCaptchaValid] = useState(false);
+  const [captchaError, setCaptchaError] = useState('');
+
+  const onCaptchaMatch = useCallback((matched) => {
+    setCaptchaValid(matched);
+    if (matched) setCaptchaError('');
+  }, []);
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (!captchaValid) {
+      setCaptchaError('请输入正确的验证码');
+      return;
+    }
+    setCaptchaError('');
+    handleLogin(e);
+  };
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
       <div className="card" style={{ padding: '40px', width: '400px', textAlign: 'center' }}>
         <h1 style={{ color: '#e66b33', marginBottom: '10px' }}>Visionary</h1>
         <p style={{ color: '#666', marginBottom: '30px' }}>欢迎回来，开始您的创意之旅</p>
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <input
             type="text"
             placeholder="用户名 / 邮箱"
@@ -50,7 +69,11 @@ const LoginPage = () => {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </div>
           </div>
-          {error && <p style={{ color: '#ff4d4f', fontSize: '14px' }}>{error}</p>}
+          <Captcha onMatch={onCaptchaMatch} />
+          {(error || captchaError) && <p style={{ color: '#ff4d4f', fontSize: '14px', margin: 0 }}>{captchaError || error}</p>}
+          <div style={{ textAlign: 'right', marginTop: '-8px' }}>
+            <Link to="/forgot-password" style={{ color: '#e66b33', fontSize: '13px', textDecoration: 'none', fontWeight: '500' }}>忘记密码？</Link>
+          </div>
           <button type="submit" className="btn-primary" style={{ width: '100%' }}>立即登录</button>
         </form>
         <p style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>

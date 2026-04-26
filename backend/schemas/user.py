@@ -41,6 +41,14 @@ class PasswordChange(BaseModel):
     old_password: str
     new_password: str
 
+class ForgotPasswordSendCode(BaseModel):
+    email: str
+
+class ForgotPasswordReset(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
 class RechargeApply(BaseModel):
     money_amount: float
     screenshot_url: Optional[str] = None
