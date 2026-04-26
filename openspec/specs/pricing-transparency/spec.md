@@ -14,6 +14,6 @@ TBD - created by archiving change pricing-and-guide-pages. Update Purpose after 
 系统 MUST 在价格页面提供至少 3 种预设充值套餐，并支持点击后直接发起充值流程。
 
 #### Scenario: 从套餐发起充值
-- **WHEN** 用户在价格页面点击“¥49.9 进阶版”卡片
-- **THEN** 系统弹出充值报备弹窗，且“金额”输入框已预填为 49.9
+- **WHEN** 用户在价格页面点击“¥45 进阶版”卡片
+- **THEN** 系统弹出充值报备弹窗，且“金额”输入框已预填为 45
 

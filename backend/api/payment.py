@@ -31,7 +31,7 @@ def create_payment(
     
     out_trade_no = generate_out_trade_no()
     # 换算积分逻辑：匹配套餐优惠
-    if money_int == 9 and data.money_amount == 9.9:
+    if money_int == 10:
         points_amount = 100
     elif money_int == 45:
         points_amount = 500
