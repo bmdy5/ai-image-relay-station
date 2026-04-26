@@ -9,3 +9,4 @@ httpx
 python-dotenv
 pymysql
 cryptography
+cos-python-sdk-v5
