@@ -24,7 +24,9 @@ import {
   ShoppingBag,
   Wand2,
   Layers,
-  Monitor
+  Monitor,
+  Download,
+  Edit3
 } from 'lucide-react';
 
 const HomePage = () => {
@@ -55,8 +57,8 @@ const HomePage = () => {
   // 积分计算矩阵 (V1.3 激进定价)
   const PRICING_MAP = {
     'standard': 5,
-    'hd': 10,
-    'master': 15
+    'hd': 15,
+    'master': 30
   };
 
   useEffect(() => {
@@ -307,7 +309,7 @@ const HomePage = () => {
         <div className="card" style={{ padding: '24px', height: 'fit-content' }}>
           <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: '8px', padding: '4px', marginBottom: '20px' }}>
             <button style={{ flex: 1, border: 'none', background: '#fff', padding: '8px', borderRadius: '6px', fontWeight: '600' }}>生成图片</button>
-            <button style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px', color: '#666', cursor: 'pointer' }}>编辑图片</button>
+            <button style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px', color: '#ccc', cursor: 'not-allowed' }}>编辑图片</button>
           </div>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontWeight: '600' }}>
@@ -330,8 +332,8 @@ const HomePage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
                 { id: 'standard', name: '标准版', pts: 5, icon: <Zap size={20} />, color: '#e66b33' },
-                { id: 'hd', name: '高清版', pts: 10, icon: <Diamond size={20} />, color: '#3b82f6', desc: '1.5倍纵向视野' },
-                { id: 'master', name: '大师版', pts: 15, icon: <Crown size={20} />, color: '#8b5cf6', desc: 'HD 构思 + 电影比例' }
+                { id: 'hd', name: '高清版', pts: 15, icon: <Diamond size={20} />, color: '#3b82f6', desc: '1.5倍纵向视野' },
+                { id: 'master', name: '大师版', pts: 30, icon: <Crown size={20} />, color: '#8b5cf6', desc: 'HD 构思 + 电影比例' }
               ].map(item => (
                 <button 
                   key={item.id}
@@ -367,7 +369,7 @@ const HomePage = () => {
                     lineHeight: '1.2'
                   }}>
                     {item.id === 'standard' && '快速出图 · 灵感捕捉'}
-                    {item.id === 'hd' && '纵向超清 · 手机适配'}
+                    {item.id === 'hd' && '纵向超清渲染'}
                     {item.id === 'master' && '视觉推理 · 电影级细节'}
                   </div>
                 </button>
@@ -429,11 +431,11 @@ const HomePage = () => {
           flexDirection: 'column', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          minHeight: '600px', 
-          maxHeight: 'calc(100vh - 140px)',
+          minHeight: '400px', 
+          maxHeight: '750px',
           background: '#fbfbfb', 
           position: 'relative', 
-          overflowY: 'auto'
+          overflow: 'hidden'
         }}>
           {loading ? (
             <div style={{ textAlign: 'center' }}>
@@ -462,14 +464,32 @@ const HomePage = () => {
                 alt="Result" 
                 style={{ 
                   maxWidth: '100%', 
-                  maxHeight: 'calc(100vh - 280px)',
+                  maxHeight: '550px',
                   objectFit: 'contain',
-                  borderRadius: '12px', 
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.1)' 
+                  borderRadius: '16px', 
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                  border: '1px solid rgba(0,0,0,0.05)'
                 }} 
               />
-              <div style={{ display: 'flex', gap: '15px', marginTop: '20px', width: '100%' }}>
-                <button className="btn-primary" style={{ flex: 1, background: '#333', whiteSpace: 'nowrap' }}>🚀 继续编辑</button>
+              <div style={{ display: 'flex', gap: '15px', marginTop: '24px', width: '100%', maxWidth: '500px' }}>
+                <button 
+                  className="btn-primary" 
+                  style={{ 
+                    flex: 1, 
+                    background: '#fafafa', 
+                    color: '#ccc', 
+                    border: '1px solid #eee',
+                    boxShadow: 'none',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'not-allowed'
+                  }}
+                >
+                  <Edit3 size={18} strokeWidth={2} /> 继续编辑
+                </button>
                 <a 
                   href={result} 
                   download 
@@ -480,10 +500,13 @@ const HomePage = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    textDecoration: 'none'
+                    gap: '8px',
+                    textDecoration: 'none',
+                    background: 'linear-gradient(135deg, #e66b33 0%, #f3a481 100%)',
+                    boxShadow: '0 4px 12px rgba(230,107,51,0.25)'
                   }}
                 >
-                  📥 高清下载
+                  <Download size={18} strokeWidth={2} /> 高清下载
                 </a>
               </div>
             </div>
@@ -539,144 +562,176 @@ const HomePage = () => {
             从复杂攻略到严谨科普，每一张画作都是 AI 深度理解与艺术表达的完美结晶。
           </p>
         </div>
-
-        {/* 故事书 Section 1 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div style={{ paddingRight: '40px' }}>
-            <div style={{ color: '#e66b33', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 01</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>复杂长图排版能力</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              支持超长纵向画布输出，精准处理数千字的逻辑排版。无论是旅游攻略、购物清单还是工作流设计，都能做到字体清晰、布局优雅。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['高清输出', '文字精准', '逻辑理解'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
+        <div style={{ background: '#fff', borderRadius: '32px', padding: '60px', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ paddingRight: '20px' }}>
+              <div style={{ color: '#e66b33', fontWeight: '800', marginBottom: '12px', fontSize: '13px', letterSpacing: '3px' }}>CASE 01</div>
+              <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '24px', color: '#1a1a1a', lineHeight: '1.2' }}>复杂长图排版能力</h2>
+              <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '30px' }}>
+                支持超长纵向画布输出，精准处理数千字的逻辑排版。无论是旅游攻略、购物清单还是工作流设计，都能做到字体清晰、布局优雅。
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['高清输出', '文字精准', '逻辑理解'].map(tag => (
+                  <span key={tag} style={{ background: '#e66b3308', border: '1px solid #e66b3315', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#e66b33', fontWeight: '600' }}>{tag}</span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div 
-            style={{ cursor: 'zoom-in', position: 'relative' }} 
-            onClick={() => setPreviewImage('/showcase/2.png')}
-          >
-            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/2.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="苏州旅游攻略" />
-          </div>
-        </div>
-
-        {/* 故事书 Section 2 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div 
-            style={{ cursor: 'zoom-in', position: 'relative' }} 
-            onClick={() => setPreviewImage('/showcase/3.png')}
-          >
-            <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/3.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="大语言模型科普" />
-          </div>
-          <div style={{ paddingLeft: '40px' }}>
-            <div style={{ color: '#3b82f6', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 02</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>知识图谱海报生成</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              GPT Image V2 能够深度理解深奥的科学概念，并将其转化为极具亲和力的视觉语言。科普教育不再枯燥，每一处插画都精准契合知识点。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['科普海报', '色彩柔和', '信息可视化'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
+            <div 
+              style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onClick={() => setPreviewImage('/showcase/2.png')}
+            >
+              <div style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={20} color="#e66b33" />
+              </div>
+              <img src="/showcase/2.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt="苏州旅游攻略" />
             </div>
           </div>
         </div>
 
-        {/* 故事书 Section 3: 凡人修仙传 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div>
-            <div style={{ color: '#8b5cf6', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 03: 电影级排版</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>中文字体与海报设计</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              攻克了 AI 绘图领域最难的中文字体精准排版。无论是武侠仙侠、科幻电影还是品牌商业海报，都能实现极具震撼力的标题呈现与意境融合。
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <span style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># 仙侠风格</span>
-              <span style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># 精准中文字体</span>
+        {/* CASE 02: 知识图谱 */}
+        <div style={{ background: '#fafafa', borderRadius: '32px', padding: '60px', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+            <div 
+              style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onClick={() => setPreviewImage('/showcase/3.png')}
+            >
+              <div style={{ position: 'absolute', top: '24px', left: '24px', background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={20} color="#3b82f6" />
+              </div>
+              <img src="/showcase/3.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt="大语言模型科普" />
             </div>
-          </div>
-          <div style={{ cursor: 'zoom-in', position: 'relative' }} onClick={() => setPreviewImage('/showcase/image.png')}>
-            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/image.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="凡人修仙传海报" />
-          </div>
-        </div>
-
-        {/* 故事书 Section 4: 逻辑与学术图表 (新增) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div style={{ cursor: 'zoom-in', position: 'relative' }} onClick={() => setPreviewImage('/showcase/5.png')}>
-            <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/5.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="学术逻辑图表" />
-          </div>
-          <div style={{ paddingLeft: '40px' }}>
-            <div style={{ color: '#ec4899', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 04: 深度逻辑推理</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>学术图表与复杂公式</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              只需输入正文逻辑和图表需求，GPT Image 2 即可生成排版完美的学术流程图或逻辑架构图。不再有乱码，只有严谨的结构与专业级设计。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['逻辑架构', '无乱码排版', '学术生产力'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
+            <div style={{ paddingLeft: '20px' }}>
+              <div style={{ color: '#3b82f6', fontWeight: '800', marginBottom: '12px', fontSize: '13px', letterSpacing: '3px' }}>CASE 02</div>
+              <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '24px', color: '#1a1a1a', lineHeight: '1.2' }}>知识图谱海报生成</h2>
+              <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '30px' }}>
+                GPT Image V2 能够深度理解深奥的科学概念，并将其转化为极具亲和力的视觉语言。科普教育不再枯燥，每一处插画都精准契合知识点。
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['科普海报', '色彩柔和', '信息可视化'].map(tag => (
+                  <span key={tag} style={{ background: '#3b82f608', border: '1px solid #3b82f615', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#3b82f6', fontWeight: '600' }}>{tag}</span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 故事书 Section 5: 极致细节 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div style={{ cursor: 'zoom-in', position: 'relative' }} onClick={() => setPreviewImage('/showcase/1.png')}>
-            <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
+        {/* CASE 03: 凡人修仙传 */}
+        <div style={{ background: '#fff', borderRadius: '32px', padding: '60px', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ paddingRight: '20px' }}>
+              <div style={{ color: '#8b5cf6', fontWeight: '800', marginBottom: '12px', fontSize: '13px', letterSpacing: '3px' }}>CASE 03</div>
+              <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '24px', color: '#1a1a1a', lineHeight: '1.2' }}>中文字体与海报设计</h2>
+              <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '30px' }}>
+                攻克了 AI 绘图领域最难的中文字体精准排版。无论是武侠仙侠、科幻电影还是品牌商业海报，都能实现极具震撼力的标题呈现与意境融合。
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['仙侠风格', '精准中文字体', '意境融合'].map(tag => (
+                  <span key={tag} style={{ background: '#8b5cf608', border: '1px solid #8b5cf615', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#8b5cf6', fontWeight: '600' }}>{tag}</span>
+                ))}
+              </div>
             </div>
-            <img src="/showcase/1.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="细节展示" />
-          </div>
-          <div style={{ paddingLeft: '40px' }}>
-            <div style={{ color: '#10b981', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 04</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>极致微距细节</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              支持超高分辨率渲染，对瞳孔倒影、发丝细节、材质纹理有着极其恐怖的还原力。每一像素都经得起无限放大，是专业插画师的首选。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['微距画质', '纹理还原', '商业级别'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
+            <div 
+              style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onClick={() => setPreviewImage('/showcase/image.png')}
+            >
+              <div style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={20} color="#8b5cf6" />
+              </div>
+              <img src="/showcase/image.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt="凡人修仙传海报" />
             </div>
           </div>
         </div>
 
-        {/* 故事书 Section 5: 创意海报设计 (新增) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div style={{ paddingRight: '40px' }}>
-            <div style={{ color: '#f59e0b', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 05</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>创意海报与构图艺术</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              通过对构图学与色彩心理学的深度理解，GPT Image V2 能自动生成极具冲击力的海报作品。无论是极简主义还是繁复美学，都能精准拿捏。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['构图艺术', '色彩冲突', '创意排版'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
+        {/* CASE 04: 逻辑与学术图表 */}
+        <div style={{ background: '#fafafa', borderRadius: '32px', padding: '60px', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+            <div 
+              style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onClick={() => setPreviewImage('/showcase/5.png')}
+            >
+              <div style={{ position: 'absolute', top: '24px', left: '24px', background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={20} color="#ec4899" />
+              </div>
+              <img src="/showcase/5.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt="学术逻辑图表" />
+            </div>
+            <div style={{ paddingLeft: '20px' }}>
+              <div style={{ color: '#ec4899', fontWeight: '800', marginBottom: '12px', fontSize: '13px', letterSpacing: '3px' }}>CASE 04</div>
+              <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '24px', color: '#1a1a1a', lineHeight: '1.2' }}>学术图表与复杂公式</h2>
+              <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '30px' }}>
+                只需输入正文逻辑和图表需求，GPT Image 2 即可生成排版完美的学术流程图或逻辑架构图。不再有乱码，只有严谨的结构与专业级设计。
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['逻辑架构', '无乱码排版', '学术生产力'].map(tag => (
+                  <span key={tag} style={{ background: '#ec489908', border: '1px solid #ec489915', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#ec4899', fontWeight: '600' }}>{tag}</span>
+                ))}
+              </div>
             </div>
           </div>
-          <div 
-            style={{ cursor: 'zoom-in', position: 'relative' }} 
-            onClick={() => setPreviewImage('/showcase/4.png')}
-          >
-            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
+        </div>
+
+        {/* CASE 05: 极致细节 */}
+        <div style={{ background: '#fff', borderRadius: '32px', padding: '60px', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ paddingRight: '20px' }}>
+              <div style={{ color: '#10b981', fontWeight: '800', marginBottom: '12px', fontSize: '13px', letterSpacing: '3px' }}>CASE 05</div>
+              <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '24px', color: '#1a1a1a', lineHeight: '1.2' }}>极致微距细节</h2>
+              <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '30px' }}>
+                支持超高分辨率渲染，对瞳孔倒影、发丝细节、材质纹理有着极其恐怖的还原力。每一像素都经得起无限放大，是专业插画师的首选。
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['微距画质', '纹理还原', '商业级别'].map(tag => (
+                  <span key={tag} style={{ background: '#10b98108', border: '1px solid #10b98115', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#10b981', fontWeight: '600' }}>{tag}</span>
+                ))}
+              </div>
             </div>
-            <img src="/showcase/4.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="创意海报展示" />
+            <div 
+              style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onClick={() => setPreviewImage('/showcase/1.png')}
+            >
+              <div style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={20} color="#10b981" />
+              </div>
+              <img src="/showcase/1.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt="细节展示" />
+            </div>
+          </div>
+        </div>
+
+        {/* CASE 06: 创意海报设计 */}
+        <div style={{ background: '#fafafa', borderRadius: '32px', padding: '60px', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+            <div 
+              style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onClick={() => setPreviewImage('/showcase/4.png')}
+            >
+              <div style={{ position: 'absolute', top: '24px', left: '24px', background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={20} color="#f59e0b" />
+              </div>
+              <img src="/showcase/4.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt="创意海报展示" />
+            </div>
+            <div style={{ paddingLeft: '20px' }}>
+              <div style={{ color: '#f59e0b', fontWeight: '800', marginBottom: '12px', fontSize: '13px', letterSpacing: '3px' }}>CASE 06</div>
+              <h2 style={{ fontSize: '36px', fontWeight: '800', marginBottom: '24px', color: '#1a1a1a', lineHeight: '1.2' }}>创意海报与构图艺术</h2>
+              <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '30px' }}>
+                通过对构图学与色彩心理学的深度理解，GPT Image V2 能自动生成极具冲击力的海报作品。无论是极简主义还是繁复美学，都能精准拿捏。
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['构图艺术', '色彩冲突', '创意排版'].map(tag => (
+                  <span key={tag} style={{ background: '#f59e0b08', border: '1px solid #f59e0b15', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#f59e0b', fontWeight: '600' }}>{tag}</span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
