@@ -9,6 +9,7 @@ from ..models import models
 from ..core.payment import PaymentService
 from ..core.deps import get_current_user
 from ..schemas import user as user_schema
+from ..core.config import get_config
 
 router = APIRouter(prefix="/payment", tags=["payment"])
 
@@ -54,12 +55,12 @@ def create_payment(
     db.add(db_log)
     db.commit()
     
-    # 2. 读取配置并构造支付参数
-    pid = os.getenv("PAYLE_PID")
-    key = os.getenv("PAYLE_KEY")
-    api_url = os.getenv("PAYLE_API_URL")
-    notify_url = os.getenv("PAYLE_NOTIFY_URL")
-    return_url = os.getenv("PAYLE_RETURN_URL")
+    # 2. 读取配置并构造支付参数 (优先从数据库 system_configs 获取)
+    pid = get_config("PAYLE_PID")
+    key = get_config("PAYLE_KEY")
+    api_url = get_config("PAYLE_API_URL")
+    notify_url = get_config("PAYLE_NOTIFY_URL")
+    return_url = get_config("PAYLE_RETURN_URL")
     
     if not all([pid, key, api_url]):
         raise HTTPException(status_code=500, detail="支付配置缺失，请联系管理员")
@@ -93,7 +94,7 @@ def create_payment(
 def payment_notify(request: Request, db: Session = Depends(get_db)):
     """接收支付乐的异步通知 (GET 方式)"""
     params = dict(request.query_params)
-    key = os.getenv("PAYLE_KEY")
+    key = get_config("PAYLE_KEY")
     
     # 1. 签名验证
     if not PaymentService.verify_sign(params, key):
