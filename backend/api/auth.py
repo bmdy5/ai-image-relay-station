@@ -118,3 +118,62 @@ def change_password(
     user_crud.update_user_password(db, current_user.id, hashed_password)
     
     return {"message": "密码修改成功"}
+
+@router.post("/forgot-password/send-code")
+def forgot_password_send_code(data: user_schema.ForgotPasswordSendCode, db: Session = Depends(get_db)):
+    email = data.email
+    
+    # 校验邮箱是否已注册（找回密码要求邮箱必须已注册）
+    db_user = user_crud.get_user_by_email(db, email=email)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="该邮箱未注册")
+
+    # 限制 60s 内只能发送一次
+    last_code = db.query(models.VerificationCode).filter(
+        models.VerificationCode.email == email
+    ).order_by(models.VerificationCode.created_at.desc()).first()
+    
+    if last_code and (datetime.utcnow() - last_code.created_at) < timedelta(seconds=60):
+        raise HTTPException(status_code=429, detail="发送太频繁，请稍后再试")
+        
+    code = f"{random.randint(100000, 999999)}"
+    
+    success = send_verification_email(email, code, purpose="reset_password")
+    if success:
+        vc = models.VerificationCode(
+            email=email,
+            code=code,
+            expires_at=datetime.utcnow() + timedelta(minutes=5)
+        )
+        db.add(vc)
+        db.commit()
+        return {"message": "验证码已发送至您的邮箱"}
+    else:
+        raise HTTPException(status_code=500, detail="邮件发送失败，请稍后重试")
+
+@router.post("/forgot-password/reset")
+def forgot_password_reset(data: user_schema.ForgotPasswordReset, db: Session = Depends(get_db)):
+    # 1. 校验邮箱是否已注册
+    db_user = user_crud.get_user_by_email(db, email=data.email)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="该邮箱未注册")
+    
+    # 2. 校验验证码
+    vc = db.query(models.VerificationCode).filter(
+        models.VerificationCode.email == data.email,
+        models.VerificationCode.code == data.code,
+        models.VerificationCode.is_used == False
+    ).order_by(models.VerificationCode.created_at.desc()).first()
+    
+    if not vc or vc.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="验证码无效或已过期")
+    
+    # 3. 标记验证码已使用
+    vc.is_used = True
+    db.commit()
+    
+    # 4. 更新密码
+    hashed_password = security.get_password_hash(data.new_password)
+    user_crud.update_user_password(db, db_user.id, hashed_password)
+    
+    return {"message": "密码重置成功，请使用新密码登录"}
