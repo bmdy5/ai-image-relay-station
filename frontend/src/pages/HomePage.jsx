@@ -18,8 +18,17 @@ import {
   Infinity,
   CheckCircle,
   X,
-  Maximize2
+  Maximize2,
+  FlaskConical,
+  Video,
+  ShoppingBag,
+  Wand2,
+  Layers,
+  Monitor,
+  Download,
+  Edit3
 } from 'lucide-react';
+import Showcase from '../components/Showcase';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -33,9 +42,13 @@ const HomePage = () => {
   const [numImages, setNumImages] = useState(1);
   const [previewImage, setPreviewImage] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showLab, setShowLab] = useState(false);
   const [feedbackContent, setFeedbackContent] = useState('');
   const [feedbackContact, setFeedbackContact] = useState('');
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  
+  // 用于实时日志记录的状态追踪
+  const lastStatus = React.useRef(null);
 
   // 消息提示逻辑
   const showToast = (message, type = 'success') => {
@@ -46,16 +59,24 @@ const HomePage = () => {
   };
 
   // 积分计算矩阵 (V1.3 激进定价)
-  const PRICING_MAP = {
+  const [pricingMap, setPricingMap] = useState({
     'standard': 5,
-    'hd': 10,
-    'master': 15
-  };
+    'hd': 15,
+    'master': 30
+  });
 
   useEffect(() => {
     fetchUserInfo();
+    fetchConfig();
     checkPendingPrompt();
   }, []);
+
+  const fetchConfig = async () => {
+    try {
+      const data = await request.get('/image/config');
+      if (data.pricing) setPricingMap(data.pricing);
+    } catch (err) {}
+  };
 
   const checkPendingPrompt = () => {
     const pending = sessionStorage.getItem('pending_prompt');
@@ -91,7 +112,10 @@ const HomePage = () => {
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
       
-      showToast('🚀 任务已提交，AI 正在为您精心创作！', 'success');
+      const toastMsg = quality === 'master' 
+        ? '🚀 大师版正在进行深度视觉推理，耗时较长（约 1-2 分钟），请耐心等待...' 
+        : '🚀 任务已提交，AI 正在为您精心创作！';
+      showToast(toastMsg, 'success');
 
       // 开始轮询 (Task 3.0: 真实状态驱动进度)
       let pollCount = 0;
@@ -102,12 +126,18 @@ const HomePage = () => {
         try {
           const statusRes = await request.get(`/image/status/${taskId}`);
           
+          // 实时状态日志打印
+          if (statusRes.status !== lastStatus.current) {
+            console.log(`%c[任务状态] ${lastStatus.current || 'pending'} -> ${statusRes.status}`, 'color: #3b82f6; font-weight: bold;');
+            lastStatus.current = statusRes.status;
+          }
+
           // 根据后端真实状态分段映射进度
           let targetProgress = internalProgress;
           if (statusRes.status === 'pending') {
             targetProgress = Math.min(internalProgress + 2, 20);
           } else if (statusRes.status === 'generating') {
-            targetProgress = Math.min(internalProgress + 1, 80);
+            targetProgress = Math.min(internalProgress + 10, 80);
             if (internalProgress < 20) targetProgress = 20;
           } else if (statusRes.status === 'storing') {
             targetProgress = Math.min(internalProgress + 5, 99);
@@ -117,12 +147,32 @@ const HomePage = () => {
             setProgress(100);
             setResult(statusRes.image_url);
             setLoading(false);
+            
+            // 重置状态追踪
+            lastStatus.current = null;
+
+            // Task: Performance Logging
+            if (statusRes.timings) {
+              const { queue, api, generation, storage, total } = statusRes.timings;
+              console.log('%c🚀 AI 生图性能报告', 'color: #7c3aed; font-weight: bold; font-size: 14px;');
+              console.log(`- 消耗积分: ${statusRes.cost_points || '--'} Points`);
+              console.log(`- 内部排队: ${(queue / 1000).toFixed(2)}s`);
+              console.log(`- 中转站网络: ${(api / 1000).toFixed(2)}s (API 往返)`);
+              console.log(`- 系统处理: ${((generation - api) / 1000).toFixed(2)}s (本地逻辑)`);
+              console.log(`- 转存 COS: ${(storage / 1000).toFixed(2)}s`);
+              console.log(`- 任务总计: ${(total / 1000).toFixed(2)}s`);
+              console.log('%c-------------------------', 'color: #7c3aed;');
+            }
             return;
           } else if (statusRes.status === 'failed') {
             clearInterval(pollTimer);
             setProgress(0);
             setLoading(false);
             showToast(`生成失败: ${statusRes.error || '未知错误'}`, 'error');
+
+            if (statusRes.timings) {
+              console.error('❌ 生图失败性能快照:', statusRes.timings);
+            }
             return;
           }
 
@@ -143,10 +193,14 @@ const HomePage = () => {
       setProgress(0);
       setLoading(false);
       const detail = err.response?.data?.detail || '提交失败，请重试';
-      if (err.response?.status === 403) {
+      const status = err.response?.status;
+      
+      if (status === 403) {
         if (window.confirm(`${detail}\n\n是否前往充值页面？`)) {
           navigate('/pricing');
         }
+      } else if (status === 429) {
+        showToast(detail, 'info'); // 并发限制使用提示色而非错误色
       } else {
         showToast(detail, 'error');
       }
@@ -297,7 +351,7 @@ const HomePage = () => {
         <div className="card" style={{ padding: '24px', height: 'fit-content' }}>
           <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: '8px', padding: '4px', marginBottom: '20px' }}>
             <button style={{ flex: 1, border: 'none', background: '#fff', padding: '8px', borderRadius: '6px', fontWeight: '600' }}>生成图片</button>
-            <button style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px', color: '#666' }}>编辑图片</button>
+            <button style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px', color: '#ccc', cursor: 'not-allowed' }}>编辑图片</button>
           </div>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontWeight: '600' }}>
@@ -320,17 +374,19 @@ const HomePage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
                 { id: 'standard', name: '标准版', pts: 5, icon: <Zap size={20} />, color: '#e66b33' },
-                { id: 'hd', name: '高清版', pts: 10, icon: <Diamond size={20} />, color: '#3b82f6' },
-                { id: 'master', name: '大师版', pts: 15, icon: <Crown size={20} />, color: '#8b5cf6' }
+                { id: 'hd', name: '高清版', pts: 15, icon: <Diamond size={20} />, color: '#3b82f6', desc: '1.5倍纵向视野' },
+                { id: 'master', name: '大师版', pts: 30, icon: <Crown size={20} />, color: '#8b5cf6', desc: 'HD 构思 + 电影比例' }
               ].map(item => (
                 <button 
                   key={item.id}
                   onClick={() => setQuality(item.id)}
+                  title={item.desc}
                   style={{ 
                     padding: '16px 8px', borderRadius: '12px', 
                     border: quality === item.id ? `2px solid ${item.color}` : '1px solid #eee', 
                     background: quality === item.id ? `${item.color}08` : '#fff', 
-                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                    cursor: 'pointer', 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: quality === item.id ? `0 4px 12px ${item.color}20` : 'none',
                     transform: quality === item.id ? 'translateY(-2px)' : 'none'
@@ -346,6 +402,18 @@ const HomePage = () => {
                     <span style={{ fontSize: '14px', fontWeight: 'bold', color: quality === item.id ? '#333' : '#666' }}>{item.name}</span>
                     <span style={{ fontSize: '11px', color: '#999' }}>{item.pts} 积分/张</span>
                   </div>
+                  {/* 新增：档次功能简述 */}
+                  <div style={{ 
+                    marginTop: '4px', 
+                    fontSize: '10px', 
+                    color: quality === item.id ? item.color : '#bbb',
+                    textAlign: 'center',
+                    lineHeight: '1.2'
+                  }}>
+                    {item.id === 'standard' && '快速出图 · 灵感捕捉'}
+                    {item.id === 'hd' && '纵向超清渲染'}
+                    {item.id === 'master' && '视觉推理 · 电影级细节'}
+                  </div>
                 </button>
               ))}
             </div>
@@ -357,13 +425,23 @@ const HomePage = () => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Coins size={20} color="#e66b33" strokeWidth={2.5} style={{ filter: 'drop-shadow(0 2px 4px rgba(230,107,51,0.3))' }} />
-              <span style={{ fontSize: '24px', fontWeight: '800', color: '#e66b33' }}>{PRICING_MAP[quality]}</span>
+              <span style={{ fontSize: '24px', fontWeight: '800', color: '#e66b33' }}>{pricingMap[quality]}</span>
               <span style={{ color: '#e66b33', fontWeight: '600', fontSize: '16px', marginLeft: '2px' }}>积分</span>
             </div>
           </div>
+            {quality === 'standard' && (
+              <div style={{ fontSize: '11px', color: '#666', marginTop: '6px' }}>
+                ⚡️ 极速通道：预估 50 秒内出图
+              </div>
+            )}
+            {quality === 'hd' && (
+              <div style={{ fontSize: '11px', color: '#3b82f6', marginTop: '6px', fontWeight: '500' }}>
+                🧪 测试期：高清渲染耗时较长，视任务复杂度而定
+              </div>
+            )}
             {quality === 'master' && (
-              <div style={{ fontSize: '11px', color: '#f3a481', marginTop: '6px' }}>
-                ✨ 包含 Vivid 色彩增强与高密度细节处理
+              <div style={{ fontSize: '11px', color: '#8b5cf6', marginTop: '6px', fontWeight: '500' }}>
+                🧪 测试期：大师级深度构思，渲染时间较长，请耐心等待
               </div>
             )}
 
@@ -395,11 +473,11 @@ const HomePage = () => {
           flexDirection: 'column', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          minHeight: '600px', 
-          maxHeight: 'calc(100vh - 140px)',
+          minHeight: '400px', 
+          maxHeight: '750px',
           background: '#fbfbfb', 
           position: 'relative', 
-          overflowY: 'auto'
+          overflow: 'hidden'
         }}>
           {loading ? (
             <div style={{ textAlign: 'center' }}>
@@ -428,14 +506,32 @@ const HomePage = () => {
                 alt="Result" 
                 style={{ 
                   maxWidth: '100%', 
-                  maxHeight: 'calc(100vh - 280px)',
+                  maxHeight: '550px',
                   objectFit: 'contain',
-                  borderRadius: '12px', 
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.1)' 
+                  borderRadius: '16px', 
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+                  border: '1px solid rgba(0,0,0,0.05)'
                 }} 
               />
-              <div style={{ display: 'flex', gap: '15px', marginTop: '20px', width: '100%' }}>
-                <button className="btn-primary" style={{ flex: 1, background: '#333', whiteSpace: 'nowrap' }}>🚀 继续编辑</button>
+              <div style={{ display: 'flex', gap: '15px', marginTop: '24px', width: '100%', maxWidth: '500px' }}>
+                <button 
+                  className="btn-primary" 
+                  style={{ 
+                    flex: 1, 
+                    background: '#fafafa', 
+                    color: '#ccc', 
+                    border: '1px solid #eee',
+                    boxShadow: 'none',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'not-allowed'
+                  }}
+                >
+                  <Edit3 size={18} strokeWidth={2} /> 继续编辑
+                </button>
                 <a 
                   href={result} 
                   download 
@@ -446,10 +542,13 @@ const HomePage = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    textDecoration: 'none'
+                    gap: '8px',
+                    textDecoration: 'none',
+                    background: 'linear-gradient(135deg, #e66b33 0%, #f3a481 100%)',
+                    boxShadow: '0 4px 12px rgba(230,107,51,0.25)'
                   }}
                 >
-                  📥 高清下载
+                  <Download size={18} strokeWidth={2} /> 高清下载
                 </a>
               </div>
             </div>
@@ -465,165 +564,7 @@ const HomePage = () => {
       </main>
 
       {/* 落地页模块：核心优势 + 深度画廊 */}
-      <section style={{ marginTop: '100px', paddingBottom: '100px' }}>
-        
-        {/* PART 1: 核心优势 (解决痛点) */}
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <div style={{ display: 'inline-block', background: '#e66b3310', color: '#e66b33', padding: '6px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', marginBottom: '15px' }}>
-            GPT Image V2 · 重新定义 AI 创作
-          </div>
-          <h1 style={{ fontSize: '36px', marginBottom: '15px', fontWeight: '800' }}>为什么选择 Visionary？</h1>
-          <p style={{ color: '#666', maxWidth: '700px', margin: '0 auto', fontSize: '16px' }}>
-            我们打破了官方繁琐的限制，为您提供最丝滑、最纯粹的云端创作体验。
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px', maxWidth: '1200px', margin: '0 auto', marginBottom: '120px' }}>
-          {[
-            { title: "自由计费 (Pay-as-you-go)", desc: "拒绝强制包月费。0 月费门槛，按需充值，每一分钱都用在刀刃上。", icon: <Coins size={24} />, color: "#e66b33" },
-            { title: "告别翻墙 (VPN Free)", desc: "无需昂贵的加速器。国内丝滑直连，随时随地开启您的创意灵感。", icon: <Globe size={24} />, color: "#3b82f6" },
-            { title: "无限制创作 (No Limits)", desc: "这里没有低配限制。只要有积分，灵感永不断电，支持超长绘图任务。", icon: <Infinity size={24} />, color: "#8b5cf6" },
-            { title: "零风控门槛 (Zero Risk)", desc: "告别繁琐的国外地址和封号风险。一键登录，立刻享受顶尖画质。", icon: <ShieldCheck size={24} />, color: "#10b981" }
-          ].map((item, idx) => (
-            <div key={idx} className="card" style={{ padding: '30px', transition: 'all 0.3s', border: '1px solid #f0f0f0', background: '#fff' }}>
-              <div style={{ width: '48px', height: '48px', background: `${item.color}10`, color: item.color, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                {item.icon}
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' }}>{item.title}</h3>
-              <p style={{ color: '#888', fontSize: '14px', lineHeight: '1.6' }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* PART 2: 能力故事画廊 (见证奇迹) */}
-        <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-          <div style={{ display: 'inline-block', background: '#e66b3310', color: '#e66b33', padding: '6px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', marginBottom: '15px' }}>
-            作品画廊 · 灵感触手可及
-          </div>
-          <h1 style={{ fontSize: '42px', marginBottom: '15px', fontWeight: '800', background: 'linear-gradient(90deg, #333, #666)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>见证 GPT Image V2 的无限可能</h1>
-          <p style={{ color: '#888', maxWidth: '600px', margin: '0 auto', fontSize: '18px' }}>
-            从复杂攻略到严谨科普，每一张画作都是 AI 深度理解与艺术表达的完美结晶。
-          </p>
-        </div>
-
-        {/* 故事书 Section 1 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div style={{ paddingRight: '40px' }}>
-            <div style={{ color: '#e66b33', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 01</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>复杂长图排版能力</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              支持超长纵向画布输出，精准处理数千字的逻辑排版。无论是旅游攻略、购物清单还是工作流设计，都能做到字体清晰、布局优雅。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['高清输出', '文字精准', '逻辑理解'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
-            </div>
-          </div>
-          <div 
-            style={{ cursor: 'zoom-in', position: 'relative' }} 
-            onClick={() => setPreviewImage('/showcase/2.png')}
-          >
-            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/2.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="苏州旅游攻略" />
-          </div>
-        </div>
-
-        {/* 故事书 Section 2 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div 
-            style={{ cursor: 'zoom-in', position: 'relative' }} 
-            onClick={() => setPreviewImage('/showcase/3.png')}
-          >
-            <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/3.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="大语言模型科普" />
-          </div>
-          <div style={{ paddingLeft: '40px' }}>
-            <div style={{ color: '#3b82f6', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 02</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>知识图谱海报生成</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              GPT Image V2 能够深度理解深奥的科学概念，并将其转化为极具亲和力的视觉语言。科普教育不再枯燥，每一处插画都精准契合知识点。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['科普海报', '色彩柔和', '信息可视化'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 故事书 Section 3: 凡人修仙传 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div>
-            <div style={{ color: '#8b5cf6', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 03: 电影级排版</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>中文字体与海报设计</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              攻克了 AI 绘图领域最难的中文字体精准排版。无论是武侠仙侠、科幻电影还是品牌商业海报，都能实现极具震撼力的标题呈现与意境融合。
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <span style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># 仙侠风格</span>
-              <span style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># 精准中文字体</span>
-            </div>
-          </div>
-          <div style={{ cursor: 'zoom-in', position: 'relative' }} onClick={() => setPreviewImage('/showcase/image.png')}>
-            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/image.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="凡人修仙传海报" />
-          </div>
-        </div>
-
-        {/* 故事书 Section 4: 极致细节 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div style={{ cursor: 'zoom-in', position: 'relative' }} onClick={() => setPreviewImage('/showcase/1.png')}>
-            <div style={{ position: 'absolute', top: '20px', left: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/1.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="细节展示" />
-          </div>
-          <div style={{ paddingLeft: '40px' }}>
-            <div style={{ color: '#10b981', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 04</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>极致微距细节</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              支持超高分辨率渲染，对瞳孔倒影、发丝细节、材质纹理有着极其恐怖的还原力。每一像素都经得起无限放大，是专业插画师的首选。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['微距画质', '纹理还原', '商业级别'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 故事书 Section 5: 创意海报设计 (新增) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '60px', alignItems: 'center', marginBottom: '120px' }}>
-          <div style={{ paddingRight: '40px' }}>
-            <div style={{ color: '#f59e0b', fontWeight: 'bold', marginBottom: '10px', fontSize: '14px', letterSpacing: '2px' }}>CASE 05</div>
-            <h2 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>创意海报与构图艺术</h2>
-            <p style={{ color: '#666', lineHeight: '1.8', fontSize: '16px', marginBottom: '25px' }}>
-              通过对构图学与色彩心理学的深度理解，GPT Image V2 能自动生成极具冲击力的海报作品。无论是极简主义还是繁复美学，都能精准拿捏。
-            </p>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {['构图艺术', '色彩冲突', '创意排版'].map(tag => (
-                <span key={tag} style={{ background: '#f5f5f5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', color: '#666' }}># {tag}</span>
-              ))}
-            </div>
-          </div>
-          <div 
-            style={{ cursor: 'zoom-in', position: 'relative' }} 
-            onClick={() => setPreviewImage('/showcase/4.png')}
-          >
-            <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '50%', zIndex: 1 }}>
-              <Maximize2 size={20} color="#e66b33" />
-            </div>
-            <img src="/showcase/4.png" style={{ width: '100%', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }} alt="创意海报展示" />
-          </div>
-        </div>
-      </section>
+      <Showcase setPreviewImage={setPreviewImage} />
 
       {/* 图片预览 Modal */}
       {previewImage && (
@@ -648,7 +589,8 @@ const HomePage = () => {
       )}
       {/* 意见反馈悬浮按钮 */}
       <button
-        onClick={() => setShowFeedback(true)}
+        onClick={() => setShowLab(true)}
+        title="Visionary 实验室"
         style={{
           position: 'fixed',
           right: '30px',
@@ -656,7 +598,7 @@ const HomePage = () => {
           width: '56px',
           height: '56px',
           borderRadius: '28px',
-          background: '#e66b33',
+          background: 'linear-gradient(135deg, #e66b33 0%, #f3a481 100%)',
           color: '#fff',
           border: 'none',
           cursor: 'pointer',
@@ -670,8 +612,92 @@ const HomePage = () => {
         onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.1) rotate(5deg)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(230,107,51,0.5)'; }}
         onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1) rotate(0)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(230,107,51,0.4)'; }}
       >
-        <BookOpen size={24} />
+        <FlaskConical size={24} />
       </button>
+
+      {/* Visionary 实验室弹窗 */}
+      {showLab && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.7)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <div className="card" style={{ 
+            width: '600px', 
+            padding: '40px', 
+            position: 'relative',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            background: '#fff',
+            borderRadius: '24px'
+          }}>
+            <button 
+              onClick={() => setShowLab(false)}
+              style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#999' }}
+            >
+              <X size={24} />
+            </button>
+            
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+              <div style={{ display: 'inline-block', background: '#e66b3315', color: '#e66b33', padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', marginBottom: '10px' }}>
+                Future Sight · 实验室
+              </div>
+              <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '10px' }}>Visionary 进化路线图</h2>
+              <p style={{ color: '#888', fontSize: '14px' }}>这些令人兴奋的功能正在实验室中秘密研发中...</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
+              {[
+                { title: '文生视频', desc: '让静止的灵感律动起来', icon: <Video size={20} />, color: '#8b5cf6', tag: '即将上线' },
+                { title: '电商产品图', desc: '一键生成商业场景大片', icon: <ShoppingBag size={20} />, color: '#f59e0b', tag: '灰度测试' },
+                { title: '图生图', desc: '以图绘图，无限风格延展', icon: <Wand2 size={20} />, color: '#3b82f6', tag: '研发中' },
+                { title: '8K 超清', desc: '无损放大，突破画质极限', icon: <Monitor size={20} />, color: '#10b981', tag: '即将上线' },
+                { title: '提示词实验室', desc: '大师级灵感词库集成', icon: <Sparkles size={20} />, color: '#ec4899', tag: '研发中' },
+                { title: '智能工作流', desc: '自动去底与后期处理', icon: <Layers size={20} />, color: '#6366f1', tag: '规划中' }
+              ].map((item, idx) => (
+                <div key={idx} style={{ 
+                  padding: '20px', 
+                  borderRadius: '16px', 
+                  border: '1px solid #f0f0f0', 
+                  background: '#fcfcfc',
+                  transition: 'all 0.2s'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', background: `${item.color}15`, color: item.color, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {item.icon}
+                    </div>
+                    <span style={{ fontSize: '10px', background: `${item.color}10`, color: item.color, padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{item.tag}</span>
+                  </div>
+                  <h4 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{item.title}</h4>
+                  <p style={{ fontSize: '12px', color: '#999' }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px dashed #eee', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>您的每一个建议都在决定 Visionary 的进化方向</p>
+              <button 
+                onClick={() => { setShowLab(false); setShowFeedback(true); }}
+                style={{ 
+                  background: 'transparent', border: '1px solid #e66b33', color: '#e66b33', 
+                  padding: '8px 24px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer',
+                  fontWeight: '600', transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.background = '#e66b3305'; }}
+                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                提交功能建议
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 意见反馈弹窗 */}
       {showFeedback && (

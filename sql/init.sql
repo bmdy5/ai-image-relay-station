@@ -59,9 +59,18 @@ BEGIN
     -- 给 recharge_logs 表补新字段
     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='recharge_logs' AND COLUMN_NAME='money_amount' AND TABLE_SCHEMA=DATABASE()) THEN
         ALTER TABLE `recharge_logs` ADD COLUMN `money_amount` INT AFTER `user_id`;
-        ALTER TABLE `recharge_logs` ADD COLUMN `screenshot_url` VARCHAR(255) AFTER `amount`;
-        ALTER TABLE `recharge_logs` ADD COLUMN `status` VARCHAR(20) DEFAULT 'pending' AFTER `screenshot_url`;
-        ALTER TABLE `recharge_logs` ADD COLUMN `admin_note` VARCHAR(255) AFTER `status`;
+    END IF;
+    
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='recharge_logs' AND COLUMN_NAME='out_trade_no' AND TABLE_SCHEMA=DATABASE()) THEN
+        ALTER TABLE `recharge_logs` ADD COLUMN `out_trade_no` VARCHAR(64) UNIQUE AFTER `operator_id`;
+    END IF;
+
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='recharge_logs' AND COLUMN_NAME='trade_no' AND TABLE_SCHEMA=DATABASE()) THEN
+        ALTER TABLE `recharge_logs` ADD COLUMN `trade_no` VARCHAR(64) UNIQUE AFTER `out_trade_no`;
+    END IF;
+
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='recharge_logs' AND COLUMN_NAME='payment_method' AND TABLE_SCHEMA=DATABASE()) THEN
+        ALTER TABLE `recharge_logs` ADD COLUMN `payment_method` VARCHAR(20) AFTER `trade_no`;
     END IF;
 END //
 DELIMITER ;

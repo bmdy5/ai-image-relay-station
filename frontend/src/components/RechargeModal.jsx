@@ -11,7 +11,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   const [payStatus, setPayStatus] = useState('pending'); // pending, success
   const pollTimer = useRef(null);
 
-  const tiers = [9.9, 45, 90, 500];
+  const tiers = [10, 45, 90, 500];
 
   // 清除轮询
   useEffect(() => {
@@ -75,7 +75,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   };
 
   const getPoints = (val) => {
-    if (val === 9.9) return 100;
+    if (val === 10) return 100;
     if (val === 45) return 500;
     if (val === 90) return 1000;
     if (val === 500) return 8000;

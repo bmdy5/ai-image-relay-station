@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 const request = axios.create({
-  baseURL: '/api', // 对应 Vercel 的代理路径
-  timeout: 60000,
+  baseURL: import.meta.env.DEV 
+    ? 'http://localhost:8000/api' 
+    : 'http://119.29.232.114/api',
+  timeout: 300000, // 增加到 5 分钟，防止生图超时
 });
 
 // 请求拦截器：注入 Token

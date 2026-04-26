@@ -9,7 +9,6 @@ import ProfilePage from './pages/ProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import PricingPage from './pages/PricingPage';
 import GuidePage from './pages/GuidePage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 

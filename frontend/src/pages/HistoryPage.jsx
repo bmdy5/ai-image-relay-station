@@ -66,9 +66,16 @@ const HistoryPage = () => {
           const updated = results.find(r => r.id === img.id);
           if (updated && updated.status !== img.status) {
             hasChanges = true;
-            // 如果任务完成或失败，顺便刷新下个人信息以更新积分显示
+            
+            // Task: Performance Logging for completed tasks
             if (updated.status === 'success' || updated.status === 'failed') {
               fetchUserInfo();
+              if (updated.timings) {
+                const { queue, api, generation, storage, total } = updated.timings;
+                console.log(`%c🚀 创作任务完成 (ID: ${img.id})`, 'color: #10b981; font-weight: bold;');
+                console.log(`- 提示词: ${img.prompt.substring(0, 20)}...`);
+                console.log(`- 性能详情: 排队 ${queue}ms | API往返 ${api}ms | 系统 ${generation - api}ms | 转存 ${storage}ms | 总计 ${total}ms`);
+              }
             }
             return { ...img, ...updated };
           }
