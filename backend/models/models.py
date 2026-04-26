@@ -50,3 +50,25 @@ class RechargeLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     target_user = relationship("User", back_populates="recharge_logs")
+
+class SystemConfig(Base):
+    __tablename__ = "system_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    config_key = Column(String(100), unique=True, index=True)
+    config_value = Column(Text)
+    description = Column(String(255))
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Feedback(Base):
+    __tablename__ = "feedbacks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(Text, nullable=False)
+    contact = Column(String(100))
+    status = Column(String, default="pending")
+    admin_note = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
