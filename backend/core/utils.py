@@ -4,7 +4,7 @@ import string
 PRICING = {
     "standard": 5,
     "hd": 10,
-    "ultra": 15
+    "master": 15
 }
 
 # 排除易混淆字符：I, O, L, 0, 1

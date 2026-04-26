@@ -20,6 +20,22 @@ router = APIRouter(prefix="/image", tags=["image"])
 
 from starlette.concurrency import run_in_threadpool
 
+# 档次配置矩阵 (Task 1.1)
+TIER_CONFIG = {
+    "standard": {
+        "size": "1024x1024",
+        "quality": "standard"
+    },
+    "hd": {
+        "size": "1024x1536", # 纵向高清
+        "quality": "standard"
+    },
+    "master": {
+        "size": "1024x1792", # 电影海报级比例
+        "quality": "high"      # 开启深度构思模式
+    }
+}
+
 async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, user_id: int, request_start_time: float):
     """
     后台任务：真正的画图、转存和结算逻辑
@@ -44,19 +60,27 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
                 if log:
                     log.status = "generating"
 
+            # 获取档次对应的具体参数 (Task 1.2 & 1.3)
+            config = TIER_CONFIG.get(quality, TIER_CONFIG["standard"])
+            
             # 2. 调用 AI 接口
             ai_start = time.time()
             async with httpx.AsyncClient(timeout=180.0) as client:
+                payload = {
+                    "model": "gpt-image-2", 
+                    "prompt": prompt,
+                    "n": 1,
+                    "size": config["size"],
+                    "response_format": "url" 
+                }
+                # 如果是大师版，加入质量增强参数
+                if config["quality"] == "high":
+                    payload["quality"] = "high"
+                
                 response = await client.post(
                     f"{base_url}/images/generations",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    json={
-                        "model": "gpt-image-2", 
-                        "prompt": prompt,
-                        "n": 1,
-                        "size": "1024x1024",
-                        "response_format": "url" 
-                    }
+                    json=payload
                 )
                 
                 if response.status_code != 200:
@@ -98,6 +122,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
                         final_url = await run_in_threadpool(upload_base64_to_cos, image_url, filename)
                     else:
                         final_url = await run_in_threadpool(upload_url_to_cos, image_url, filename)
+                
                 cos_store_time = time.time() - cos_start
                 
                 success = True
