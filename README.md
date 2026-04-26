@@ -29,7 +29,7 @@ GPT-Image2 Relay Station 是一个基于 FastAPI 与 React 构建的高性能 AI
 | 维度 | 技术栈 |
 | :--- | :--- |
 | **前端** | React 18, Vite, Axios, React Router, Lucide Icons, Vanilla CSS |
-| **后端** | FastAPI (Python 3.14+), SQLAlchemy, Pydantic, Bcrypt, PyJWT |
+| **后端** | FastAPI (Python 3.10+), SQLAlchemy, Pydantic, Bcrypt, PyJWT |
 | **数据库** | MySQL 5.7+ / MariaDB |
 | **部署** | Vercel (Frontend & API), Tencent Cloud (Database) |
 
@@ -38,7 +38,7 @@ GPT-Image2 Relay Station 是一个基于 FastAPI 与 React 构建的高性能 AI
 ## 快速上手指南
 
 ### 1. 环境准备
-*   确保安装了 **Python 3.14** 或更高版本。
+*   确保安装了 **Python 3.10** 或更高版本。
 *   确保安装了 **Node.js** (推荐 v18+)。
 *   本地或云端已启动 **MySQL** 服务。
 

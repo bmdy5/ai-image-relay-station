@@ -27,7 +27,7 @@ const PricingPage = () => {
   const tiers = [
     { 
       name: '初探版', 
-      price: 9.9, 
+      price: 10, 
       points: 100, 
       color: '#e66b33',
       icon: <Zap size={24} />,
@@ -116,7 +116,7 @@ const PricingPage = () => {
             <h2 style={{ fontSize: '22px', marginBottom: '8px', fontWeight: '800' }}>{tier.name}</h2>
             <div style={{ color: tier.color, fontSize: '42px', fontWeight: '900', marginBottom: '0px' }}>{tier.points} <span style={{ fontSize: '16px', fontWeight: 'normal' }}>积分</span></div>
             <div style={{ color: '#999', fontSize: '16px', marginBottom: '30px' }}>
-              售价 ¥ {tier.price} <span style={{ textDecoration: 'line-through', fontSize: '12px', marginLeft: '5px' }}>¥ {tier.points / 10}</span>
+              售价 ¥ {tier.price}
             </div>
             
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px' }}>

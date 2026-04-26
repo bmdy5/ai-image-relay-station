@@ -16,7 +16,9 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        from .config import get_config
+        secret = get_config("SECRET_KEY", security.SECRET_KEY)
+        payload = jwt.decode(token, secret, algorithms=[security.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -32,7 +34,9 @@ def get_optional_current_user(db: Session = Depends(get_db), token: str = Depend
     if not token:
         return None
     try:
-        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        from .config import get_config
+        secret = get_config("SECRET_KEY", security.SECRET_KEY)
+        payload = jwt.decode(token, secret, algorithms=[security.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             return None
