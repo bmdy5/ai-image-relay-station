@@ -31,12 +31,20 @@ def create_recharge_apply(db: Session, user_id: int, money_amount: int, screensh
     return db_log
 
 def get_pending_recharges(db: Session):
-    return db.query(models.RechargeLog).filter(models.RechargeLog.status == "pending").all()
+    # 只返回“人工报备”的订单（即没有商户单号的订单），在线订单由系统自动处理
+    return db.query(models.RechargeLog).filter(
+        models.RechargeLog.status == "pending",
+        models.RechargeLog.out_trade_no == None
+    ).all()
 
 def audit_recharge(db: Session, log_id: int, admin_id: int, approved: bool, admin_note: str = None):
     db_log = db.query(models.RechargeLog).filter(models.RechargeLog.id == log_id).with_for_update().first()
     if not db_log or db_log.status != "pending":
         raise HTTPException(status_code=404, detail="未找到待审核订单")
+    
+    # 安全逻辑：严禁管理员手动干预在线订单
+    if db_log.out_trade_no:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="在线支付订单由系统自动处理，严禁人工干预，以防重复加分")
     
     if approved:
         db_log.status = "success"

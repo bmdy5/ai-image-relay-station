@@ -142,7 +142,11 @@ const PricingPage = () => {
         ))}
       </div>
 
-      <footer style={{ marginTop: '60px', textAlign: 'center', color: '#999', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+      <div style={{ marginTop: '30px', textAlign: 'center', color: '#666', background: '#f9f9f9', padding: '15px', borderRadius: '12px', fontSize: '14px', border: '1px dashed #ddd' }}>
+        💡 提示：除了上述套餐，我们还支持 <strong>自定义金额充值</strong> (1元起)。点击上方任意按钮即可进入充值中心。
+      </div>
+
+      <footer style={{ marginTop: '30px', textAlign: 'center', color: '#999', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
         <ShieldCheck size={18} /> 支付安全保障：所有交易均通过加密通道处理，积分秒级到账。
       </footer>
 
