@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from backend.api import auth, image, admin, user, feedback
+from backend.api import auth, image, admin, user, feedback, payment
 
 app = FastAPI()
 
@@ -20,6 +20,7 @@ app.include_router(image.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(user.router, prefix="/api")
 app.include_router(feedback.router, prefix="/api")
+app.include_router(payment.router, prefix="/api")
 
 @app.get("/api/health")
 async def health_check():
