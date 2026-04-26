@@ -5,6 +5,7 @@ import httpx
 import os
 import uuid
 import datetime
+import time
 
 from backend.models.database import get_db, session_scope
 from backend.core.utils import PRICING
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/image", tags=["image"])
 
 from starlette.concurrency import run_in_threadpool
 
-async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, user_id: int):
+async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, user_id: int, request_start_time: float):
     """
     后台任务：真正的画图、转存和结算逻辑
     重构：使用 session_scope 强制管理连接生命周期
@@ -31,6 +32,8 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
     success = False
     error_msg = ""
     final_url = ""
+    ai_gen_time = 0
+    cos_store_time = 0
 
     while retry_count <= max_retries and not success:
         try:
@@ -41,6 +44,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
                     log.status = "generating"
 
             # 2. 调用 AI 接口
+            ai_start = time.time()
             async with httpx.AsyncClient(timeout=180.0) as client:
                 response = await client.post(
                     f"{base_url}/images/generations",
@@ -72,6 +76,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
 
                 if not raw_data and not image_url:
                     raise Exception("无法从 API 响应中提取图片")
+                ai_gen_time = time.time() - ai_start
 
                 # 3. 更新状态为“转存中”
                 with session_scope() as db:
@@ -80,7 +85,11 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
                         log.status = "storing"
 
                 # 4. 转存到 COS
-                filename = f"{uuid.uuid4()}.png"
+                cos_start = time.time()
+                # 提取提示词前 10 个字符并清理非法字符作为文件名
+                safe_prompt = "".join([c for c in prompt[:10] if c.isalnum()]).strip() or "image"
+                filename = f"user_{user_id}_{safe_prompt}_{uuid.uuid4().hex[:8]}.png"
+                
                 if raw_data:
                     final_url = await run_in_threadpool(upload_base64_to_cos, raw_data, filename)
                 else:
@@ -88,6 +97,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
                         final_url = await run_in_threadpool(upload_base64_to_cos, image_url, filename)
                     else:
                         final_url = await run_in_threadpool(upload_url_to_cos, image_url, filename)
+                cos_store_time = time.time() - cos_start
                 
                 success = True
         except Exception as e:
@@ -116,6 +126,17 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
             # 失败返还：从冻结中扣除并加回到可用
             user.points += cost
             user.frozen_points = max(0, user.frozen_points - cost)
+
+    # 6. 性能日志打印
+    total_time = time.time() - request_start_time
+    overhead = total_time - ai_gen_time - cos_store_time
+    print(f"\n--- [Performance Report] Visionary | 用户:{user_id} | 提示词:{prompt[:15]}... ---")
+    print(f"Log ID: {log_id}")
+    print(f"Total Time: {total_time:.2f}s")
+    print(f"AI Gen Time: {ai_gen_time:.2f}s")
+    print(f"COS Store Time: {cos_store_time:.2f}s")
+    print(f"System/Queue Overhead: {overhead:.2f}s")
+    print(f"-----------------------------------------------------------\n")
 
 @router.post("/generate")
 async def generate_image(
@@ -151,7 +172,8 @@ async def generate_image(
     # 3. 启动后台任务
     background_tasks.add_task(
         process_image_task, 
-        pending_log.id, payload.prompt, payload.quality, cost, current_user.id
+        pending_log.id, payload.prompt, payload.quality, cost, current_user.id,
+        time.time()
     )
     
     return {
@@ -241,3 +263,20 @@ async def view_image(id: int, db: Session = Depends(get_db)):
     except:
         pass
     raise HTTPException(status_code=400, detail="不支持的图片格式")
+
+@router.delete("/{id}")
+async def delete_image(
+    id: int, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    
+    if log.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="无权删除他人作品")
+    
+    db.delete(log)
+    db.commit()
+    return {"message": "删除成功"}

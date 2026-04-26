@@ -14,7 +14,8 @@ import {
   ClipboardCopy, 
   RotateCcw,
   Sparkles,
-  ArrowLeft
+  ArrowLeft,
+  Trash2
 } from 'lucide-react';
 import './HistoryPage.css';
 
@@ -169,12 +170,25 @@ const HistoryPage = () => {
     navigate('/');
   };
 
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('确定要删除这张作品吗？删除后不可恢复。')) return;
+    
+    try {
+      await request.delete(`/image/${id}`);
+      setImages(prev => prev.filter(img => img.id !== id));
+      if (selectedImage?.id === id) setSelectedImage(null);
+    } catch (err) {
+      alert('删除失败，请稍后重试');
+    }
+  };
+
   return (
     <div className="history-container">
       {/* 顶部导航栏 (保持风格统一) */}
       <header style={{ height: '70px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e66b33', cursor: 'pointer' }} onClick={() => navigate('/')}>GPT Image 2</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e66b33', cursor: 'pointer' }} onClick={() => navigate('/')}>Visionary</div>
           <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
             <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Images size={18} strokeWidth={1.75} /> 我的创作
@@ -190,33 +204,71 @@ const HistoryPage = () => {
           </nav>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ background: '#f5f5f5', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', display: 'flex', gap: '8px' }}>
-            <span>🪙 {userInfo?.points || 0}</span>
+          {/* 积分药丸 - 高级感重塑 */}
+          <div style={{ 
+            background: 'rgba(230, 107, 51, 0.05)', 
+            border: '1px solid rgba(230, 107, 51, 0.2)',
+            padding: '6px 14px', 
+            borderRadius: '20px', 
+            fontSize: '14px', 
+            display: 'flex', 
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: '600',
+            color: '#e66b33'
+          }}>
+            <Coins size={16} strokeWidth={2.5} style={{ filter: 'drop-shadow(0 2px 4px rgba(230,107,51,0.3))' }} />
+            <span>{userInfo?.points || 0}</span>
             {userInfo?.frozen_points > 0 && (
-              <span style={{ color: '#999', borderLeft: '1px solid #ddd', paddingLeft: '8px' }} title="生图中冻结的积分">
+              <span style={{ color: '#999', borderLeft: '1px solid rgba(0,0,0,0.1)', paddingLeft: '8px', fontSize: '12px' }} title="生图中冻结的积分">
                 🔒 {userInfo.frozen_points}
               </span>
             )}
           </div>
+
+          {/* 用户头像 - 动态效果 */}
           <button 
             onClick={() => navigate('/profile')} 
             style={{ 
-              background: '#eee', border: 'none', borderRadius: '50%', 
-              width: '32px', height: '32px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666'
+              background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)', 
+              border: 'none', 
+              borderRadius: '50%', 
+              width: '36px', 
+              height: '36px', 
+              cursor: 'pointer',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: '#444',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+              transition: 'transform 0.2s'
             }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            <User size={18} strokeWidth={1.75} />
+            <User size={20} strokeWidth={2} />
           </button>
+
+          {/* 退出按钮 - 极简现代 */}
           <button 
             onClick={logout} 
             style={{ 
-              background: 'transparent', border: '1px solid #ddd', borderRadius: '6px', 
-              padding: '5px 12px', fontSize: '13px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '6px', color: '#666'
+              background: 'transparent', 
+              border: '1px solid #eee', 
+              borderRadius: '8px', 
+              padding: '6px 14px', 
+              fontSize: '13px', 
+              cursor: 'pointer',
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              color: '#666',
+              transition: 'all 0.2s'
             }}
+            onMouseOver={(e) => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.borderColor = '#ddd'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#eee'; }}
           >
-            <LogOut size={14} strokeWidth={1.75} /> 退出
+            <LogOut size={14} strokeWidth={2} /> 退出
           </button>
         </div>
       </header>
@@ -281,6 +333,25 @@ const HistoryPage = () => {
                       style={{ minHeight: '200px', objectFit: 'cover' }}
                     />
                   )}
+                  
+                  {/* 右上角删除按钮 */}
+                  {(img.status === 'success' || img.status === 'failed') && (
+                    <button 
+                      onClick={(e) => handleDelete(e, img.id)}
+                      style={{ 
+                        position: 'absolute', top: '10px', right: '10px', 
+                        background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+                        border: 'none', borderRadius: '8px', width: '32px', height: '32px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff', cursor: 'pointer', zIndex: 10, transition: 'all 0.2s'
+                      }}
+                      className="delete-btn-overlay"
+                      title="删除此作品"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+
                   <div className="gallery-info">
                     <div className="gallery-prompt">{img.prompt}</div>
                     <div className="gallery-date">{new Date(img.created_at).toLocaleString()}</div>

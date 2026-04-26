@@ -14,7 +14,7 @@ const LoginPage = () => {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
       <div className="card" style={{ padding: '40px', width: '400px', textAlign: 'center' }}>
-        <h1 style={{ color: '#e66b33', marginBottom: '10px' }}>GPT Image 2</h1>
+        <h1 style={{ color: '#e66b33', marginBottom: '10px' }}>Visionary</h1>
         <p style={{ color: '#666', marginBottom: '30px' }}>欢迎回来，开始您的创意之旅</p>
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <input

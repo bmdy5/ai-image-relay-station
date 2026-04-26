@@ -24,7 +24,7 @@ const RegisterPage = () => {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
       <div className="card" style={{ padding: '40px', width: '400px', textAlign: 'center' }}>
         <h1 style={{ color: '#e66b33', marginBottom: '10px' }}>加入内测</h1>
-        <p style={{ color: '#666', marginBottom: '10px' }}>体验 GPT Image 2 的震撼效果</p>
+        <p style={{ color: '#666', marginBottom: '10px' }}>体验 Visionary 的震撼效果</p>
         <div style={{ background: '#fff5f0', color: '#e66b33', padding: '10px', borderRadius: '8px', fontSize: '12px', marginBottom: '20px' }}>
           ⚠️ 当前内测剩余名额：100 人
         </div>
