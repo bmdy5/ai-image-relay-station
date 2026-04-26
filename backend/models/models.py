@@ -48,6 +48,9 @@ class RechargeLog(Base):
     status = Column(String, default="pending")  # pending / success / rejected
     admin_note = Column(String)  # 管理员理由
     operator_id = Column(Integer)  # 操作管理员的 ID
+    out_trade_no = Column(String(64), unique=True, index=True, nullable=True)  # 商户订单号
+    trade_no = Column(String(64), unique=True, index=True, nullable=True)  # 支付平台交易号
+    payment_method = Column(String(20), nullable=True)  # 支付方式 (wxpay/alipay)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     target_user = relationship("User", back_populates="recharge_logs")
