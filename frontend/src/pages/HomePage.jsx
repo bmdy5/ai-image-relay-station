@@ -374,8 +374,8 @@ const HomePage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
               {[
                 { id: 'standard', name: '标准版', pts: 5, icon: <Zap size={20} />, color: '#e66b33' },
-                { id: 'hd', name: '高清版', pts: 15, icon: <Diamond size={20} />, color: '#3b82f6', desc: '1.5倍纵向视野' },
-                { id: 'master', name: '大师版', pts: 30, icon: <Crown size={20} />, color: '#8b5cf6', desc: 'HD 构思 + 电影比例' }
+                { id: 'hd', name: '高清版', pts: 10, icon: <Diamond size={20} />, color: '#3b82f6', desc: '1.5倍纵向视野' },
+                { id: 'master', name: '大师版', pts: 15, icon: <Crown size={20} />, color: '#8b5cf6', desc: 'HD 构思 + 电影比例' }
               ].map(item => (
                 <button 
                   key={item.id}
@@ -411,7 +411,7 @@ const HomePage = () => {
                     lineHeight: '1.2'
                   }}>
                     {item.id === 'standard' && '快速出图 · 灵感捕捉'}
-                    {item.id === 'hd' && '纵向超清渲染'}
+                    {item.id === 'hd' && '纵向超清 · 手机适配'}
                     {item.id === 'master' && '视觉推理 · 电影级细节'}
                   </div>
                 </button>
