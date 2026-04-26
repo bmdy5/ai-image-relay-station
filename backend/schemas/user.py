@@ -42,7 +42,7 @@ class PasswordChange(BaseModel):
     new_password: str
 
 class RechargeApply(BaseModel):
-    money_amount: int
+    money_amount: float
     screenshot_url: Optional[str] = None
 
 class RechargeAudit(BaseModel):
