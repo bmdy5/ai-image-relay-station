@@ -1,63 +1,136 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
-import { useRegisterController } from '../controllers/useRegisterController';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import request from '../api/request';
 
 const RegisterPage = () => {
-  const {
-    username, setUsername,
-    password, setPassword,
-    showPassword, setShowPassword,
-    error, handleRegister
-  } = useRegisterController();
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
+
+  const handleSendCode = async () => {
+    if (!email || !email.includes('@')) {
+      setError('请输入有效的邮箱地址');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await request.post('/auth/send-code', { email });
+      setCountdown(60);
+      alert('验证码已发送，请检查您的邮箱');
+    } catch (err) {
+      setError(err.response?.data?.detail || '发送失败，请重试');
+    }
+    setLoading(false);
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const fingerprint = btoa(navigator.userAgent).substring(0, 32);
+      await request.post('/auth/register', { 
+        email, 
+        password, 
+        code,
+        fingerprint 
+      });
+      alert('注册成功！');
+      navigate('/login');
+    } catch (err) {
+      setError(err.response?.data?.detail || '注册失败');
+    }
+    setLoading(false);
+  };
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
-      <div className="card" style={{ padding: '40px', width: '400px', textAlign: 'center' }}>
-        <h1 style={{ color: '#e66b33', marginBottom: '10px' }}>加入内测</h1>
-        <p style={{ color: '#666', marginBottom: '10px' }}>体验 GPT Image 2 的震撼效果</p>
-        <div style={{ background: '#fff5f0', color: '#e66b33', padding: '10px', borderRadius: '8px', fontSize: '12px', marginBottom: '20px' }}>
-          ⚠️ 当前内测剩余名额：100 人
+      <div className="card" style={{ padding: '40px', width: '420px', textAlign: 'center' }}>
+        <h1 style={{ color: '#e66b33', marginBottom: '10px', fontWeight: '800' }}>加入内测</h1>
+        <p style={{ color: '#666', marginBottom: '20px' }}>开启您的 AI 视觉创意之旅</p>
+        
+        <div style={{ background: '#fff5f0', color: '#e66b33', padding: '12px', borderRadius: '10px', fontSize: '13px', marginBottom: '25px', textAlign: 'left', border: '1px solid #ffdecb' }}>
+          💡 <strong>内测提示：</strong>
+          <br />当前仅开放 100 个内测名额，注册即送 10 积分。
         </div>
-        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <input
-            type="text"
-            placeholder="设置用户名"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
-          />
-          <div style={{ position: 'relative' }}>
+
+        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <input
-              type={showPassword ? "text" : "password"}
-              placeholder="设置密码"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              placeholder="您的邮箱地址"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', width: '100%', boxSizing: 'border-box', paddingRight: '40px' }}
+              style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
             />
-            <div 
-              onClick={() => setShowPassword(!showPassword)}
+            <button
+              type="button"
+              disabled={countdown > 0 || loading}
+              onClick={handleSendCode}
               style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                cursor: 'pointer',
-                color: '#999',
-                display: 'flex',
-                alignItems: 'center'
+                width: '120px',
+                padding: '10px',
+                background: countdown > 0 ? '#ccc' : '#fcfcfc',
+                border: '1px solid #e66b33',
+                color: '#e66b33',
+                borderRadius: '8px',
+                fontSize: '13px',
+                cursor: countdown > 0 ? 'not-allowed' : 'pointer',
+                fontWeight: '600'
               }}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </div>
+              {countdown > 0 ? `${countdown}s` : '获取验证码'}
+            </button>
           </div>
-          {error && <p style={{ color: '#ff4d4f', fontSize: '14px' }}>{error}</p>}
-          <button type="submit" className="btn-primary" style={{ width: '100%' }}>确认注册</button>
+
+          <input
+            type="text"
+            placeholder="邮箱验证码"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+          />
+
+          <input
+            type="password"
+            placeholder="设置登录密码"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+          />
+
+          {error && <p style={{ color: '#ff4d4f', fontSize: '13px', textAlign: 'left', margin: 0 }}>❌ {error}</p>}
+
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="btn-primary" 
+            style={{ width: '100%', padding: '14px', marginTop: '10px', fontSize: '16px' }}
+          >
+            {loading ? '处理中...' : '立即开启创作'}
+          </button>
         </form>
-        <p style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
-          已有账号？ <Link to="/login" style={{ color: '#e66b33', fontWeight: '600', textDecoration: 'none' }}>返回登录</Link>
+
+        <p style={{ marginTop: '25px', fontSize: '14px', color: '#666' }}>
+          已有账号？ <Link to="/login" style={{ color: '#e66b33', fontWeight: '600', textDecoration: 'none' }}>直接登录</Link>
         </p>
       </div>
     </div>
