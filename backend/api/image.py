@@ -14,6 +14,7 @@ from backend.crud import image as image_crud
 from backend.schemas import image as image_schema
 from ..models import models
 from backend.core.cos import upload_base64_to_cos, upload_url_to_cos
+from backend.core.config import get_config
 
 router = APIRouter(prefix="/image", tags=["image"])
 
@@ -24,8 +25,8 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
     后台任务：真正的画图、转存和结算逻辑
     重构：使用 session_scope 强制管理连接生命周期
     """
-    api_key = os.getenv("OPENAI_API_KEY")
-    base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    api_key = get_config("OPENAI_API_KEY")
+    base_url = get_config("OPENAI_BASE_URL", "https://api.openai.com/v1")
     
     max_retries = 2
     retry_count = 0
