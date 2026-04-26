@@ -3,7 +3,7 @@ import request from '../api/request';
 import { CreditCard, MessageSquare, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react';
 
 const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
-  const [money, setMoney] = useState(initialAmount || 9.9);
+  const [money, setMoney] = useState(initialAmount || 10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1); // 1: Choose Method, 2: Manual Guide, 3: Manual Report, 4: Online Processing
