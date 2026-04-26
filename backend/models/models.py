@@ -7,8 +7,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password_hash = Column(String)
+    username = Column(String(50), unique=True, index=True, nullable=True)
+    email = Column(String(255), unique=True, index=True, nullable=True)
+    password_hash = Column(String(255))
     fingerprint = Column(String)
     points = Column(Integer, default=10)  # 默认赠送 10 积分
     frozen_points = Column(Integer, default=0)  # 冻结积分
@@ -72,3 +73,13 @@ class Feedback(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
+
+class VerificationCode(Base):
+    __tablename__ = "verification_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), index=True)
+    code = Column(String(10))
+    expires_at = Column(DateTime)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
