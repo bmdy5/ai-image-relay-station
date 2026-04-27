@@ -2,6 +2,7 @@ import os
 import time
 import uuid
 import httpx
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -64,23 +65,39 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
             log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
             if log: log.status = "generating"
 
-        # 2. 调用 AI 接口
+        # 2. 调用 AI 接口 (安全重试机制：仅针对不扣费的连接失败)
         api_start = time.time()
-        async with httpx.AsyncClient(timeout=180.0) as client:
-            payload = {
-                "model": "gpt-image-2", "prompt": prompt, "n": 1,
-                "size": config["size"], "response_format": "url"
-            }
-            if config["quality"] == "high": payload["quality"] = "high"
-            
-            response = await client.post(
-                f"{base_url}/images/generations",
-                headers={"Authorization": f"Bearer {api_key}"}, json=payload
-            )
-        api_ms = int((time.time() - api_start) * 1000)
+        for attempt in range(3):  # 最多尝试 3 次 (初始 + 2次重试)
+            try:
+                async with httpx.AsyncClient(timeout=180.0) as client:
+                    payload = {
+                        "model": "gpt-image-2", "prompt": prompt, "n": 1,
+                        "size": config["size"], "response_format": "url"
+                    }
+                    if config["quality"] == "high": payload["quality"] = "high"
+                    
+                    response = await client.post(
+                        f"{base_url}/images/generations",
+                        headers={"Authorization": f"Bearer {api_key}"}, json=payload
+                    )
+                
+                # 如果代码走到这里，说明连接已成功且收到了响应
+                if response.status_code != 200:
+                    raise Exception(f"API Error ({response.status_code}): {response.text}")
+                
+                # 成功获取响应，跳出重试循环
+                break
+            except (httpx.ConnectError, httpx.ConnectTimeout) as ce:
+                if attempt < 2:
+                    print(f"--- [Retry] Connection failed (Attempt {attempt+1}): {repr(ce)}. Retrying in 1s... ---")
+                    await asyncio.sleep(1)
+                    continue
+                raise ce  # 超过重试次数，抛出异常进入退费流程
+            except Exception as e:
+                # 其他所有错误 (如 ReadTimeout, API Error) 均涉及资金风险，严禁重试
+                raise e
         
-        if response.status_code != 200:
-            raise Exception(f"API Error ({response.status_code}): {response.text}")
+        api_ms = int((time.time() - api_start) * 1000)
         
         res_json = response.json()
         image_url = ""
