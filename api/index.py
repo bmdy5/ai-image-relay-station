@@ -48,5 +48,3 @@ def debug_env():
 @app.get("/api/health")
 async def health_check():
     return {"status": "ok", "message": "GPT-Image2 Relay Station API is running"}
-
-# 这里的 app 对象将被 Vercel 识别为 Serverless 处理函数

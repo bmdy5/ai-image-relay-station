@@ -44,7 +44,7 @@ def get_daily_total_points(db: Session, day):
 def count_active_tasks(db: Session, user_id: int):
     return db.query(models.ImageLog).filter(
         models.ImageLog.user_id == user_id,
-        models.ImageLog.status == "pending"
+        models.ImageLog.status.in_(["pending", "generating", "storing"])
     ).count()
 
 def reset_active_tasks(db: Session, user_id: int):

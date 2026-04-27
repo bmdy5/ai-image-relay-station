@@ -34,6 +34,13 @@ class ImageLog(Base):
     status = Column(String)  # success / failed
     error_msg = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Performance tracking (Task: Timing Analysis)
+    queue_duration = Column(Integer, default=0)       # 队列排队时间 (ms)
+    api_duration = Column(Integer, default=0)         # 中转站 API 响应时间 (ms)
+    generation_duration = Column(Integer, default=0)  # AI 生成总时间 (含 API 和本地处理) (ms)
+    storage_duration = Column(Integer, default=0)     # 转存 COS 时间 (ms)
+    total_duration = Column(Integer, default=0)       # 总任务耗时 (ms)
 
     owner = relationship("User", back_populates="image_logs")
 
