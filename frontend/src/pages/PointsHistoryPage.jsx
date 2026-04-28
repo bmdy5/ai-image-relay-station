@@ -15,8 +15,34 @@ const PointsHistoryPage = ({ isMobile }) => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const logs = await request.get('/user/consumption');
-      setHistory(logs);
+      // 同时获取消费记录和充值记录
+      const [consumptionLogs, rechargeLogs] = await Promise.all([
+        request.get('/user/consumption'),
+        request.get('/user/recharge/history')
+      ]);
+
+      // 格式化并合并
+      const formattedConsumption = consumptionLogs.map(item => ({
+        ...item,
+        type: 'consumption',
+        display_amount: `-${item.cost_points}`,
+        display_label: item.prompt || '生图消耗',
+        color: '#ff4d4f'
+      }));
+
+      const formattedRecharge = rechargeLogs.map(item => ({
+        ...item,
+        type: 'recharge',
+        display_amount: `+${item.amount}`,
+        display_label: `充值到账 (¥${item.money_amount || 0})`,
+        color: '#52c41a'
+      }));
+
+      const combined = [...formattedConsumption, ...formattedRecharge].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      setHistory(combined);
     } catch (err) {
       console.error(err);
     } finally {
@@ -34,7 +60,7 @@ const PointsHistoryPage = ({ isMobile }) => {
           <ArrowLeft size={20} />
         </button>
         <h1 style={{ fontSize: '24px', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <ClipboardList size={24} color="#e66b33" /> 积分消费记录
+          <ClipboardList size={24} color="#e66b33" /> 积分明细
         </h1>
       </div>
 
@@ -47,21 +73,23 @@ const PointsHistoryPage = ({ isMobile }) => {
               <thead>
                 <tr style={{ borderBottom: '2px solid #f5f5f5', textAlign: 'left' }}>
                   <th style={{ padding: '12px 8px' }}>时间</th>
-                  <th style={{ padding: '12px 8px' }}>消耗</th>
-                  <th style={{ padding: '12px 8px' }}>提示词</th>
+                  <th style={{ padding: '12px 8px' }}>变动</th>
+                  <th style={{ padding: '12px 8px' }}>描述</th>
                   <th style={{ padding: '12px 8px' }}>状态</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                  <tr key={`${item.type}-${item.id}`} style={{ borderBottom: '1px solid #f5f5f5' }}>
                     <td style={{ padding: '12px 8px', color: '#888', whiteSpace: 'nowrap' }}>
                       {new Date(item.created_at).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
-                    <td style={{ padding: '12px 8px', fontWeight: '600' }}>-{item.cost_points}</td>
+                    <td style={{ padding: '12px 8px', fontWeight: 'bold', color: item.color }}>
+                      {item.display_amount}
+                    </td>
                     <td style={{ padding: '12px 8px' }}>
-                      <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.prompt}>
-                        {item.prompt}
+                      <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.display_label}>
+                        {item.display_label}
                       </div>
                     </td>
                     <td style={{ padding: '12px 8px' }}>
@@ -82,7 +110,7 @@ const PointsHistoryPage = ({ isMobile }) => {
                       }}>
                         {item.status === 'success' && '成功'}
                         {item.status === 'failed' && '失败'}
-                        {item.status === 'pending' && '等待中'}
+                        {item.status === 'pending' && '已提交'}
                         {item.status === 'generating' && '生成中'}
                         {item.status === 'storing' && '保存中'}
                       </span>

@@ -242,8 +242,8 @@ const ProfilePage = ({ isMobile }) => {
                 <ClipboardList size={22} strokeWidth={2} />
               </div>
               <div>
-                <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>积分消费记录</div>
-                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>查看所有生图扣费明细</div>
+                <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>积分明细</div>
+                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>查看充值到账与生图扣费记录</div>
               </div>
             </div>
             <div style={{ color: '#ccc' }}>

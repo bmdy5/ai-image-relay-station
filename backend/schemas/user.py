@@ -56,3 +56,14 @@ class RechargeApply(BaseModel):
 class RechargeAudit(BaseModel):
     approved: bool
     admin_note: Optional[str] = None
+
+class RechargeLogInfo(BaseModel):
+    id: int
+    amount: int
+    money_amount: Optional[float]
+    status: str
+    payment_method: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
