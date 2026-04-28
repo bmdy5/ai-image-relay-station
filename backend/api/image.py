@@ -43,6 +43,22 @@ async def get_config_info():
         "tiers": TIER_CONFIG
     }
 
+# 档次配置矩阵 (Task 1.1)
+TIER_CONFIG = {
+    "standard": {
+        "size": "1024x1024",
+        "quality": "standard"
+    },
+    "hd": {
+        "size": "1024x1536", # 纵向高清
+        "quality": "standard"
+    },
+    "master": {
+        "size": "1024x1792", # 电影海报级比例
+        "quality": "high"      # 开启深度构思模式
+    }
+}
+
 async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, user_id: int, request_start_time: float):
     """
     后台任务 (精简版)：直接执行单次生图逻辑，不进行任何重试以保护资金安全。
@@ -116,7 +132,8 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
 
         # 4. 转存 COS
         store_start = time.time()
-        filename = f"user_{user_id}_{uuid.uuid4().hex[:8]}.png"
+        safe_prompt = "".join([c for c in prompt[:10] if c.isalnum()]).strip() or "image"
+        filename = f"user_{user_id}_{safe_prompt}_{uuid.uuid4().hex[:8]}.png"
         
         if image_url.startswith("data:image") or len(image_url) > 1000:
             final_url = await run_in_threadpool(upload_base64_to_cos, image_url, filename)

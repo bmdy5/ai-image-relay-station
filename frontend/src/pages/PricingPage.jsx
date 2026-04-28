@@ -14,7 +14,7 @@ import {
 import RechargeModal from '../components/RechargeModal';
 import request from '../api/request';
 
-const PricingPage = () => {
+const PricingPage = ({ isMobile }) => {
   const navigate = useNavigate();
   const [showRecharge, setShowRecharge] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(0);
@@ -58,17 +58,19 @@ const PricingPage = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px', animation: 'fadeIn 0.5s ease' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '50px' }}>
-        <button 
-          onClick={() => navigate('/')} 
-          style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}
-        >
-          <ArrowLeft size={20} /> 返回首页
-        </button>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', textAlign: 'center', flex: 1 }}>价格与积分计划</h1>
-        <div style={{ width: '100px' }}></div>
-      </header>
+    <div style={{ maxWidth: '1000px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', animation: 'fadeIn 0.5s ease', paddingBottom: isMobile ? '100px' : '0' }}>
+      {!isMobile && (
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '50px' }}>
+          <button 
+            onClick={() => navigate('/')} 
+            style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}
+          >
+            <ArrowLeft size={20} /> 返回首页
+          </button>
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', textAlign: 'center', flex: 1 }}>价格与积分计划</h1>
+          <div style={{ width: '100px' }}></div>
+        </header>
+      )}
 
       {/* 消费规则 */}
       <section className="card" style={{ padding: '30px', marginBottom: '40px', background: '#fcfcfc' }}>

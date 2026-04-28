@@ -12,6 +12,14 @@ def send_verification_email(to_email: str, code: str, purpose: str = "register")
     优先从数据库 (system_configs 表) 读取配置，其次读取环境变量。
     purpose: "register" 注册验证码, "reset_password" 找回密码验证码
     """
+    # 根据用途区分邮件标题和内容
+    if purpose == "reset_password":
+        subject = "找回密码验证码 - Visionary AI"
+        body = f"您正在找回密码，验证码为：{code}\n\n该验证码有效期为 5 分钟。请勿将验证码泄露给他人。\n\n如非本人操作，请忽略此邮件。"
+    else:
+        subject = "注册验证码 - Visionary AI"
+        body = f"您的注册验证码为：{code}\n\n该验证码有效期为 5 分钟。请勿将验证码泄露给他人。\n\n如非本人操作，请忽略此邮件。"
+
     smtp_server = get_config("SMTP_SERVER")
     smtp_port = int(get_config("SMTP_PORT", 465))
     smtp_user = get_config("SMTP_USER")
@@ -30,15 +38,8 @@ def send_verification_email(to_email: str, code: str, purpose: str = "register")
         msg = MIMEMultipart()
         msg['From'] = f"Visionary AI <{smtp_user}>"
         msg['To'] = to_email
-        # 根据用途区分邮件标题和内容
-        if purpose == "reset_password":
-            subject = "找回密码验证码 - Visionary AI"
-            body = f"您正在找回密码，验证码为：{code}\n\n该验证码有效期为 5 分钟。请勿将验证码泄露给他人。\n\n如非本人操作，请忽略此邮件。"
-        else:
-            subject = "注册验证码 - Visionary AI"
-            body = f"您的注册验证码为：{code}\n\n该验证码有效期为 5 分钟。请勿将验证码泄露给他人。\n\n如非本人操作，请忽略此邮件。"
-
         msg['Subject'] = subject
+        
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
         
         if int(smtp_port) == 465:

@@ -1,18 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import AdminPage from './pages/AdminPage';
 import HomePage from './pages/HomePage';
+import MobileHomePage from './pages/MobileHomePage';
 import ProfilePage from './pages/ProfilePage';
 import HistoryPage from './pages/HistoryPage';
 import PricingPage from './pages/PricingPage';
 import GuidePage from './pages/GuidePage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import PointsHistoryPage from './pages/PointsHistoryPage';
 import PrivateRoute from './components/PrivateRoute';
+import MobileLayout from './components/MobileLayout';
 import './App.css';
 
 function App() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const renderWithLayout = (element) => {
+    return isMobile ? <MobileLayout>{element}</MobileLayout> : element;
+  };
+
   return (
     <Router>
       <Routes>
@@ -31,7 +46,7 @@ function App() {
           path="/history" 
           element={
             <PrivateRoute>
-              <HistoryPage />
+              {renderWithLayout(<HistoryPage isMobile={isMobile} />)}
             </PrivateRoute>
           } 
         />
@@ -39,7 +54,15 @@ function App() {
           path="/profile" 
           element={
             <PrivateRoute>
-              <ProfilePage />
+              {renderWithLayout(<ProfilePage isMobile={isMobile} />)}
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/points-history" 
+          element={
+            <PrivateRoute>
+              {renderWithLayout(<PointsHistoryPage isMobile={isMobile} />)}
             </PrivateRoute>
           } 
         />
@@ -47,7 +70,7 @@ function App() {
           path="/pricing" 
           element={
             <PrivateRoute>
-              <PricingPage />
+              {renderWithLayout(<PricingPage isMobile={isMobile} />)}
             </PrivateRoute>
           } 
         />
@@ -55,7 +78,7 @@ function App() {
           path="/guide" 
           element={
             <PrivateRoute>
-              <GuidePage />
+              {renderWithLayout(<GuidePage isMobile={isMobile} />)}
             </PrivateRoute>
           } 
         />
@@ -63,7 +86,7 @@ function App() {
           path="/" 
           element={
             <PrivateRoute>
-              <HomePage />
+              {renderWithLayout(isMobile ? <MobileHomePage /> : <HomePage isMobile={isMobile} />)}
             </PrivateRoute>
           } 
         />
