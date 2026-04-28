@@ -346,7 +346,7 @@ const HomePage = () => {
       </header>
 
       {/* 主工作台 (双栏) */}
-      <main style={{ display: 'grid', gridTemplateColumns: '450px 1fr', gap: '30px', marginTop: '30px' }}>
+      <main className="desktop-main-layout">
         {/* 左侧：参数调节区 */}
         <div className="card" style={{ padding: '24px', height: 'fit-content' }}>
           <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: '8px', padding: '4px', marginBottom: '20px' }}>

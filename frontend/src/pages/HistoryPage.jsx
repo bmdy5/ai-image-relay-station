@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import './HistoryPage.css';
 
-const HistoryPage = () => {
+const HistoryPage = ({ isMobile }) => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
   const [images, setImages] = useState([]);
@@ -191,9 +191,10 @@ const HistoryPage = () => {
   };
 
   return (
-    <div className="history-container">
+    <div className="history-container" style={isMobile ? { paddingBottom: '80px', height: '100%', overflowY: 'auto' } : {}}>
       {/* 顶部导航栏 (保持风格统一) */}
-      <header style={{ height: '70px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
+      {!isMobile && (
+        <header style={{ height: '70px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
           <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e66b33', cursor: 'pointer' }} onClick={() => navigate('/')}>Visionary</div>
           <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
@@ -279,6 +280,7 @@ const HistoryPage = () => {
           </button>
         </div>
       </header>
+      )}
 
       <main>
         <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
