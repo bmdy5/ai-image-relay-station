@@ -36,3 +36,15 @@ def get_consumption_history(
         models.ImageLog.user_id == current_user.id
     ).order_by(models.ImageLog.created_at.desc()).all()
     return logs
+
+@router.get("/recharge/history", response_model=List[user_schema.RechargeLogInfo])
+def get_recharge_history(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # 只返回充值成功的记录
+    logs = db.query(models.RechargeLog).filter(
+        models.RechargeLog.user_id == current_user.id,
+        models.RechargeLog.status == "success"
+    ).order_by(models.RechargeLog.created_at.desc()).all()
+    return logs
