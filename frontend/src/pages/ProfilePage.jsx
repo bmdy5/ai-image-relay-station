@@ -16,7 +16,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-const ProfilePage = () => {
+const ProfilePage = ({ isMobile }) => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
   const [history, setHistory] = useState([]);
@@ -31,12 +31,8 @@ const ProfilePage = () => {
 
   const fetchData = async () => {
     try {
-      const [user, logs] = await Promise.all([
-        request.get('/auth/me'),
-        request.get('/user/consumption')
-      ]);
+      const user = await request.get('/auth/me');
       setUserInfo(user);
-      setHistory(logs);
     } catch (err) {}
   };
 
@@ -82,25 +78,29 @@ const ProfilePage = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ fontSize: '28px' }}>个人中心</h1>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-          {userInfo?.is_admin && (
-            <button onClick={() => navigate('/admin')} style={{ background: '#fff7e6', border: '1px solid #ffd591', color: '#e66b33', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ShieldCheck size={14} strokeWidth={2} /> 管理后台
+    <div style={{ maxWidth: '1000px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', paddingBottom: isMobile ? '100px' : '0' }}>
+      {!isMobile && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+          <h1 style={{ fontSize: '28px' }}>个人中心</h1>
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+            {userInfo?.is_admin && (
+              <button onClick={() => navigate('/admin')} style={{ background: '#fff7e6', border: '1px solid #ffd591', color: '#e66b33', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShieldCheck size={14} strokeWidth={2} /> 管理后台
+              </button>
+            )}
+            <button onClick={() => navigate('/history')} style={{ background: 'transparent', border: 'none', color: '#e66b33', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Images size={16} strokeWidth={2} /> 我的创作
             </button>
-          )}
-          <button onClick={() => navigate('/history')} style={{ background: 'transparent', border: 'none', color: '#e66b33', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Images size={16} strokeWidth={2} /> 我的创作
-          </button>
-          <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <ArrowLeft size={16} strokeWidth={2} /> 返回首页
-          </button>
+            <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ArrowLeft size={16} strokeWidth={2} /> 返回首页
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px' }}>
+      {isMobile && <h1 style={{ fontSize: '24px', marginBottom: '20px', textAlign: 'center' }}>个人中心</h1>}
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '30px' }}>
         {/* 左侧：用户信息与修改密码 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
           <div className="card" style={{ padding: '24px' }}>
@@ -220,65 +220,35 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* 右侧：消费明细 */}
-        <div className="card" style={{ padding: '24px' }}>
-          <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <ClipboardList size={20} strokeWidth={2} color="#e66b33" /> 积分明细 (生图记录)
-          </h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #f5f5f5', textAlign: 'left' }}>
-                  <th style={{ padding: '12px 8px' }}>时间</th>
-                  <th style={{ padding: '12px 8px' }}>消耗</th>
-                  <th style={{ padding: '12px 8px' }}>提示词</th>
-                  <th style={{ padding: '12px 8px' }}>状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                    <td style={{ padding: '12px 8px', color: '#888', whiteSpace: 'nowrap' }}>
-                      {new Date(item.created_at).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ padding: '12px 8px', fontWeight: '600' }}>-{item.cost_points}</td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.prompt}>
-                        {item.prompt}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <span style={{ 
-                        padding: '2px 8px', 
-                        borderRadius: '4px', 
-                        fontSize: '12px',
-                        background: 
-                          item.status === 'success' ? '#f6ffed' : 
-                          item.status === 'failed' ? '#fff1f0' : '#fff7e6',
-                        color: 
-                          item.status === 'success' ? '#52c41a' : 
-                          item.status === 'failed' ? '#ff4d4f' : '#faad14',
-                        border: `1px solid ${
-                          item.status === 'success' ? '#b7eb8f' : 
-                          item.status === 'failed' ? '#ffa39e' : '#ffe58f'
-                        }`
-                      }}>
-                        {item.status === 'success' && '成功'}
-                        {item.status === 'failed' && '失败'}
-                        {item.status === 'pending' && '等待中'}
-                        {item.status === 'generating' && '生成中'}
-                        {item.status === 'storing' && '保存中'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {history.length === 0 && (
-                  <tr>
-                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无记录</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        {/* 右侧：消费明细入口 (原表格移至独立页面) */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div 
+            className="card" 
+            onClick={() => navigate('/points-history')}
+            style={{ 
+              padding: '20px 24px', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              cursor: 'pointer',
+              background: '#fff',
+              transition: 'background 0.2s',
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#fcfcfc'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#fff'}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: '#fff2eb', padding: '10px', borderRadius: '12px', color: '#e66b33' }}>
+                <ClipboardList size={22} strokeWidth={2} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>积分消费记录</div>
+                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>查看所有生图扣费明细</div>
+              </div>
+            </div>
+            <div style={{ color: '#ccc' }}>
+              <ArrowLeft size={18} style={{ transform: 'rotate(180deg)' }} />
+            </div>
           </div>
         </div>
       </div>
