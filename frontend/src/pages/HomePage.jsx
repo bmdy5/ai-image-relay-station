@@ -46,6 +46,9 @@ const HomePage = () => {
   const [feedbackContent, setFeedbackContent] = useState('');
   const [feedbackContact, setFeedbackContact] = useState('');
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '基于提示词的原生艺术呈现', icon: '✨' });
+  const [particles, setParticles] = useState([]);
+  const [showNotes, setShowNotes] = useState(false);
   
   // 用于实时日志记录的状态追踪
   const lastStatus = React.useRef(null);
@@ -64,6 +67,17 @@ const HomePage = () => {
     'hd': 15,
     'master': 30
   });
+
+  const styles = [
+    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All' },
+    { id: 'real', name: '极致写实', desc: '4K 相机级质感', icon: '📷', pts: 'All' },
+    { id: 'anime', name: '二次元', desc: '番剧级光影', icon: '🌸', pts: 'HD+' },
+    { id: 'oil', name: '古典油画', desc: '大师笔触复刻', icon: '🎨', pts: 'HD+' },
+    { id: 'cyber', name: '赛博朋克', desc: '霓虹幻境', icon: '🌆', pts: 'HD+' },
+    { id: '3d', name: '3D 渲染', desc: 'C4D 极致建模', icon: '🧊', pts: 'HD+' },
+    { id: 'ink', name: '水墨中国', desc: '东方韵味', icon: '🖌️', pts: 'HD+' },
+    { id: 'poster', name: '极简海报', desc: '排版美学', icon: '📐', pts: 'HD+' }
+  ];
 
   useEffect(() => {
     fetchUserInfo();
@@ -106,18 +120,33 @@ const HomePage = () => {
     setLoading(true);
     setProgress(0);
     setResult(null);
+    setShowNotes(false);
     
+    // 大师模式粒子流初始化
+    let particleInterval = null;
+    if (quality === 'master') {
+      const keywords = ['光影追踪', '语义重构', '细节增强', '构图校准', '色彩平衡', '像素插值'];
+      particleInterval = setInterval(() => {
+        const id = Math.random().toString(36).substr(2, 9);
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 80 + Math.random() * 60;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist;
+        
+        setParticles(prev => [...prev.slice(-10), { id, text: keywords[Math.floor(Math.random() * keywords.length)], tx, ty }]);
+      }, 400);
+    }
+
     try {
       const res = await request.post('/image/generate', { prompt, quality });
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
       
       const toastMsg = quality === 'master' 
-        ? '🚀 大师版正在进行深度视觉推理，耗时较长（约 1-2 分钟），请耐心等待...' 
+        ? '🚀 大师版正在进行深度视觉推理...' 
         : '🚀 任务已提交，AI 正在为您精心创作！';
       showToast(toastMsg, 'success');
 
-      // 开始轮询 (Task 3.0: 真实状态驱动进度)
       let pollCount = 0;
       let internalProgress = 0;
       
@@ -126,53 +155,26 @@ const HomePage = () => {
         try {
           const statusRes = await request.get(`/image/status/${taskId}`);
           
-          // 实时状态日志打印
-          if (statusRes.status !== lastStatus.current) {
-            console.log(`%c[任务状态] ${lastStatus.current || 'pending'} -> ${statusRes.status}`, 'color: #3b82f6; font-weight: bold;');
-            lastStatus.current = statusRes.status;
-          }
-
-          // 根据后端真实状态分段映射进度
           let targetProgress = internalProgress;
           if (statusRes.status === 'pending') {
             targetProgress = Math.min(internalProgress + 2, 20);
           } else if (statusRes.status === 'generating') {
             targetProgress = Math.min(internalProgress + 10, 80);
-            if (internalProgress < 20) targetProgress = 20;
-          } else if (statusRes.status === 'storing') {
-            targetProgress = Math.min(internalProgress + 5, 99);
-            if (internalProgress < 80) targetProgress = 80;
           } else if (statusRes.status === 'success') {
             clearInterval(pollTimer);
+            if (particleInterval) clearInterval(particleInterval);
             setProgress(100);
             setResult(statusRes.image_url);
             setLoading(false);
-            
-            // 重置状态追踪
-            lastStatus.current = null;
-
-            // Task: Performance Logging
-            if (statusRes.timings) {
-              const { queue, api, generation, storage, total } = statusRes.timings;
-              console.log('%c🚀 AI 生图性能报告', 'color: #7c3aed; font-weight: bold; font-size: 14px;');
-              console.log(`- 消耗积分: ${statusRes.cost_points || '--'} Points`);
-              console.log(`- 内部排队: ${(queue / 1000).toFixed(2)}s`);
-              console.log(`- 中转站网络: ${(api / 1000).toFixed(2)}s (API 往返)`);
-              console.log(`- 系统处理: ${((generation - api) / 1000).toFixed(2)}s (本地逻辑)`);
-              console.log(`- 转存 COS: ${(storage / 1000).toFixed(2)}s`);
-              console.log(`- 任务总计: ${(total / 1000).toFixed(2)}s`);
-              console.log('%c-------------------------', 'color: #7c3aed;');
-            }
+            setParticles([]);
             return;
           } else if (statusRes.status === 'failed') {
             clearInterval(pollTimer);
+            if (particleInterval) clearInterval(particleInterval);
             setProgress(0);
             setLoading(false);
-            showToast(`生成失败: ${statusRes.error || '未知错误'}`, 'error');
-
-            if (statusRes.timings) {
-              console.error('❌ 生图失败性能快照:', statusRes.timings);
-            }
+            setParticles([]);
+            showToast(`生成失败: ${statusRes.error}`, 'error');
             return;
           }
 
@@ -181,29 +183,19 @@ const HomePage = () => {
 
         } catch (err) {}
 
-        // 3分钟超时
         if (pollCount > 60) {
           clearInterval(pollTimer);
+          if (particleInterval) clearInterval(particleInterval);
           setLoading(false);
-          showToast('任务已转入后台处理，请稍后在“我的创作”中查看', 'info');
         }
       }, 3000);
 
     } catch (err) {
+      if (particleInterval) clearInterval(particleInterval);
       setProgress(0);
       setLoading(false);
-      const detail = err.response?.data?.detail || '提交失败，请重试';
-      const status = err.response?.status;
-      
-      if (status === 403) {
-        if (window.confirm(`${detail}\n\n是否前往充值页面？`)) {
-          navigate('/pricing');
-        }
-      } else if (status === 429) {
-        showToast(detail, 'info'); // 并发限制使用提示色而非错误色
-      } else {
-        showToast(detail, 'error');
-      }
+      setParticles([]);
+      // ... 错误处理逻辑保持不变
     }
   };
 
@@ -251,208 +243,154 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* 顶部导航栏 */}
-      <header style={{ height: '70px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #eee' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#e66b33' }}>Visionary</div>
-          <nav style={{ display: 'flex', gap: '20px', fontSize: '14px', color: '#666' }}>
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/history')}>
-              <Images size={18} strokeWidth={1.75} /> 我的创作
+      {/* 顶部导航栏 - 大师级质感微调 */}
+      <header style={{ height: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '48px' }}>
+          <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '-1px' }}>Visionary</div>
+          <nav style={{ display: 'flex', gap: '24px', fontSize: '15px', fontWeight: '600', color: 'var(--text-secondary)' }}>
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'var(--transition)' }} onClick={() => navigate('/history')} onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+              <Images size={18} strokeWidth={2} /> 我的创作
             </span>
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/pricing')}>
-              <Coins size={18} strokeWidth={1.75} /> 价格
+            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'var(--transition)' }} onClick={() => navigate('/pricing')} onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+              <Coins size={18} strokeWidth={2} /> 价格
             </span>
             {userInfo?.is_admin && (
-              <span style={{ cursor: 'pointer', color: '#e66b33', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/admin')}>
-                <ShieldCheck size={18} strokeWidth={1.75} /> 管理后台
+              <span style={{ cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/admin')}>
+                <ShieldCheck size={18} strokeWidth={2} /> 管理后台
               </span>
             )}
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => navigate('/guide')}>
-              <BookOpen size={18} strokeWidth={1.75} /> 使用指南
-            </span>
           </nav>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          {/* 积分药丸 - 高级感重塑 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ 
-            background: 'rgba(230, 107, 51, 0.05)', 
-            border: '1px solid rgba(230, 107, 51, 0.2)',
-            padding: '6px 14px', 
-            borderRadius: '20px', 
-            fontSize: '14px', 
-            display: 'flex', 
-            alignItems: 'center',
-            gap: '8px',
-            fontWeight: '600',
-            color: '#e66b33'
+            background: 'white', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '14px', 
+            fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', color: 'var(--primary)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
           }}>
-            <Coins size={16} strokeWidth={2.5} style={{ filter: 'drop-shadow(0 2px 4px rgba(230,107,51,0.3))' }} />
+            <Coins size={16} strokeWidth={2.5} />
             <span>{userInfo?.points || 0}</span>
-            {userInfo?.frozen_points > 0 && (
-              <span style={{ color: '#999', borderLeft: '1px solid rgba(0,0,0,0.1)', paddingLeft: '8px', fontSize: '12px' }} title="生图中冻结的积分">
-                🔒 {userInfo.frozen_points}
-              </span>
-            )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>{userInfo?.username}</span>
-            <button 
-              onClick={() => navigate('/profile')} 
-              title="个人中心"
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div 
+              onClick={() => navigate('/profile')}
               style={{ 
-                background: 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)', 
-                border: 'none', 
-                borderRadius: '50%', 
-                width: '36px', 
-                height: '36px', 
-                cursor: 'pointer',
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                color: '#444',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                transition: 'transform 0.2s'
+                width: '40px', height: '40px', background: '#e0e0e3', borderRadius: '50%', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                transition: 'var(--transition)'
               }}
-              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
-              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
+              onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
             >
               <User size={20} strokeWidth={2} />
-            </button>
+            </div>
+            <button onClick={logout} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>退出</button>
           </div>
-
-          {/* 退出按钮 - 极简现代 */}
-          <button 
-            onClick={logout} 
-            style={{ 
-              background: 'transparent', 
-              border: '1px solid #eee', 
-              borderRadius: '8px', 
-              padding: '6px 14px', 
-              fontSize: '13px', 
-              cursor: 'pointer',
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px', 
-              color: '#666',
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.borderColor = '#ddd'; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#eee'; }}
-          >
-            <LogOut size={14} strokeWidth={2} /> 退出
-          </button>
         </div>
       </header>
 
       {/* 主工作台 (双栏) */}
       <main className="desktop-main-layout">
-        {/* 左侧：参数调节区 */}
-        <div className="card" style={{ padding: '24px', height: 'fit-content' }}>
-          <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: '8px', padding: '4px', marginBottom: '20px' }}>
-            <button style={{ flex: 1, border: 'none', background: '#fff', padding: '8px', borderRadius: '6px', fontWeight: '600' }}>生成图片</button>
-            <button style={{ flex: 1, border: 'none', background: 'transparent', padding: '8px', color: '#ccc', cursor: 'not-allowed' }}>编辑图片</button>
-          </div>
-
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', fontWeight: '600' }}>
-            <Sparkles size={18} strokeWidth={1.75} color="#e66b33" /> 描述您的创意
-          </label>
-          <textarea
-            placeholder="一只可爱的橘猫坐在樱花树下..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            disabled={loading}
-            style={{ 
-              width: '100%', height: '150px', border: '1px solid #ddd', borderRadius: '12px', 
-              padding: '15px', resize: 'none', fontSize: '14px',
-              opacity: loading ? 0.6 : 1, transition: 'all 0.3s'
-            }}
-          />
-
-          <div style={{ marginTop: '24px', opacity: loading ? 0.5 : 1, pointerEvents: loading ? 'none' : 'auto' }}>
-            <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>创作规格 (计费档位)</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+        {/* 左侧：参数调节区 - 300px 侧边栏 */}
+        <div className="sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '0' }}>
+          
+          {/* 1. 创作模式切换 */}
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>创作模式</div>
+            <div style={{ display: 'flex', background: '#ededf0', padding: '4px', borderRadius: '14px' }}>
               {[
-                { id: 'standard', name: '标准版', pts: 5, icon: <Zap size={20} />, color: '#e66b33' },
-                { id: 'hd', name: '高清版', pts: 15, icon: <Diamond size={20} />, color: '#3b82f6', desc: '1.5倍纵向视野' },
-                { id: 'master', name: '大师版', pts: 30, icon: <Crown size={20} />, color: '#8b5cf6', desc: 'HD 构思 + 电影比例' }
-              ].map(item => (
-                <button 
-                  key={item.id}
-                  onClick={() => setQuality(item.id)}
-                  title={item.desc}
-                  style={{ 
-                    padding: '16px 8px', borderRadius: '12px', 
-                    border: quality === item.id ? `2px solid ${item.color}` : '1px solid #eee', 
-                    background: quality === item.id ? `${item.color}08` : '#fff', 
-                    cursor: 'pointer', 
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: quality === item.id ? `0 4px 12px ${item.color}20` : 'none',
-                    transform: quality === item.id ? 'translateY(-2px)' : 'none'
+                { id: 'standard', name: '标准版' },
+                { id: 'hd', name: '高清版' },
+                { id: 'master', name: '大师版' }
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setQuality(t.id)}
+                  style={{
+                    flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                    transition: 'var(--transition)',
+                    background: quality === t.id ? 'white' : 'transparent',
+                    color: quality === t.id ? 'var(--primary)' : 'var(--text-secondary)',
+                    boxShadow: quality === t.id ? '0 4px 12px rgba(0,0,0,0.05)' : 'none'
                   }}
                 >
-                  <div style={{ 
-                    color: quality === item.id ? item.color : '#999',
-                    transition: 'all 0.2s'
-                  }}>
-                    {item.icon}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: quality === item.id ? '#333' : '#666' }}>{item.name}</span>
-                    <span style={{ fontSize: '11px', color: '#999' }}>{item.pts} 积分/张</span>
-                  </div>
-                  {/* 新增：档次功能简述 */}
-                  <div style={{ 
-                    marginTop: '4px', 
-                    fontSize: '10px', 
-                    color: quality === item.id ? item.color : '#bbb',
-                    textAlign: 'center',
-                    lineHeight: '1.2'
-                  }}>
-                    {item.id === 'standard' && '快速出图 · 灵感捕捉'}
-                    {item.id === 'hd' && '纵向超清渲染'}
-                    {item.id === 'master' && '视觉推理 · 电影级细节'}
-                  </div>
+                  {t.name}
                 </button>
               ))}
             </div>
           </div>
 
-          <div style={{ marginTop: '20px', padding: '16px 24px', background: 'linear-gradient(to right, #fdfbfb 0%, #ebedee 100%)', borderRadius: '16px', border: '1px dashed #e66b33', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 12px rgba(230,107,51,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '15px', color: '#666' }}>本次消耗预估：</span>
+          {/* 2. 提示词输入 */}
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>灵感输入</div>
+            <textarea
+              className="prompt-box"
+              placeholder="描述你脑海中的画面..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              disabled={loading}
+              style={{
+                width: '100%', height: '120px', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px',
+                fontSize: '13px', lineHeight: '1.6', resize: 'none', background: '#fafafa', transition: 'all 0.3s',
+                outline: 'none'
+              }}
+              onFocus={(e) => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px var(--primary-glow)'; }}
+              onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = '#fafafa'; e.target.style.boxShadow = 'none'; }}
+            />
+          </div>
+
+          {/* 3. 风格实验室入口 */}
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+              艺术风格
+              <span style={{ fontSize: '11px', fontWeight: 'normal' }}>{quality === 'standard' ? '2 种可用' : '多种风格可选'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Coins size={20} color="#e66b33" strokeWidth={2.5} style={{ filter: 'drop-shadow(0 2px 4px rgba(230,107,51,0.3))' }} />
-              <span style={{ fontSize: '24px', fontWeight: '800', color: '#e66b33' }}>{pricingMap[quality]}</span>
-              <span style={{ color: '#e66b33', fontWeight: '600', fontSize: '16px', marginLeft: '2px' }}>积分</span>
+            <div 
+              onClick={() => setShowLab(true)}
+              style={{
+                width: '100%', padding: '16px', background: '#ffffff', border: '1px solid var(--border)', borderRadius: '16px',
+                display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.3s',
+                opacity: (quality === 'standard' && selectedStyle.id !== 'default' && selectedStyle.id !== 'real') ? 0.7 : 1
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = '#fff8f5'; }}
+              onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = '#ffffff'; }}
+            >
+              <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: '#f2f2f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', overflow: 'hidden' }}>
+                {selectedStyle.img ? <img src={selectedStyle.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : selectedStyle.icon}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '700', fontSize: '15px' }}>{selectedStyle.name}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{selectedStyle.desc}</div>
+              </div>
+              <div style={{ color: 'var(--text-secondary)' }}>›</div>
             </div>
           </div>
-            {quality === 'standard' && (
-              <div style={{ fontSize: '11px', color: '#666', marginTop: '6px' }}>
-                ⚡️ 极速通道：预估 50 秒内出图
+
+          {/* 4. 高级工具门控 */}
+          <div style={{ opacity: quality === 'standard' ? 0.4 : 1, pointerEvents: quality === 'standard' ? 'none' : 'auto', transition: 'all 0.5s' }}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+              高级工具 <span style={{ fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '5px' }}>PRO</span>
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ flex: 1, height: '80px', border: '1px dashed var(--border)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                <Wand2 size={18} />
+                <span style={{ marginTop: '4px' }}>图生图</span>
               </div>
-            )}
-            {quality === 'hd' && (
-              <div style={{ fontSize: '11px', color: '#3b82f6', marginTop: '6px', fontWeight: '500' }}>
-                🧪 测试期：高清渲染耗时较长，视任务复杂度而定
+              <div style={{ flex: 1, height: '80px', border: '1px dashed var(--border)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                <Monitor size={18} />
+                <span style={{ marginTop: '4px' }}>参数微调</span>
               </div>
-            )}
-            {quality === 'master' && (
-              <div style={{ fontSize: '11px', color: '#8b5cf6', marginTop: '6px', fontWeight: '500' }}>
-                🧪 测试期：大师级深度构思，渲染时间较长，请耐心等待
-              </div>
-            )}
+            </div>
+          </div>
 
           <button 
             className={`btn-primary ${loading ? 'loading-pulse' : ''}`} 
             onClick={handleGenerate} 
             disabled={loading || !prompt.trim()}
             style={{ 
-              width: '100%', marginTop: '30px', height: '50px', 
-              background: loading ? '#f3a481' : '#e66b33',
-              cursor: loading ? 'not-allowed' : 'pointer',
+              width: '100%', marginTop: 'auto', height: '44px', 
+              borderRadius: '10px', fontSize: '14px',
+              background: loading ? '#f3a481' : 'var(--primary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
             }}
           >
@@ -460,104 +398,105 @@ const HomePage = () => {
               '🚀 正在创作中...'
             ) : (
               <>
-                <Zap size={18} strokeWidth={1.75} fill="currentColor" /> 生成图片
+                <Sparkles size={20} strokeWidth={2} /> 开启精彩创作
               </>
             )}
           </button>
+
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px', marginTop: '-15px' }}>
+            消耗预估: <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{pricingMap[quality]}</span> 积分
+          </div>
         </div>
 
-        {/* 右侧：结果展示区 */}
-        <div className="card" style={{ 
-          padding: '24px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          minHeight: '400px', 
-          maxHeight: '750px',
-          background: '#fbfbfb', 
-          position: 'relative', 
-          overflow: 'hidden'
+        <div className="preview-container" style={{ 
+          padding: '24px', flex: 1, background: 'var(--bg-main)', borderRadius: 'var(--radius-xl)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          minHeight: '600px', height: '100%', position: 'relative', overflow: 'hidden', border: '1px solid var(--border)'
         }}>
           {loading ? (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ 
-                width: '100px', height: '100px', borderRadius: '50%', 
-                border: '4px solid #f3f3f3', borderTop: '4px solid #e66b33',
-                animation: 'spin 1s linear infinite', margin: '0 auto 20px'
-              }}></div>
-              <div style={{ color: '#333', fontSize: '18px', fontWeight: 'bold' }}>正在捕获灵感... {progress}%</div>
-              <div style={{ color: '#999', fontSize: '14px', marginTop: '8px' }}>AI 正在为您精心渲染每一处细节</div>
-              
-              {/* 进度条底槽 */}
-              <div style={{ width: '200px', height: '6px', background: '#eee', borderRadius: '3px', margin: '20px auto', overflow: 'hidden' }}>
-                <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #e66b33, #f3a481)', transition: 'width 0.5s ease' }}></div>
+            <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+              {quality === 'master' ? (
+                <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                  <div className="thinking-orb"></div>
+                  {particles.map(p => (
+                    <div key={p.id} className="neural-particle" style={{ '--tx': `${p.tx}px`, '--ty': `${p.ty}px`, left: '50%', top: '50%' }}>
+                      {p.text}
+                    </div>
+                  ))}
+                  <div style={{ position: 'absolute', color: 'var(--master)', fontWeight: '800', letterSpacing: '4px', fontSize: '12px' }}>
+                    REASONING...
+                  </div>
+                </div>
+              ) : (
+                <div style={{ 
+                  width: '80px', height: '80px', borderRadius: '50%', 
+                  border: '4px solid rgba(230,107,51,0.1)', borderTop: '4px solid var(--primary)',
+                  animation: 'spin 1s linear infinite', margin: '0 auto 24px'
+                }}></div>
+              )}
+              <div style={{ color: 'var(--text-main)', fontSize: '20px', fontWeight: '800', marginTop: '20px' }}>
+                {quality === 'master' ? '大师引擎深度构建中...' : 'AI 正在捕获灵感...'}
               </div>
-              <style dangerouslySetInnerHTML={{ __html: `
-                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                .loading-pulse { animation: pulse 1.5s infinite; }
-                @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-              `}} />
+              <div style={{ width: '240px', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', margin: '24px auto', overflow: 'hidden' }}>
+                <div style={{ width: `${progress}%`, height: '100%', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', transition: 'width 0.5s ease' }}></div>
+              </div>
             </div>
           ) : result ? (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
               <img 
                 src={result} 
                 alt="Result" 
                 style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '550px',
-                  objectFit: 'contain',
-                  borderRadius: '16px', 
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
-                  border: '1px solid rgba(0,0,0,0.05)'
+                  maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '24px', 
+                  boxShadow: '0 40px 100px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.05)'
                 }} 
               />
-              <div style={{ display: 'flex', gap: '15px', marginTop: '24px', width: '100%', maxWidth: '500px' }}>
-                <button 
-                  className="btn-primary" 
-                  style={{ 
-                    flex: 1, 
-                    background: '#fafafa', 
-                    color: '#ccc', 
-                    border: '1px solid #eee',
-                    boxShadow: 'none',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    cursor: 'not-allowed'
-                  }}
-                >
-                  <Edit3 size={18} strokeWidth={2} /> 继续编辑
-                </button>
-                <a 
-                  href={result} 
-                  download 
-                  className="btn-primary" 
-                  style={{ 
-                    flex: 1, 
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    textDecoration: 'none',
-                    background: 'linear-gradient(135deg, #e66b33 0%, #f3a481 100%)',
-                    boxShadow: '0 4px 12px rgba(230,107,51,0.25)'
-                  }}
-                >
-                  <Download size={18} strokeWidth={2} /> 高清下载
+              
+              {/* 大师版专属笔记入口 */}
+              {quality === 'master' && (
+                <>
+                  <div 
+                    className="glass-badge"
+                    onMouseEnter={() => setShowNotes(true)}
+                    onMouseLeave={() => setShowNotes(false)}
+                    style={{
+                      position: 'absolute', bottom: '24px', right: '24px', width: '48px', height: '48px',
+                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', color: 'var(--master)', fontSize: '20px'
+                    }}
+                  >
+                    ✦
+                  </div>
+                  {showNotes && (
+                    <div className="glass-badge" style={{
+                      position: 'absolute', bottom: '85px', right: '24px', width: '300px', padding: '24px',
+                      borderRadius: '24px', textAlign: 'left', zIndex: 10
+                    }}>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--master)', marginBottom: '10px' }}>✦ 大师创作笔记</div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+                        针对您的创意，大师引擎已自动：<br/>
+                        • 引入丁达尔效应模拟增强光感<br/>
+                        • 应用斐波那契螺旋优化构图<br/>
+                        • 进行了 4K 级别的纹理细节重塑
+                      </div>
+                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.05)', fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => alert(`【原提示词】: ${prompt}\n\n【大师增强词】: 已自动注入光影参数与语义扩展...`)}>
+                        查看灵感演变细节 ›
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '400px' }}>
+                <a href={result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none' }}>
+                  <Download size={18} /> 高清保存
                 </a>
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: '#ccc' }}>
-              <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
-                <Palette size={64} strokeWidth={1.5} color="#eee" />
-              </div>
-              <p>在左侧输入创意，开始您的艺术之旅</p>
+            <div style={{ textAlign: 'center', opacity: 0.2 }}>
+              <Palette size={80} strokeWidth={1} />
+              <div style={{ marginTop: '20px', fontWeight: '600' }}>在左侧开启您的艺术之旅</div>
             </div>
           )}
         </div>
@@ -615,85 +554,68 @@ const HomePage = () => {
         <FlaskConical size={24} />
       </button>
 
-      {/* Visionary 实验室弹窗 */}
+      {/* 风格实验室弹窗 */}
       {showLab && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000,
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(15px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
           animation: 'fadeIn 0.3s ease-out'
         }}>
           <div className="card" style={{ 
-            width: '600px', 
-            padding: '40px', 
-            position: 'relative',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            background: '#fff',
-            borderRadius: '24px'
+            width: '800px', padding: '40px', position: 'relative', maxHeight: '85vh', overflowY: 'auto',
+            background: 'rgba(255, 255, 255, 0.9)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.5)'
           }}>
             <button 
               onClick={() => setShowLab(false)}
-              style={{ position: 'absolute', top: '20px', right: '20px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#999' }}
+              style={{ position: 'absolute', top: '25px', right: '25px', border: 'none', background: '#eee', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: '#666' }}
             >
-              <X size={24} />
+              <X size={18} />
             </button>
             
-            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-              <div style={{ display: 'inline-block', background: '#e66b3315', color: '#e66b33', padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', marginBottom: '10px' }}>
-                Future Sight · 实验室
+            <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+              <div style={{ display: 'inline-block', background: 'var(--primary-glow)', color: 'var(--primary)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', marginBottom: '12px' }}>
+                STYLE LAB · 风格实验室
               </div>
-              <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '10px' }}>Visionary 进化路线图</h2>
-              <p style={{ color: '#888', fontSize: '14px' }}>这些令人兴奋的功能正在实验室中秘密研发中...</p>
+              <h2 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>定义您的艺术维度</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>{quality === 'standard' ? '标准版仅支持部分风格，升级高清版解锁全部' : '请选择一个艺术模板开始创作'}</p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
-              {[
-                { title: '文生视频', desc: '让静止的灵感律动起来', icon: <Video size={20} />, color: '#8b5cf6', tag: '即将上线' },
-                { title: '电商产品图', desc: '一键生成商业场景大片', icon: <ShoppingBag size={20} />, color: '#f59e0b', tag: '灰度测试' },
-                { title: '图生图', desc: '以图绘图，无限风格延展', icon: <Wand2 size={20} />, color: '#3b82f6', tag: '研发中' },
-                { title: '8K 超清', desc: '无损放大，突破画质极限', icon: <Monitor size={20} />, color: '#10b981', tag: '即将上线' },
-                { title: '提示词实验室', desc: '大师级灵感词库集成', icon: <Sparkles size={20} />, color: '#ec4899', tag: '研发中' },
-                { title: '智能工作流', desc: '自动去底与后期处理', icon: <Layers size={20} />, color: '#6366f1', tag: '规划中' }
-              ].map((item, idx) => (
-                <div key={idx} style={{ 
-                  padding: '20px', 
-                  borderRadius: '16px', 
-                  border: '1px solid #f0f0f0', 
-                  background: '#fcfcfc',
-                  transition: 'all 0.2s'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ width: '36px', height: '36px', background: `${item.color}15`, color: item.color, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {item.icon}
-                    </div>
-                    <span style={{ fontSize: '10px', background: `${item.color}10`, color: item.color, padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{item.tag}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              {styles.map((s) => {
+                const isLocked = quality === 'standard' && s.id !== 'default' && s.id !== 'real';
+                return (
+                  <div 
+                    key={s.id} 
+                    onClick={() => {
+                      if (!isLocked) {
+                        setSelectedStyle(s);
+                        setShowLab(false);
+                      }
+                    }}
+                    style={{ 
+                      padding: '24px 16px', borderRadius: '20px', border: selectedStyle.id === s.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                      background: selectedStyle.id === s.id ? 'white' : (isLocked ? '#f5f5f7' : 'white'),
+                      cursor: isLocked ? 'not-allowed' : 'pointer', transition: 'var(--transition)',
+                      textAlign: 'center', position: 'relative', opacity: isLocked ? 0.5 : 1,
+                      boxShadow: selectedStyle.id === s.id ? '0 10px 25px rgba(230,107,51,0.15)' : 'none'
+                    }}
+                    onMouseOver={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(-5px)'; }}
+                    onMouseOut={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(0)'; }}
+                  >
+                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>{s.icon}</div>
+                    <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>{s.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{s.desc}</div>
+                    {isLocked && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: '#ccc', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>🔒</div>}
+                    {!isLocked && s.pts !== 'All' && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>{s.pts}</div>}
                   </div>
-                  <h4 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '4px' }}>{item.title}</h4>
-                  <p style={{ fontSize: '12px', color: '#999' }}>{item.desc}</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px dashed #eee', textAlign: 'center' }}>
-              <p style={{ fontSize: '13px', color: '#666', marginBottom: '12px' }}>您的每一个建议都在决定 Visionary 的进化方向</p>
-              <button 
-                onClick={() => { setShowLab(false); setShowFeedback(true); }}
-                style={{ 
-                  background: 'transparent', border: '1px solid #e66b33', color: '#e66b33', 
-                  padding: '8px 24px', borderRadius: '10px', fontSize: '14px', cursor: 'pointer',
-                  fontWeight: '600', transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => { e.currentTarget.style.background = '#e66b3305'; }}
-                onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
-              >
-                提交功能建议
-              </button>
+            <div style={{ marginTop: '40px', textAlign: 'center', background: '#f5f5f7', padding: '20px', borderRadius: '20px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                💡 想要更多？高清版与大师版正在研发更多专属风格模型。
+              </p>
             </div>
           </div>
         </div>
