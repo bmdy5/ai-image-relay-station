@@ -3,27 +3,38 @@ import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
 import { 
-  ShieldCheck, 
-  Images, 
-  ArrowLeft, 
-  LogOut, 
-  Wallet, 
-  User, 
-  Lock, 
-  ClipboardList,
-  Copy,
-  RefreshCw,
-  AlertTriangle
+  ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock, 
+  RefreshCw, Copy, ExternalLink, MessageSquare
 } from 'lucide-react';
+
+const MobileDrawer = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'flex-end' }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', animation: 'fadeInOverlay 0.3s ease' }} />
+      <div style={{ 
+        position: 'relative', width: '100%', background: '#fff', borderTopLeftRadius: '32px', borderTopRightRadius: '32px', 
+        padding: '24px 20px 40px', animation: 'slideUpDrawer 0.3s cubic-bezier(0.32, 0.72, 0, 1)', maxHeight: '85vh', overflowY: 'auto' 
+      }}>
+        <div style={{ width: '40px', height: '4px', background: '#E5E5EA', borderRadius: '2px', margin: '0 auto 20px' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '800' }}>{title}</h2>
+          <div onClick={onClose} style={{ width: '32px', height: '32px', borderRadius: '16px', background: '#F2F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>×</div>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const ProfilePage = ({ isMobile }) => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
-  const [msg, setMsg] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
   const [showRecharge, setShowRecharge] = useState(false);
+  const [activeDrawer, setActiveDrawer] = useState(null); // 'password', 'support'
+  const [feedback, setFeedback] = useState({ content: '', contact: '' });
+  const [pwdForm, setPwdForm] = useState({ old: '', new: '' });
 
   useEffect(() => {
     fetchData();
@@ -36,235 +47,227 @@ const ProfilePage = ({ isMobile }) => {
     } catch (err) {}
   };
 
+  const handleSupportSubmit = async () => {
+    if (!feedback.content) return;
+    setLoading(true);
+    try {
+      await request.post('/feedback/submit', feedback);
+      alert('感谢反馈，我们将尽快处理！');
+      setActiveDrawer(null);
+      setFeedback({ content: '', contact: '' });
+    } catch (err) {
+      alert('提交失败，请重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (!pwdForm.old || !pwdForm.new) return;
+    setLoading(true);
+    try {
+      await request.post('/auth/change-password', { 
+        old_password: pwdForm.old, 
+        new_password: pwdForm.new 
+      });
+      alert('密码修改成功，请重新登录');
+      logout();
+    } catch (err) {
+      alert(err.response?.data?.detail || '修改失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCopyUID = () => {
     if (userInfo?.uid) {
       navigator.clipboard.writeText(userInfo.uid);
-      alert('UID 已复制到剪贴板');
+      alert('UID 已复制');
     }
   };
 
   const handleResetTasks = async () => {
-    if (!window.confirm('此操作将强制清理您当前正在排队的任务状态。仅建议在任务长时间卡死（超过1分钟）时使用。确认重置吗？')) return;
+    if (!window.confirm('清理挂起任务？')) return;
     setLoading(true);
     try {
       await request.post('/image/reset');
-      alert('任务锁已成功清理，您可以重新尝试生图。');
+      alert('清理成功');
       fetchData();
     } catch (err) {
-      alert('重置失败: ' + (err.response?.data?.detail || '网络错误'));
+      alert('失败: ' + (err.response?.data?.detail || '网络错误'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (passwords.new !== passwords.confirm) {
-      return setMsg({ type: 'error', text: '两次输入的新密码不一致' });
-    }
-    setLoading(true);
-    try {
-      await request.post('/auth/change-password', {
-        old_password: passwords.old,
-        new_password: passwords.new
-      });
-      setMsg({ type: 'success', text: '密码修改成功' });
-      setPasswords({ old: '', new: '', confirm: '' });
-    } catch (err) {
-      setMsg({ type: 'error', text: err.response?.data?.detail || '修改失败' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const SettingItem = ({ icon, label, sublabel, onClick, color = '#1D1D1F' }) => (
+    <div 
+      onClick={onClick}
+      style={{ 
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+        padding: '16px 20px', background: '#fff', cursor: 'pointer' 
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ color }}>{icon}</div>
+        <div>
+          <div style={{ fontSize: '15px', fontWeight: '600', color: '#1D1D1F' }}>{label}</div>
+          {sublabel && <div style={{ fontSize: '11px', color: '#8E8E93', marginTop: '2px' }}>{sublabel}</div>}
+        </div>
+      </div>
+      <ArrowRight size={16} color="#C4C4C6" />
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: '1000px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', paddingBottom: isMobile ? '100px' : '0' }}>
-      {!isMobile && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '28px' }}>个人中心</h1>
-          <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-            {userInfo?.is_admin && (
-              <button onClick={() => navigate('/admin')} style={{ background: '#fff7e6', border: '1px solid #ffd591', color: '#e66b33', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ShieldCheck size={14} strokeWidth={2} /> 管理后台
-              </button>
-            )}
-            <button onClick={() => navigate('/history')} style={{ background: 'transparent', border: 'none', color: '#e66b33', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Images size={16} strokeWidth={2} /> 我的创作
-            </button>
-            <button onClick={() => navigate('/')} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ArrowLeft size={16} strokeWidth={2} /> 返回首页
-            </button>
-          </div>
-        </div>
-      )}
-
-      {isMobile && <h1 style={{ fontSize: '24px', marginBottom: '20px', textAlign: 'center' }}>个人中心</h1>}
-
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', gap: '30px' }}>
-        {/* 左侧：用户信息与修改密码 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-          <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <User size={20} strokeWidth={2} color="#e66b33" /> 账户概览
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#666' }}>用户名</span>
-                <span style={{ fontWeight: '600' }}>{userInfo?.username}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#666' }}>UID</span>
-                <span 
-                  onClick={handleCopyUID}
-                  style={{ fontWeight: '600', color: '#e66b33', cursor: 'pointer', borderBottom: '1px dashed #e66b33' }}
-                  title="点击复制"
-                >
-                  {userInfo?.uid}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#666' }}>可用积分</span>
-                <span style={{ fontWeight: '600', color: '#e66b33' }}>🪙 {userInfo?.points}</span>
-              </div>
-              {userInfo?.frozen_points > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#999' }}>
-                  <span style={{ fontSize: '13px' }}>生图中锁定</span>
-                  <span style={{ fontSize: '13px' }}>🔒 {userInfo?.frozen_points}</span>
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#666' }}>注册时间</span>
-                <span>{userInfo?.created_at && new Date(userInfo.created_at).toLocaleDateString()}</span>
+    <div style={{ 
+      minHeight: '100%', background: 'var(--bg-main)', 
+      padding: isMobile ? '0 0 100px 0' : '40px 20px' 
+    }}>
+      {/* 资产看板 */}
+      <div style={{ padding: '24px 20px' }}>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)', 
+          borderRadius: '32px', padding: '30px', color: 'white',
+          boxShadow: '0 20px 40px rgba(255, 107, 0, 0.2)',
+          position: 'relative', overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '28px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <User size={30} />
+            </div>
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: '800' }}>{userInfo?.username}</div>
+              <div onClick={handleCopyUID} style={{ fontSize: '12px', opacity: 0.8, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                UID: {userInfo?.uid} <Copy size={12} />
               </div>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <div style={{ fontSize: '13px', opacity: 0.8 }}>当前余额</div>
+              <div style={{ fontSize: '32px', fontWeight: '900', marginTop: '4px' }}>{userInfo?.points} <span style={{ fontSize: '14px', fontWeight: '700' }}>积分</span></div>
+            </div>
             <button 
-              className="btn-primary"
               onClick={() => setShowRecharge(true)}
-              style={{ width: '100%', marginTop: '20px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+              style={{ padding: '12px 24px', borderRadius: '16px', background: 'white', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '14px' }}
             >
-              <Wallet size={18} strokeWidth={2} /> 充值积分
+              充值
             </button>
-            <button 
-              onClick={logout}
-              style={{ 
-                width: '100%', marginTop: '12px', padding: '10px', borderRadius: '8px', 
-                border: '1px solid #ff4d4f', color: '#ff4d4f', background: 'transparent', 
-                cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' 
-              }}
-            >
-              <LogOut size={16} strokeWidth={2} /> 退出当前账号
-            </button>
-
-            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #eee' }}>
-              <button 
-                onClick={handleResetTasks}
-                disabled={loading}
-                style={{ 
-                  width: '100%', padding: '10px', borderRadius: '8px', 
-                  border: '1px solid #faad14', color: '#faad14', background: 'transparent', 
-                  cursor: loading ? 'not-allowed' : 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' 
-                }}
-              >
-                <RefreshCw size={16} strokeWidth={2} className={loading ? 'loading-spin' : ''} /> 
-                {loading ? '正在清理...' : '清理挂起任务'}
-              </button>
-              <p style={{ fontSize: '11px', color: '#999', marginTop: '8px', textAlign: 'center', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center' }}>
-                <AlertTriangle size={12} /> 仅用于任务卡死时手动解锁
-              </p>
-            </div>
-          </div>
-
-          <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Lock size={20} strokeWidth={2} color="#e66b33" /> 修改密码
-            </h3>
-            <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <input 
-                type="password" 
-                placeholder="当前密码" 
-                required
-                value={passwords.old}
-                onChange={e => setPasswords({...passwords, old: e.target.value})}
-                style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
-              />
-              <input 
-                type="password" 
-                placeholder="新密码" 
-                required
-                value={passwords.new}
-                onChange={e => setPasswords({...passwords, new: e.target.value})}
-                style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
-              />
-              <input 
-                type="password" 
-                placeholder="确认新密码" 
-                required
-                value={passwords.confirm}
-                onChange={e => setPasswords({...passwords, confirm: e.target.value})}
-                style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
-              />
-              {msg.text && (
-                <div style={{ fontSize: '13px', color: msg.type === 'success' ? '#52c41a' : '#ff4d4f' }}>
-                  {msg.text}
-                </div>
-              )}
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="btn-primary" 
-                style={{ width: '100%', padding: '10px' }}
-              >
-                {loading ? '正在提交...' : '确认修改'}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* 右侧：消费明细入口 (原表格移至独立页面) */}
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div 
-            className="card" 
-            onClick={() => navigate('/points-history')}
-            style={{ 
-              padding: '20px 24px', 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              cursor: 'pointer',
-              background: '#fff',
-              transition: 'background 0.2s',
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = '#fcfcfc'}
-            onMouseOut={(e) => e.currentTarget.style.background = '#fff'}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ background: '#fff2eb', padding: '10px', borderRadius: '12px', color: '#e66b33' }}>
-                <ClipboardList size={22} strokeWidth={2} />
-              </div>
-              <div>
-                <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#333' }}>积分明细</div>
-                <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>查看充值到账与生图扣费记录</div>
-              </div>
-            </div>
-            <div style={{ color: '#ccc' }}>
-              <ArrowLeft size={18} style={{ transform: 'rotate(180deg)' }} />
-            </div>
           </div>
         </div>
       </div>
+
+      {/* 设置列表 - 账户 */}
+      <div style={{ padding: '0 20px' }}>
+        <div style={{ fontSize: '12px', fontWeight: '600', color: '#8E8E93', marginBottom: '8px', paddingLeft: '10px' }}>账户设置</div>
+        <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+          <SettingItem icon={<Wallet size={20} />} label="账单明细" sublabel="查看积分消费记录" onClick={() => navigate('/points-history')} />
+          <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
+          <SettingItem icon={<Lock size={20} />} label="修改密码" sublabel="保障账户安全" onClick={() => setActiveDrawer('password')} />
+        </div>
+      </div>
+
+      {/* 设置列表 - 高级功能 */}
+      <div style={{ padding: '24px 20px 0 20px' }}>
+        <div style={{ fontSize: '12px', fontWeight: '600', color: '#8E8E93', marginBottom: '8px', paddingLeft: '10px' }}>高级功能</div>
+        <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+          <SettingItem 
+            icon={<RefreshCw size={20} className={loading ? 'loading-spin' : ''} />} 
+            label="清理任务锁" 
+            sublabel="解决生图卡死问题" 
+            onClick={handleResetTasks} 
+            color="#FF9500"
+          />
+          {userInfo?.is_admin && (
+            <>
+              <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
+              <SettingItem icon={<ShieldCheck size={20} />} label="管理后台" sublabel="系统管理入口" onClick={() => navigate('/admin')} color="var(--master)" />
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* 支持 */}
+      <div style={{ padding: '24px 20px' }}>
+        <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+          <SettingItem icon={<MessageSquare size={20} />} label="联系支持" onClick={() => setActiveDrawer('support')} />
+        </div>
+      </div>
+
+      {/* 登出 */}
+      <div style={{ padding: '0 20px' }}>
+        <button 
+          onClick={logout}
+          style={{ 
+            width: '100%', padding: '16px', borderRadius: '20px', background: 'white', 
+            color: '#FF3B30', border: 'none', fontWeight: '700', fontSize: '15px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+          }}
+        >
+          <LogOut size={18} /> 退出当前账户
+        </button>
+      </div>
+
+      {/* 抽屉：修改密码 */}
+      <MobileDrawer isOpen={activeDrawer === 'password'} onClose={() => setActiveDrawer(null)} title="修改密码">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <input 
+            type="password" placeholder="原密码" value={pwdForm.old} 
+            onChange={e => setPwdForm({...pwdForm, old: e.target.value})}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
+          />
+          <input 
+            type="password" placeholder="新密码" value={pwdForm.new} 
+            onChange={e => setPwdForm({...pwdForm, new: e.target.value})}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
+          />
+          <button 
+            onClick={handlePasswordSubmit} disabled={loading}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#1D1D1F', color: '#fff', fontWeight: '700', marginTop: '10px' }}
+          >
+            {loading ? '提交中...' : '确认修改'}
+          </button>
+        </div>
+      </MobileDrawer>
+
+      {/* 抽屉：联系支持 */}
+      <MobileDrawer isOpen={activeDrawer === 'support'} onClose={() => setActiveDrawer(null)} title="意见反馈">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <textarea 
+            placeholder="请详细描述您遇到的问题或建议..." value={feedback.content} 
+            onChange={e => setFeedback({...feedback, content: e.target.value})}
+            style={{ width: '100%', height: '150px', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px', resize: 'none' }} 
+          />
+          <input 
+            placeholder="联系方式 (可选)" value={feedback.contact} 
+            onChange={e => setFeedback({...feedback, contact: e.target.value})}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
+          />
+          <button 
+            onClick={handleSupportSubmit} disabled={loading || !feedback.content}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: '700', marginTop: '10px' }}
+          >
+            {loading ? '提交中...' : '提交反馈'}
+          </button>
+        </div>
+      </MobileDrawer>
+
       {showRecharge && (
         <RechargeModal 
-          uid={userInfo?.uid} 
-          onClose={() => setShowRecharge(false)} 
-          onSuccess={() => {
-            alert('报备提交成功，请等待审核');
-            fetchData();
-          }}
+          uid={userInfo?.uid} onClose={() => setShowRecharge(false)} 
+          onSuccess={() => { setShowRecharge(false); fetchData(); }}
         />
       )}
+
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .loading-spin { animation: spin 1s linear infinite; }
+        @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUpDrawer { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}} />
     </div>
   );

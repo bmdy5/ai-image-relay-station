@@ -1,15 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, 
-  Zap, 
-  Check, 
-  Coins, 
-  Star,
-  Diamond,
-  Crown,
-  Sparkles,
-  ShieldCheck
+  Sparkles, Zap, Diamond, Crown, ShieldCheck, Check, Info, ArrowRight
 } from 'lucide-react';
 import RechargeModal from '../components/RechargeModal';
 import request from '../api/request';
@@ -20,35 +12,48 @@ const PricingPage = ({ isMobile }) => {
   const [selectedAmount, setSelectedAmount] = useState(0);
   const [userInfo, setUserInfo] = useState(null);
 
-  React.useEffect(() => {
-    request.get('/auth/me').then(setUserInfo).catch(() => {});
+  const fetchData = async () => {
+    try {
+      const user = await request.get('/auth/me');
+      setUserInfo(user);
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   const tiers = [
     { 
+      id: 'basic',
       name: '初探版', 
       price: 10, 
       points: 100, 
-      color: '#e66b33',
+      color: 'var(--primary)',
       icon: <Zap size={24} />,
-      features: ['可生成 20 张标准图', '或 6 张大师级艺术图', '永久有效', '基础技术支持'] 
+      estimate: '约可创作 20 张标准图',
+      features: ['永久有效', '基础生成速度', '移动端同步'] 
     },
     { 
+      id: 'advanced',
       name: '进阶版', 
       price: 45, 
-      points: 500, 
+      points: 450, 
       color: '#3b82f6',
       icon: <Diamond size={24} />,
-      features: ['可生成 100 张标准图', '或 33 张大师级艺术图', '优先生成队列', '专属技巧指导'], 
+      estimate: '约可创作 90 张标准图',
+      features: ['优先生成队列', '解锁高清模式', '专属技巧指导'], 
       recommended: true 
     },
     { 
+      id: 'master',
       name: '专业版', 
       price: 90, 
-      points: 1000, 
-      color: '#8b5cf6',
+      points: 900, 
+      color: 'var(--master)',
       icon: <Crown size={24} />,
-      features: ['可生成 200 张标准图', '或 66 张大师级艺术图', '全速商业通道', '1对1 技术专家支持'] 
+      estimate: '解锁 60 张大师级笔记',
+      features: ['全速商业通道', '视觉推理引擎', '1对1 技术支持'] 
     }
   ];
 
@@ -58,119 +63,147 @@ const PricingPage = ({ isMobile }) => {
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', animation: 'fadeIn 0.5s ease', paddingBottom: isMobile ? '100px' : '0' }}>
-      {!isMobile && (
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '50px' }}>
-          <button 
-            onClick={() => navigate('/')} 
-            style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}
-          >
-            <ArrowLeft size={20} /> 返回首页
-          </button>
-          <h1 style={{ fontSize: '28px', fontWeight: 'bold', textAlign: 'center', flex: 1 }}>价格与积分计划</h1>
-          <div style={{ width: '100px' }}></div>
-        </header>
+    <div style={{ 
+      display: 'flex', flexDirection: 'column', minHeight: '100%', 
+      background: 'var(--bg-main)', padding: isMobile ? '0 0 100px 0' : '40px 20px' 
+    }}>
+      {/* 移动端标题 */}
+      {isMobile && (
+        <div style={{ padding: '24px 20px 10px' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-1px' }}>积分中心</h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>选择最适合您的创作计划</p>
+        </div>
       )}
 
-      {/* 消费规则 */}
-      <section className="card" style={{ padding: '30px', marginBottom: '40px', background: '#fcfcfc' }}>
-        <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Zap size={22} color="#e66b33" fill="#e66b33" /> 积分消耗规则
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-          {[
-            { label: '标准生成', cost: 5, desc: '日常练手、极速草图', icon: <Zap size={18} />, color: '#e66b33' },
-            { label: '高清生成', cost: 10, desc: '细腻光影、高保真细节', icon: <Diamond size={18} />, color: '#3b82f6' },
-            { label: '大师生成', cost: 15, desc: '极致色彩、AI 画质增强', icon: <Crown size={18} />, color: '#8b5cf6' }
-          ].map(item => (
-            <div key={item.label} style={{ padding: '20px', borderRadius: '12px', border: '1px solid #eee', background: '#fff', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: item.color }}></div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: item.color, marginBottom: '10px' }}>
-                {item.icon} <span style={{ fontWeight: 'bold', fontSize: '15px' }}>{item.label}</span>
-              </div>
-              <div style={{ color: '#333', fontSize: '28px', fontWeight: '900', margin: '5px 0' }}>{item.cost} <span style={{ fontSize: '14px', color: '#999', fontWeight: 'normal' }}>积分/张</span></div>
-              <div style={{ color: '#999', fontSize: '12px' }}>{item.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 套餐卡片 */}
-      <div style={{ display: 'flex', gap: '25px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+      {/* 横向滚动套餐区 */}
+      <div style={{
+        display: 'flex',
+        overflowX: isMobile ? 'auto' : 'hidden',
+        padding: isMobile ? '20px' : '0',
+        gap: '20px',
+        scrollSnapType: 'x mandatory',
+        WebkitOverflowScrolling: 'touch'
+      }}>
         {tiers.map(tier => (
           <div 
-            key={tier.name} 
-            className="card" 
+            key={tier.id} 
             style={{ 
-              flex: 1, minWidth: '280px', padding: '40px 30px', textAlign: 'center', position: 'relative',
-              border: tier.recommended ? '2px solid #e66b33' : '1px solid transparent',
-              transform: tier.recommended ? 'scale(1.05)' : 'none',
-              zIndex: tier.recommended ? 2 : 1
+              flex: isMobile ? '0 0 85%' : 1,
+              scrollSnapAlign: 'center',
+              background: '#fff',
+              borderRadius: '32px',
+              padding: '40px 30px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              boxShadow: tier.id === 'master' ? '0 20px 40px rgba(124, 77, 255, 0.15)' : 'var(--shadow)',
+              border: tier.recommended ? '2px solid var(--primary)' : '1px solid rgba(0,0,0,0.03)',
+              position: 'relative',
+              overflow: 'hidden'
             }}
           >
+            {tier.recommended && (
+              <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--primary)', color: 'white', fontSize: '10px', fontWeight: '800', padding: '4px 10px', borderRadius: '10px' }}>
+                最受欢迎
+              </div>
+            )}
+            
             <div style={{ 
-              display: 'flex', justifyContent: 'center', alignItems: 'center', 
-              width: '50px', height: '50px', borderRadius: '12px', background: `${tier.color}15`, 
-              color: tier.color, margin: '0 auto 20px' 
+              width: '60px', height: '60px', borderRadius: '20px', 
+              background: `${tier.color}10`, color: tier.color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '24px'
             }}>
               {tier.icon}
             </div>
-            <h2 style={{ fontSize: '22px', marginBottom: '8px', fontWeight: '800' }}>{tier.name}</h2>
-            <div style={{ color: tier.color, fontSize: '42px', fontWeight: '900', marginBottom: '0px' }}>{tier.points} <span style={{ fontSize: '16px', fontWeight: 'normal' }}>积分</span></div>
-            <div style={{ color: '#999', fontSize: '16px', marginBottom: '30px' }}>
-              售价 ¥ {tier.price}
+
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1D1D1F', marginBottom: '4px' }}>{tier.name}</h3>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '42px', fontWeight: '900', color: tier.id === 'master' ? 'var(--master)' : '#1D1D1F' }}>{tier.points}</span>
+              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)' }}>积分</span>
             </div>
-            
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px 0', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '600', color: tier.color, marginBottom: '24px' }}>¥ {tier.price}</div>
+
+            <div style={{ width: '100%', height: '1px', background: 'rgba(0,0,0,0.03)', marginBottom: '24px' }} />
+
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1D1D1F', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={14} color={tier.color} /> {tier.estimate}
+              </div>
               {tier.features.map(f => (
-                <li key={f} style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px', color: '#555' }}>
-                  <Sparkles size={14} color={tier.color} /> {f}
-                </li>
+                <div key={f} style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Check size={14} color="#34C759" /> {f}
+                </div>
               ))}
-            </ul>
+            </div>
 
             <button 
-              className="btn-primary" 
-              style={{ 
-                width: '100%', padding: '14px', 
-                background: tier.recommended ? `linear-gradient(135deg, ${tier.color} 0%, #000 100%)` : '#333',
-                borderRadius: '12px', border: 'none', fontWeight: 'bold', boxShadow: tier.recommended ? `0 10px 20px ${tier.color}30` : 'none'
-              }}
               onClick={() => handleRecharge(tier.price)}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
+                background: tier.id === 'master' ? 'var(--master)' : tier.recommended ? 'var(--primary)' : '#1D1D1F',
+                color: 'white', fontWeight: '800', fontSize: '15px', cursor: 'pointer',
+                boxShadow: tier.recommended ? '0 10px 25px var(--primary-glow)' : 'none'
+              }}
             >
-              立即获取
+              立即购买
             </button>
           </div>
         ))}
       </div>
 
-      <div style={{ marginTop: '30px', textAlign: 'center', color: '#666', background: '#f9f9f9', padding: '15px', borderRadius: '12px', fontSize: '14px', border: '1px dashed #ddd' }}>
-        💡 提示：除了上述套餐，我们还支持 <strong>自定义金额充值</strong> (1元起)。点击上方任意按钮即可进入充值中心。
+      {/* 权益对比看板 */}
+      <div style={{ padding: '20px', marginTop: '10px' }}>
+        <div style={{ background: '#fff', borderRadius: '24px', padding: '24px', boxShadow: 'var(--shadow)' }}>
+          <h4 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Info size={18} color="var(--primary)" /> 权益对比
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', fontWeight: '800', color: '#999' }}>
+              <span style={{ width: '80px' }}>对比项</span>
+              <div style={{ display: 'flex', gap: '24px', marginRight: '4px' }}>
+                <span style={{ width: '45px', textAlign: 'center' }}>标准</span>
+                <span style={{ width: '45px', textAlign: 'center' }}>进阶</span>
+                <span style={{ width: '45px', textAlign: 'center' }}>大师</span>
+              </div>
+            </div>
+            {[
+              { label: '生成画质', std: '720P', adv: '1080P', master: '4K Pro ✦' },
+              { label: '生成速度', std: '排队', adv: '优先', master: '极速' },
+              { label: 'AI 创作笔记', std: '✕', adv: '✕', master: '大师笔记' },
+              { label: '商业授权', std: '✕', adv: '支持', master: '全支持' }
+            ].map(row => (
+              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{row.label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: '#999', width: '45px', textAlign: 'center', fontSize: '11px' }}>{row.std}</span>
+                  <ArrowRight size={10} color="#E5E5EA" />
+                  <span style={{ color: '#3b82f6', width: '45px', textAlign: 'center', fontSize: '11px', fontWeight: '600' }}>{row.adv}</span>
+                  <ArrowRight size={10} color="#E5E5EA" />
+                  <span style={{ fontWeight: '800', color: 'var(--master)', width: '45px', textAlign: 'center', fontSize: '11px' }}>{row.master}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <footer style={{ marginTop: '30px', textAlign: 'center', color: '#999', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-        <ShieldCheck size={18} /> 支付安全保障：所有交易均通过加密通道处理，积分秒级到账。
+      <footer style={{ padding: '20px', textAlign: 'center', color: '#999', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        <ShieldCheck size={14} /> 支付安全保障 · 积分秒级到账
       </footer>
 
       {showRecharge && (
         <RechargeModal 
-          uid={userInfo?.uid} 
-          initialAmount={selectedAmount}
-          onClose={() => setShowRecharge(false)} 
-          onSuccess={() => {
-            alert('报备提交成功，请等待审核');
-            setShowRecharge(false);
-          }}
+          uid={userInfo?.uid} onClose={() => setShowRecharge(false)} 
+          onSuccess={() => { setShowRecharge(false); fetchData(); }}
         />
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .loading-spin { animation: spin 1s linear infinite; }
+        @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUpDrawer { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}} />
     </div>
   );
