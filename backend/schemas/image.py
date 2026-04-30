@@ -4,6 +4,7 @@ from typing import Optional
 class ImageCreate(BaseModel):
     prompt: str
     quality: str = "standard"  # standard, hd, master
+    style: str = "default"     # 新增：风格 ID
 
 class ImageLogInfo(BaseModel):
     id: int
