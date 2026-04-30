@@ -75,10 +75,6 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   };
 
   const getPoints = (val) => {
-    if (val === 10) return 100;
-    if (val === 45) return 500;
-    if (val === 90) return 1000;
-    if (val === 500) return 8000;
     return Math.floor(Number(val) * 10);
   };
 

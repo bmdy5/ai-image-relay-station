@@ -13,7 +13,20 @@
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   --radius-lg: 24px;
   --radius-xl: 40px;
+  --radius-mobile: 20px; /* 手机端通用圆角 */
   --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --z-drawer: 2000;
+  --z-tabbar: 1000;
+}
+
+@keyframes slideUpDrawer {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 * {
