@@ -116,7 +116,9 @@ const MobileHomePage = () => {
     setPrompt('');
     try {
       const res = await request.post('/image/generate', { 
-        prompt: prompt, quality: quality, style: selectedStyle.id !== 'default' ? selectedStyle.id : undefined
+        prompt: prompt, 
+        quality: quality, 
+        style: selectedStyle.id 
       });
       const taskId = res.id;
       const pollTimer = setInterval(async () => {
