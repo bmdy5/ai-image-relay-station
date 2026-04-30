@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const NeuralPlexus = () => {
+const NeuralPlexus = ({ transparent = false }) => {
   const canvasRef = useRef(null);
   const mainRectRef = useRef(null);
 
@@ -82,7 +82,10 @@ const NeuralPlexus = () => {
       }
     }
 
-    for (let i = 0; i < 70; i++) {
+    const isMobile = window.innerWidth < 768;
+    const particleCount = isMobile ? 30 : 70;
+
+    for (let i = 0; i < particleCount; i++) {
       particles.push(new Particle());
     }
 
@@ -136,7 +139,7 @@ const NeuralPlexus = () => {
         left: 0,
         zIndex: 0,
         pointerEvents: 'none',
-        background: '#f8f8fa'
+        background: transparent ? 'transparent' : '#f8f8fa'
       }}
     />
   );

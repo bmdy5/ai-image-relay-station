@@ -6,6 +6,156 @@ import {
 import RechargeModal from '../components/RechargeModal';
 import Showcase from '../components/Showcase';
 import request from '../api/request';
+import { PulseIcon, OrbitIcon, LatticeIcon } from '../components/PricingIcons';
+
+// 手机端专用高级翻转卡片
+const MobilePricingCard = ({ tier, onRecharge }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <div 
+      className={`mobile-pricing-card ${isFlipped ? 'is-flipped' : ''} tier-${tier.id}`}
+      onClick={() => setIsFlipped(!isFlipped)}
+    >
+      {/* 独立背景流光层 (仅专业版) */}
+      {tier.id === 'master' && <div className="liquid-border" />}
+      
+      <div className="card-inner">
+        {/* 正面 */}
+        <div className={`card-face face-front face-${tier.id}`}>
+          <div className="noise-overlay" />
+          <div className="icon-wrapper">
+            {tier.id === 'basic' && <PulseIcon />}
+            {tier.id === 'advanced' && <OrbitIcon />}
+            {tier.id === 'master' && <LatticeIcon />}
+          </div>
+          <h3 className="tier-name">{tier.name}</h3>
+          <p className="tier-desc">{tier.description}</p>
+          <div className="feature-group">
+            {tier.features.map((f, i) => (
+              <div key={i} className="feature-row">
+                <div className="feature-dot" />
+                <span>{f}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flip-hint">点击查看价格 ⟳</div>
+        </div>
+
+        {/* 背面 - 重新设计的苹果风格卡片 */}
+        <div className={`card-face face-back back-${tier.id}`}>
+          <div className="noise-overlay" />
+          <div className="back-content-stack">
+            <div className="top-branding">
+              <span className="back-label">ENERGY REFILL</span>
+            </div>
+            
+            <div className="middle-price">
+              <div className="points-main">{tier.points}</div>
+              <div className="points-sub">CREDITS AVAILABLE</div>
+            </div>
+
+            <div className="bottom-action">
+              <div className="price-tag">¥{tier.price}.00</div>
+              <button 
+                className="buy-btn-premium"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRecharge(tier.price);
+                }}
+              >
+                立即充值
+              </button>
+            </div>
+            <div className="flip-hint-back">点击返回详情</div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .mobile-pricing-card {
+          flex: 0 0 85%;
+          height: 520px;
+          perspective: 2000px;
+          position: relative;
+          scroll-snap-align: center;
+          margin-bottom: 20px;
+        }
+        .card-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+          transform-style: preserve-3d;
+        }
+        .mobile-pricing-card.is-flipped .card-inner {
+          transform: rotateY(180deg);
+        }
+        .card-face {
+          position: absolute;
+          inset: 0;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          border-radius: 40px;
+          padding: 40px 30px;
+          display: flex;
+          flex-direction: column;
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(30px);
+          -webkit-backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+          overflow: hidden;
+        }
+        .face-back { transform: rotateY(180deg); }
+        
+        /* 品牌配色 */
+        .face-advanced, .back-advanced { background: rgba(230, 107, 51, 0.95); color: #fff; }
+        .face-master, .back-master { background: linear-gradient(135deg, #1d1d1f 0%, #000 100%); color: #fff; border-color: rgba(255,255,255,0.1); }
+
+        /* 正面样式 */
+        .icon-wrapper { margin-bottom: 30px; align-self: center; transform: scale(1.1); }
+        .tier-name { font-size: 26px; font-weight: 900; margin-bottom: 10px; text-align: center; letter-spacing: -0.5px; }
+        .tier-desc { font-size: 14px; opacity: 0.6; text-align: center; line-height: 1.6; margin-bottom: 30px; padding: 0 10px; }
+        .feature-group { width: 100%; display: flex; flex-direction: column; gap: 16px; margin-bottom: auto; }
+        .feature-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; }
+        .feature-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+        .face-advanced .feature-dot, .face-master .feature-dot { background: #fff; }
+
+        /* 背面样式 - 终极对齐 */
+        .back-content-stack { height: 100%; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+        .back-label { font-size: 12px; letter-spacing: 6px; opacity: 0.5; font-weight: 800; }
+        
+        .middle-price { text-align: center; }
+        .points-main { font-family: 'Outfit'; font-size: 100px; font-weight: 900; line-height: 0.9; letter-spacing: -4px; margin-bottom: 10px; }
+        .points-sub { font-size: 11px; font-weight: 800; letter-spacing: 2px; opacity: 0.4; }
+        
+        .bottom-action { width: 100%; text-align: center; }
+        .price-tag { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 20px; }
+        .back-advanced .price-tag, .back-master .price-tag { color: #fff; }
+        
+        .buy-btn-premium {
+          width: 100%; padding: 20px; border-radius: 22px; border: none; font-size: 18px; font-weight: 800; cursor: pointer;
+          background: #1d1d1f; color: #fff; transition: all 0.3s;
+          box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .back-advanced .buy-btn-premium { background: #fff; color: var(--primary); }
+        .back-master .buy-btn-premium { background: var(--primary); color: #fff; box-shadow: 0 10px 30px rgba(124, 77, 255, 0.3); }
+        
+        .flip-hint, .flip-hint-back { font-size: 12px; opacity: 0.3; font-weight: 700; margin-top: 15px; text-align: center; }
+
+        /* 专业版流光边框 */
+        .liquid-border {
+          position: absolute; inset: -1.5px; border-radius: 41.5px; z-index: -1;
+          background: conic-gradient(from var(--angle), transparent 70%, var(--primary) 85%, #ffcc00 100%);
+          animation: rotate-border 4s linear infinite;
+        }
+        @keyframes rotate-border { to { --angle: 360deg; } }
+      `}</style>
+
+    </div>
+  );
+};
 
 const MobilePricingPage = ({ isMobile }) => {
   const navigate = useNavigate();
@@ -31,20 +181,16 @@ const MobilePricingPage = ({ isMobile }) => {
       name: '初探版', 
       price: 10, 
       points: 100, 
-      color: 'var(--primary)',
-      icon: <Zap size={24} />,
-      estimate: '约可创作 20 张标准图',
-      features: ['永久有效', '基础生成速度', '移动端同步'] 
+      description: '开启 AI 艺术之旅，体验初步感知力',
+      features: ['100 创作积分永久有效', '标准生成引擎支持', '移动端全功能同步'] 
     },
     { 
       id: 'advanced',
       name: '进阶版', 
       price: 45, 
       points: 450, 
-      color: '#3b82f6',
-      icon: <Diamond size={24} />,
-      estimate: '约可创作 90 张标准图',
-      features: ['优先生成队列', '解锁高清模式', '专属技巧指导'], 
+      description: '为高频创作者而生，解锁更高画质',
+      features: ['450 创作积分永久有效', '解锁 HD 高清生成模式', '优先创作队列支持'],
       recommended: true 
     },
     { 
@@ -52,10 +198,8 @@ const MobilePricingPage = ({ isMobile }) => {
       name: '专业版', 
       price: 90, 
       points: 900, 
-      color: 'var(--master)',
-      icon: <Crown size={24} />,
-      estimate: '解锁 60 张大师级笔记',
-      features: ['全速商业通道', '视觉推理引擎', '1对1 技术支持'] 
+      description: '大师级视觉引擎，掌控顶级算力',
+      features: ['900 创作积分永久有效', '4K 极致视觉引擎通道', '全商业用途授权许可'] 
     }
   ];
 
@@ -80,77 +224,14 @@ const MobilePricingPage = ({ isMobile }) => {
       {/* 横向滚动套餐区 */}
       <div style={{
         display: 'flex',
-        overflowX: isMobile ? 'auto' : 'hidden',
-        padding: isMobile ? '20px' : '0',
+        overflowX: 'auto',
+        padding: '20px',
         gap: '20px',
         scrollSnapType: 'x mandatory',
         WebkitOverflowScrolling: 'touch'
       }}>
         {tiers.map(tier => (
-          <div 
-            key={tier.id} 
-            style={{ 
-              flex: isMobile ? '0 0 85%' : 1,
-              scrollSnapAlign: 'center',
-              background: '#fff',
-              borderRadius: '32px',
-              padding: '40px 30px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              boxShadow: tier.id === 'master' ? '0 20px 40px rgba(124, 77, 255, 0.15)' : 'var(--shadow)',
-              border: tier.recommended ? '2px solid var(--primary)' : '1px solid rgba(0,0,0,0.03)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-          >
-            {tier.recommended && (
-              <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--primary)', color: 'white', fontSize: '10px', fontWeight: '800', padding: '4px 10px', borderRadius: '10px' }}>
-                最受欢迎
-              </div>
-            )}
-            
-            <div style={{ 
-              width: '60px', height: '60px', borderRadius: '20px', 
-              background: `${tier.color}10`, color: tier.color,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '24px'
-            }}>
-              {tier.icon}
-            </div>
-
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#1D1D1F', marginBottom: '4px' }}>{tier.name}</h3>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '42px', fontWeight: '900', color: tier.id === 'master' ? 'var(--master)' : '#1D1D1F' }}>{tier.points}</span>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)' }}>积分</span>
-            </div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: tier.color, marginBottom: '24px' }}>¥ {tier.price}</div>
-
-            <div style={{ width: '100%', height: '1px', background: 'rgba(0,0,0,0.03)', marginBottom: '24px' }} />
-
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#1D1D1F', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={14} color={tier.color} /> {tier.estimate}
-              </div>
-              {tier.features.map(f => (
-                <div key={f} style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Check size={14} color="#34C759" /> {f}
-                </div>
-              ))}
-            </div>
-
-            <button 
-              onClick={() => handleRecharge(tier.price)}
-              style={{
-                width: '100%', padding: '16px', borderRadius: '18px', border: 'none',
-                background: tier.id === 'master' ? 'var(--master)' : tier.recommended ? 'var(--primary)' : '#1D1D1F',
-                color: 'white', fontWeight: '800', fontSize: '15px', cursor: 'pointer',
-                boxShadow: tier.recommended ? '0 10px 25px var(--primary-glow)' : 'none'
-              }}
-            >
-              立即购买
-            </button>
-          </div>
+          <MobilePricingCard key={tier.id} tier={tier} onRecharge={handleRecharge} />
         ))}
       </div>
 
