@@ -22,7 +22,7 @@ router = APIRouter(prefix="/image", tags=["image"])
 TIER_CONFIG = {
     "standard": {"size": "1024x1024", "quality": "standard"},
     "hd": {"size": "1024x1536", "quality": "standard"},
-    "master": {"size": "1024x1792", "quality": "high"}
+    "master": {"size": "1024x1792", "quality": "standard"}
 }
 
 # 计费标准 (用户支付积分)
@@ -55,11 +55,11 @@ TIER_CONFIG = {
     },
     "master": {
         "size": "1024x1792", # 电影海报级比例
-        "quality": "high"      # 开启深度构思模式
+        "quality": "standard"      # 降级为标准模式
     }
 }
 
-async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, user_id: int, request_start_time: float):
+async def process_image_task(log_id: int, prompt: str, quality: str, style: str, cost: int, user_id: int, request_start_time: float):
     """
     后台任务 (精简版)：直接执行单次生图逻辑，不进行任何重试以保护资金安全。
     """
@@ -83,14 +83,20 @@ async def process_image_task(log_id: int, prompt: str, quality: str, cost: int, 
 
         # 2. 调用 AI 接口 (安全重试机制：仅针对不扣费的连接失败)
         api_start = time.time()
+        
+        # 处理风格后缀增强
+        prompt_to_send = prompt
+        if style == "real":
+            prompt_to_send = f"{prompt}, 要求仿真现实"
+
         for attempt in range(3):  # 最多尝试 3 次 (初始 + 2次重试)
             try:
                 async with httpx.AsyncClient(timeout=180.0) as client:
                     payload = {
-                        "model": "gpt-image-2", "prompt": prompt, "n": 1,
+                        "model": "gpt-image-2", "prompt": prompt_to_send, "n": 1,
                         "size": config["size"], "response_format": "url"
                     }
-                    if config["quality"] == "high": payload["quality"] = "high"
+                    # 所有档位强制使用 standard，移除 quality: high 注入逻辑
                     
                     response = await client.post(
                         f"{base_url}/images/generations",
@@ -199,7 +205,7 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
     if result == 0: raise HTTPException(status_code=403, detail="余额不足")
     pending_log = image_crud.create_image_log(db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, cost_points=cost, status="pending")
     db.commit()
-    background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, cost, current_user.id, time.time())
+    background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time())
     return {"id": pending_log.id, "status": "pending", "remaining_points": current_user.points}
 
 @router.get("/status/{id}")
