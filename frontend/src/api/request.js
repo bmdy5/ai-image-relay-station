@@ -23,6 +23,11 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    if (error.response?.status === 503) {
+      // 触发全局维护事件
+      window.dispatchEvent(new CustomEvent('system-maintenance'));
+      return new Promise(() => {}); // 停止后续链式调用
+    }
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
