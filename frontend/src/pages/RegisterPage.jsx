@@ -4,6 +4,7 @@ import request from '../api/request';
 import NeuralPlexus from '../components/NeuralPlexus';
 
 const RegisterPage = () => {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
@@ -46,6 +47,7 @@ const RegisterPage = () => {
     try {
       const fingerprint = btoa(navigator.userAgent).substring(0, 32);
       await request.post('/auth/register', { 
+        username,
         email, 
         password, 
         code,
@@ -76,6 +78,15 @@ const RegisterPage = () => {
         </div>
 
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <input
+            type="text"
+            placeholder="您的用户名"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+          />
+
           <div style={{ display: 'flex', gap: '10px' }}>
             <input
               type="email"
