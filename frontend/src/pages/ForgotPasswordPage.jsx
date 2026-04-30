@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, KeyRound, ShieldCheck, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useForgotPasswordController } from '../controllers/useForgotPasswordController';
+import NeuralPlexus from '../components/NeuralPlexus';
 
 const ForgotPasswordPage = () => {
   const {
@@ -20,8 +21,13 @@ const ForgotPasswordPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
-      <div className="card" style={{ padding: '40px', width: '420px', textAlign: 'center' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
+      <NeuralPlexus />
+      <div id="pc-main-stage" className="card" style={{ 
+        padding: '40px', width: '420px', textAlign: 'center',
+        background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.5)', position: 'relative', zIndex: 1
+      }}>
         
         {/* Header */}
         <div style={{ marginBottom: '8px' }}>
