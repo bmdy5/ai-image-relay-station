@@ -7,11 +7,19 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.api import auth, image, admin, user, feedback, payment
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    # 无论是连接失败、超时还是语法错误（只要是 DB 层面的），一律熔断
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "SYSTEM_MAINTENANCE", "message": f"数据库访问异常: {type(exc).__name__}"},
+    )
 
 @app.exception_handler(OperationalError)
 async def database_exception_handler(request: Request, exc: OperationalError):

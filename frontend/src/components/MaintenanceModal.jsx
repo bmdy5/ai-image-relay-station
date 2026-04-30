@@ -24,7 +24,7 @@ const MaintenanceModal = () => {
       position: 'fixed', inset: 0, zIndex: 9999,
       background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(20px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px'
+      padding: '20px', pointerEvents: 'all', userSelect: 'none'
     }}>
       <div style={{
         background: '#fff', padding: '40px', borderRadius: '32px',
