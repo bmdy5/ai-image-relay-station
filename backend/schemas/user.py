@@ -14,6 +14,7 @@ class EmailSendCode(BaseModel):
     email: str
 
 class UserCreateEmail(BaseModel):
+    username: str
     email: str
     password: str
     code: str

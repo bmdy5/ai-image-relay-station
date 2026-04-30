@@ -60,6 +60,11 @@ def register(user: user_schema.UserCreateEmail, request: Request, db: Session = 
     if db_user:
         raise HTTPException(status_code=400, detail="此邮箱已注册，请直接登录")
         
+    # 2.1 校验用户名是否已存在
+    db_user_name = user_crud.get_user_by_username(db, username=user.username)
+    if db_user_name:
+        raise HTTPException(status_code=400, detail="用户名已被占用，请换一个")
+        
     # 3. 校验验证码
     vc = db.query(models.VerificationCode).filter(
         models.VerificationCode.email == user.email,

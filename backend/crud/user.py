@@ -26,11 +26,8 @@ def create_user(db: Session, user: user_schema.UserCreate, password_hash: str, i
     return db_user
 
 def create_user_by_email(db: Session, user: user_schema.UserCreateEmail, password_hash: str, ip: str = None):
-    # 尝试提取邮箱前缀作为初始用户名
-    default_username = user.email.split('@')[0] if user.email else None
-    
     db_user = models.User(
-        username=default_username,
+        username=user.username,
         email=user.email,
         password_hash=password_hash,
         fingerprint=user.fingerprint,
