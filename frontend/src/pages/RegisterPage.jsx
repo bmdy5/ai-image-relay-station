@@ -65,7 +65,7 @@ const RegisterPage = () => {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
       <NeuralPlexus />
       <div id="pc-main-stage" className="card" style={{ 
-        padding: '40px', width: '420px', textAlign: 'center',
+        padding: '30px 24px', width: '90%', maxWidth: '420px', textAlign: 'center',
         background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(20px)',
         border: '1px solid rgba(255, 255, 255, 0.5)', position: 'relative', zIndex: 1
       }}>

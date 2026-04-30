@@ -5,6 +5,7 @@ import {
   Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award
 } from 'lucide-react';
 import MobileDrawer from '../components/MobileDrawer';
+import NeuralPlexus from '../components/NeuralPlexus';
 
 // 结果卡片组件
 const ResultCard = ({ job, onOpenNotes }) => {
@@ -140,7 +141,8 @@ const MobileHomePage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg-main)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'transparent', position: 'relative' }}>
+      <NeuralPlexus transparent={true} />
       <main ref={stackRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {jobs.length === 0 ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ccc', marginTop: '15vh' }}>
