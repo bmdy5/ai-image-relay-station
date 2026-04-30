@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLoginController } from '../controllers/useLoginController';
 import Captcha from '../components/Captcha';
+import AnimatedBackground from '../components/AnimatedBackground';
 
 const LoginPage = () => {
   const {
@@ -31,8 +32,13 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
-      <div className="card" style={{ padding: '40px', width: '400px', textAlign: 'center' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
+      <AnimatedBackground type="dots" />
+      <div className="card" style={{ 
+        padding: '40px', width: '400px', textAlign: 'center', 
+        background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.5)', position: 'relative', zIndex: 1
+      }}>
         <h1 style={{ color: '#e66b33', marginBottom: '10px' }}>Visionary</h1>
         <p style={{ color: '#666', marginBottom: '30px' }}>欢迎回来，开始您的创意之旅</p>
         <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

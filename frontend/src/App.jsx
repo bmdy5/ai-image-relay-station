@@ -13,6 +13,7 @@ import GuidePage from './pages/GuidePage';
 import PointsHistoryPage from './pages/PointsHistoryPage';
 import PrivateRoute from './components/PrivateRoute';
 import MobileLayout from './components/MobileLayout';
+import PCLayout from './components/PCLayout';
 import './App.css';
 
 function App() {
@@ -25,7 +26,7 @@ function App() {
   }, []);
 
   const renderWithLayout = (element) => {
-    return isMobile ? <MobileLayout>{element}</MobileLayout> : element;
+    return isMobile ? <MobileLayout>{element}</MobileLayout> : <PCLayout>{element}</PCLayout>;
   };
 
   return (
@@ -38,7 +39,7 @@ function App() {
           path="/admin" 
           element={
             <PrivateRoute>
-              <AdminPage />
+              {renderWithLayout(<AdminPage isMobile={isMobile} />)}
             </PrivateRoute>
           } 
         />

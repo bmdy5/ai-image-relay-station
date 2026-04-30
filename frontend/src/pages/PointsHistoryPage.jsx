@@ -52,17 +52,19 @@ const PointsHistoryPage = ({ isMobile }) => {
 
   return (
     <div style={{ maxWidth: '800px', margin: isMobile ? '20px auto' : '40px auto', padding: '0 20px', paddingBottom: isMobile ? '100px' : '0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '30px', gap: '20px' }}>
-        <button 
-          onClick={() => navigate('/profile')} 
-          style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 style={{ fontSize: '24px', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <ClipboardList size={24} color="#e66b33" /> 积分明细
-        </h1>
-      </div>
+      {isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '30px', gap: '20px' }}>
+          <button 
+            onClick={() => navigate('/profile')} 
+            style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 style={{ fontSize: '24px', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <ClipboardList size={24} color="#e66b33" /> 积分明细
+          </h1>
+        </div>
+      )}
 
       <div className="card" style={{ padding: '24px', background: '#fff' }}>
         {loading ? (

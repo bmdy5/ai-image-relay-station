@@ -73,31 +73,7 @@ const AdminPage = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ margin: 0 }}>管理员控制台</h1>
-        <button 
-          onClick={() => navigate('/')}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
-            background: 'transparent', 
-            border: '1px solid #ddd', 
-            padding: '8px 16px', 
-            borderRadius: '8px', 
-            cursor: 'pointer',
-            color: '#666',
-            fontSize: '14px',
-            transition: 'all 0.2s'
-          }}
-          onMouseOver={(e) => { e.currentTarget.style.background = '#f5f5f5'; e.currentTarget.style.borderColor = '#ccc'; }}
-          onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#ddd'; }}
-        >
-          <ArrowLeft size={16} /> 返回首页
-        </button>
-      </div>
-      
+    <>
       <div style={{ display: 'flex', gap: '20px', marginBottom: '30px', borderBottom: '1px solid #eee' }}>
         <div 
           onClick={() => setActiveTab('audit')}
@@ -254,7 +230,7 @@ const AdminPage = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

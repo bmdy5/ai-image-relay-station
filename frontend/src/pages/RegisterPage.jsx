@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import request from '../api/request';
+import AnimatedBackground from '../components/AnimatedBackground';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -59,8 +60,13 @@ const RegisterPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#fcfcfc' }}>
-      <div className="card" style={{ padding: '40px', width: '420px', textAlign: 'center' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
+      <AnimatedBackground type="dots" />
+      <div className="card" style={{ 
+        padding: '40px', width: '420px', textAlign: 'center',
+        background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.5)', position: 'relative', zIndex: 1
+      }}>
         <h1 style={{ color: '#e66b33', marginBottom: '10px', fontWeight: '800' }}>加入内测</h1>
         <p style={{ color: '#666', marginBottom: '20px' }}>开启您的 AI 视觉创意之旅</p>
         
