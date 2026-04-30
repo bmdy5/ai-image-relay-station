@@ -421,7 +421,74 @@ const HomePage = () => {
           ) : (
             <div style={{ textAlign: 'center', opacity: 0.2 }}>
               <Palette size={80} strokeWidth={1} />
-              <div style={{ marginTop: '20px', fontWeight: '600' }}>在左侧开启您的艺术之旅</div>
+            </div>
+          )}
+
+          {/* 风格实验室弹窗 - 移动到此处以实现在预览区居中且不遮挡侧边栏 */}
+          {showLab && (
+            <div style={{
+              position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+              animation: 'fadeIn 0.3s ease-out'
+            }}>
+              <div className="card" style={{ 
+                width: '90%', maxWidth: '800px', padding: '40px', position: 'relative', maxHeight: '90%', overflowY: 'auto',
+                background: 'rgba(255, 255, 255, 0.95)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.5)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.1)'
+              }}>
+                <button 
+                  onClick={() => setShowLab(false)}
+                  style={{ position: 'absolute', top: '25px', right: '25px', border: 'none', background: '#eee', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: '#666' }}
+                >
+                  <X size={18} />
+                </button>
+                
+                <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+                  <div style={{ display: 'inline-block', background: 'var(--primary-glow)', color: 'var(--primary)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', marginBottom: '12px' }}>
+                    STYLE LAB · 风格实验室
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>定义您的艺术维度</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{quality === 'standard' ? '标准版仅支持部分风格，升级高清版解锁全部' : '请选择一个艺术模板开始创作'}</p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                  {styles.map((s) => {
+                    const isLocked = quality === 'standard' && s.id !== 'default' && s.id !== 'real';
+                    return (
+                      <div 
+                        key={s.id} 
+                        onClick={() => {
+                          if (!isLocked) {
+                            setSelectedStyle(s);
+                            setShowLab(false);
+                          }
+                        }}
+                        style={{ 
+                          padding: '24px 16px', borderRadius: '20px', border: selectedStyle.id === s.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                          background: selectedStyle.id === s.id ? 'white' : (isLocked ? '#f5f5f7' : 'white'),
+                          cursor: isLocked ? 'not-allowed' : 'pointer', transition: 'var(--transition)',
+                          textAlign: 'center', position: 'relative', opacity: isLocked ? 0.5 : 1,
+                          boxShadow: selectedStyle.id === s.id ? '0 10px 25px rgba(230,107,51,0.15)' : 'none'
+                        }}
+                        onMouseOver={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(-5px)'; }}
+                        onMouseOut={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(0)'; }}
+                      >
+                        <div style={{ fontSize: '32px', marginBottom: '12px' }}>{s.icon}</div>
+                        <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>{s.name}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{s.desc}</div>
+                        {isLocked && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: '#ccc', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>🔒</div>}
+                        {!isLocked && s.pts !== 'All' && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>{s.pts}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ marginTop: '40px', textAlign: 'center', background: '#f5f5f7', padding: '20px', borderRadius: '20px' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    💡 想要更多？高清版与大师版正在研发更多专属风格模型。
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -479,72 +546,7 @@ const HomePage = () => {
         <FlaskConical size={24} />
       </button>
 
-      {/* 风格实验室弹窗 */}
-      {showLab && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(15px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
-          animation: 'fadeIn 0.3s ease-out'
-        }}>
-          <div className="card" style={{ 
-            width: '800px', padding: '40px', position: 'relative', maxHeight: '85vh', overflowY: 'auto',
-            background: 'rgba(255, 255, 255, 0.9)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.5)'
-          }}>
-            <button 
-              onClick={() => setShowLab(false)}
-              style={{ position: 'absolute', top: '25px', right: '25px', border: 'none', background: '#eee', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: '#666' }}
-            >
-              <X size={18} />
-            </button>
-            
-            <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-              <div style={{ display: 'inline-block', background: 'var(--primary-glow)', color: 'var(--primary)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', marginBottom: '12px' }}>
-                STYLE LAB · 风格实验室
-              </div>
-              <h2 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>定义您的艺术维度</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>{quality === 'standard' ? '标准版仅支持部分风格，升级高清版解锁全部' : '请选择一个艺术模板开始创作'}</p>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-              {styles.map((s) => {
-                const isLocked = quality === 'standard' && s.id !== 'default' && s.id !== 'real';
-                return (
-                  <div 
-                    key={s.id} 
-                    onClick={() => {
-                      if (!isLocked) {
-                        setSelectedStyle(s);
-                        setShowLab(false);
-                      }
-                    }}
-                    style={{ 
-                      padding: '24px 16px', borderRadius: '20px', border: selectedStyle.id === s.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                      background: selectedStyle.id === s.id ? 'white' : (isLocked ? '#f5f5f7' : 'white'),
-                      cursor: isLocked ? 'not-allowed' : 'pointer', transition: 'var(--transition)',
-                      textAlign: 'center', position: 'relative', opacity: isLocked ? 0.5 : 1,
-                      boxShadow: selectedStyle.id === s.id ? '0 10px 25px rgba(230,107,51,0.15)' : 'none'
-                    }}
-                    onMouseOver={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(-5px)'; }}
-                    onMouseOut={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(0)'; }}
-                  >
-                    <div style={{ fontSize: '32px', marginBottom: '12px' }}>{s.icon}</div>
-                    <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>{s.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{s.desc}</div>
-                    {isLocked && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: '#ccc', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>🔒</div>}
-                    {!isLocked && s.pts !== 'All' && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>{s.pts}</div>}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div style={{ marginTop: '40px', textAlign: 'center', background: '#f5f5f7', padding: '20px', borderRadius: '20px' }}>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                💡 想要更多？高清版与大师版正在研发更多专属风格模型。
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 意见反馈弹窗 */}
       {showFeedback && (

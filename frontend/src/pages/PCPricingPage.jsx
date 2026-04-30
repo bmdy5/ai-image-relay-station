@@ -290,23 +290,7 @@ const PCPricingPage = () => {
       alignItems: 'center',
       width: '100%'
     }}>
-      <div className="pricing-header" style={{ textAlign: 'center', marginBottom: '60px', position: 'relative', zIndex: 4 }}>
-        <h1 style={{ 
-          fontSize: '48px', 
-          fontWeight: '900', 
-          letterSpacing: '-1.5px', 
-          margin: 0,
-          background: 'linear-gradient(180deg, #1d1d1f 0%, #6e6e73 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          fontFamily: 'Outfit'
-        }}>
-          注入无限创作能量
-        </h1>
-        <p style={{ marginTop: '12px', fontSize: '18px', color: 'var(--text-secondary)', fontWeight: '500' }}>
-          选择适合您的计划，释放极致艺术创造力
-        </p>
-      </div>
+
 
       <div className="pricing-grid" style={{ 
         display: 'flex', 

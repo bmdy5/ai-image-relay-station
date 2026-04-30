@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import request from '../api/request';
-import AnimatedBackground from '../components/AnimatedBackground';
+import NeuralPlexus from '../components/NeuralPlexus';
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -61,8 +61,8 @@ const RegisterPage = () => {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
-      <AnimatedBackground type="dots" />
-      <div className="card" style={{ 
+      <NeuralPlexus />
+      <div id="pc-main-stage" className="card" style={{ 
         padding: '40px', width: '420px', textAlign: 'center',
         background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(20px)',
         border: '1px solid rgba(255, 255, 255, 0.5)', position: 'relative', zIndex: 1

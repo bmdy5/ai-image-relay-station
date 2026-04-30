@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useLoginController } from '../controllers/useLoginController';
 import Captcha from '../components/Captcha';
-import AnimatedBackground from '../components/AnimatedBackground';
+import NeuralPlexus from '../components/NeuralPlexus';
 
 const LoginPage = () => {
   const {
@@ -33,8 +33,8 @@ const LoginPage = () => {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
-      <AnimatedBackground type="dots" />
-      <div className="card" style={{ 
+      <NeuralPlexus />
+      <div id="pc-main-stage" className="card" style={{ 
         padding: '40px', width: '400px', textAlign: 'center', 
         background: 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(20px)',
         border: '1px solid rgba(255, 255, 255, 0.5)', position: 'relative', zIndex: 1
