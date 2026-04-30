@@ -7,8 +7,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.api import auth, image, admin, user, feedback, payment
+from sqlalchemy.exc import OperationalError
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
 app = FastAPI()
+
+@app.exception_handler(OperationalError)
+async def database_exception_handler(request: Request, exc: OperationalError):
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "SYSTEM_MAINTENANCE", "message": "数据库连接异常，系统进入维护模式"},
+    )
 
 # 配置 CORS
 app.add_middleware(
