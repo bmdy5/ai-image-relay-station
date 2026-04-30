@@ -15,17 +15,24 @@ app = FastAPI()
 
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
-    # 无论是连接失败、超时还是语法错误（只要是 DB 层面的），一律熔断
     return JSONResponse(
         status_code=503,
-        content={"detail": "SYSTEM_MAINTENANCE", "message": f"数据库访问异常: {type(exc).__name__}"},
+        content={"detail": "SYSTEM_MAINTENANCE", "message": "数据库服务暂时不可用"},
     )
 
-@app.exception_handler(OperationalError)
-async def database_exception_handler(request: Request, exc: OperationalError):
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # 如果普通异常中包含数据库关键字，也判定为维护模式
+    exc_str = str(exc).lower()
+    if any(k in exc_str for k in ["mysql", "operationalerror", "connection refused", "sqlalchemy"]):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "SYSTEM_MAINTENANCE", "message": "底层服务连接异常"},
+        )
+    # 其他错误保留 500
     return JSONResponse(
-        status_code=503,
-        content={"detail": "SYSTEM_MAINTENANCE", "message": "数据库连接异常，系统进入维护模式"},
+        status_code=500,
+        content={"detail": "SERVER_ERROR", "message": "服务器内部错误"},
     )
 
 # 配置 CORS
@@ -68,6 +75,13 @@ def debug_env():
         "ENV_LIST": list(os.environ.keys())[:10] # 只列出前10个Key确认连通性
     }
 
+from sqlalchemy import text
+from backend.models.database import get_db
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
 @app.get("/api/health")
-async def health_check():
-    return {"status": "ok", "message": "GPT-Image2 Relay Station API is running"}
+async def health_check(db: Session = Depends(get_db)):
+    # 尝试执行一个最简单的查询来验证数据库连接
+    db.execute(text("SELECT 1"))
+    return {"status": "ok", "message": "GPT-Image2 Relay Station API and Database are healthy"}

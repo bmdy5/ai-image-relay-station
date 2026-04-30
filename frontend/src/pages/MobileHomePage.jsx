@@ -5,7 +5,6 @@ import {
   Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award
 } from 'lucide-react';
 import MobileDrawer from '../components/MobileDrawer';
-import MaintenanceModal from '../components/MaintenanceModal';
 
 // 结果卡片组件
 const ResultCard = ({ job, onOpenNotes }) => {
@@ -81,14 +80,9 @@ const MobileHomePage = () => {
   const [activeDrawer, setActiveDrawer] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格' });
   const [pricingMap, setPricingMap] = useState({ 'standard': 5, 'hd': 15, 'master': 30 });
-  const [isMaintenance, setIsMaintenance] = useState(false);
 
   useEffect(() => {
     fetchConfig();
-
-    const handleMaintenance = () => setIsMaintenance(true);
-    window.addEventListener('system-maintenance', handleMaintenance);
-    return () => window.removeEventListener('system-maintenance', handleMaintenance);
   }, []);
 
   useEffect(() => {
@@ -234,7 +228,6 @@ const MobileHomePage = () => {
         </div>
       </MobileDrawer>
 
-      {isMaintenance && <MaintenanceModal />}
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

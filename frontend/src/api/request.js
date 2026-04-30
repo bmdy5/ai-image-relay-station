@@ -23,10 +23,10 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 503) {
-      // 触发全局维护事件
+    // 处理 503 或网络彻底连不上（无 response）的情况
+    if (error.response?.status === 503 || !error.response) {
       window.dispatchEvent(new CustomEvent('system-maintenance'));
-      return new Promise(() => {}); // 停止后续链式调用
+      return new Promise(() => {}); 
     }
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
