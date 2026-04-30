@@ -28,8 +28,8 @@ if [ ! -z "$PID_TUNNEL" ]; then
 fi
 
 echo -e "${GREEN}正在建立 SSH 数据库隧道 (Port 3307)...${NC}"
-# 使用 -f (后台) -N (不执行命令) 模式启动隧道
-ssh -f -N -L 3307:localhost:3306 root@119.29.232.114
+# 使用 -f (后台) -N (不执行命令) 模式启动隧道，增加保活参数防止连接断开
+ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ExitOnForwardFailure=yes -f -N -L 3307:localhost:3306 root@119.29.232.114
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}SSH 隧道已建立${NC}"
 else
