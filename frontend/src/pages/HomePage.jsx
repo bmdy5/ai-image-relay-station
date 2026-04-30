@@ -138,7 +138,11 @@ const HomePage = () => {
     }
 
     try {
-      const res = await request.post('/image/generate', { prompt, quality });
+      const res = await request.post('/image/generate', { 
+        prompt, 
+        quality, 
+        style: selectedStyle.id 
+      });
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
       
