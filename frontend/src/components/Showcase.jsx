@@ -105,11 +105,11 @@ const Showcase = ({ setPreviewImage, isMobile: propIsMobile }) => {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '20px' : '40px', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         {[
-          { id: '01', title: "复杂长图排版能力", color: "#e66b33", img: "/showcase/2.png", tags: ['高清输出', '文字精准'], desc: "支持超长纵向画布输出，精准处理数千字的逻辑排版。无论是旅游攻略、购物清单还是工作流设计，都能做到字体清晰、布局优雅。" },
-          { id: '02', title: "知识图谱海报生成", color: "#3b82f6", img: "/showcase/3.png", tags: ['科普海报', '信息可视化'], desc: "GPT Image V2 能够深度理解深奥的科学概念，并将其转化为极具亲和力的视觉语言。科普教育不再枯燥。" },
-          { id: '03', title: "中文字体与海报设计", color: "#8b5cf6", img: "/showcase/image.png", tags: ['精准中文', '意境融合'], desc: "攻克了 AI 绘图领域最难的中文字体精准排版。无论是武侠仙侠、科幻电影还是商业海报，都能实现震撼呈现。" },
-          { id: '04', title: "学术图表与复杂公式", color: "#ec4899", img: "/showcase/5.png", tags: ['逻辑架构', '专业设计'], desc: "只需输入正文逻辑和图表需求，即可生成排版完美的学术流程图或逻辑架构图。不再有乱码，只有严谨结构。" },
-          { id: '05', title: "极致微距细节", color: "#10b981", img: "/showcase/1.png", tags: ['微距画质', '商业级别'], desc: "支持超高分辨率渲染，对瞳孔倒影、发丝细节、材质纹理有着极其恐怖的还原力。每一像素都经得起无限放大。" }
+          { id: '01', title: "复杂长图排版能力", color: "#e66b33", img: "/showcase/2.png", tags: ['高清输出', '文字精准'], featureLabel: "高清版 - 均衡模型", desc: "支持超长纵向画布输出，精准处理数千字的逻辑排版。无论是旅游攻略、购物清单还是工作流设计，都能做到字体清晰、布局优雅。" },
+          { id: '02', title: "知识图谱海报生成", color: "#3b82f6", img: "/showcase/3.png", tags: ['科普海报', '信息可视化'], featureLabel: "高清版 - 创意引擎", desc: "GPT Image V2 能够深度理解深奥的科学概念，并将其转化为极具亲和力的视觉语言。科普教育不再枯燥。" },
+          { id: '03', title: "中文字体与海报设计", color: "#8b5cf6", img: "/showcase/image.png", tags: ['精准中文', '意境融合'], featureLabel: "大师版 - 艺术引擎", desc: "攻克了 AI 绘图领域最难的中文字体精准排版。无论是武侠仙侠、科幻电影还是商业海报，都能实现震撼呈现。" },
+          { id: '04', title: "学术图表与复杂公式", color: "#ec4899", img: "/showcase/5.png", tags: ['逻辑架构', '专业设计'], featureLabel: "高清版 - 逻辑模型", desc: "只需输入正文逻辑和图表需求，即可生成排版完美的学术流程图或逻辑架构图。不再有乱码，只有严谨结构。" },
+          { id: '05', title: "极致微距细节", color: "#10b981", img: "/showcase/1.png", tags: ['微距画质', '商业级别'], featureLabel: "PRO - 极致写实", desc: "支持超高分辨率渲染，对瞳孔倒影、发丝细节、材质纹理有着极其恐怖的还原力。每一像素都经得起无限放大。" }
         ].map((item, idx) => (
           <div key={item.id} style={{ 
             background: idx % 2 === 0 ? '#fff' : (isMobile ? '#fff' : '#fafafa'), 
@@ -135,8 +135,25 @@ const Showcase = ({ setPreviewImage, isMobile: propIsMobile }) => {
               style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
               onClick={() => setPreviewImage(item.img)}
             >
-              <div style={{ position: 'absolute', top: '24px', right: '24px', background: 'rgba(255,255,255,0.9)', padding: '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <Maximize2 size={isMobile ? 18 : 20} color={item.color} />
+              <div style={{ position: 'absolute', top: isMobile ? '12px' : '24px', right: isMobile ? '12px' : '24px', background: 'rgba(255,255,255,0.9)', padding: isMobile ? '8px' : '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={isMobile ? 14 : 20} color={item.color} />
+              </div>
+              <div style={{ 
+                position: 'absolute', 
+                bottom: isMobile ? '12px' : '24px', 
+                left: isMobile ? '12px' : '24px', 
+                background: 'rgba(0,0,0,0.4)', 
+                backdropFilter: 'blur(10px)',
+                color: '#fff',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                fontSize: '10px',
+                fontWeight: '700',
+                letterSpacing: '1px',
+                zIndex: 1,
+                opacity: 0.8
+              }}>
+                {item.featureLabel}
               </div>
               <img src={item.img} style={{ width: '100%', borderRadius: isMobile ? '16px' : '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt={item.title} />
             </div>
