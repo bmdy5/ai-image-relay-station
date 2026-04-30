@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import request from './api/request';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -14,16 +15,39 @@ import PointsHistoryPage from './pages/PointsHistoryPage';
 import PrivateRoute from './components/PrivateRoute';
 import MobileLayout from './components/MobileLayout';
 import PCLayout from './components/PCLayout';
+import MaintenanceModal from './components/MaintenanceModal';
 import './App.css';
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+  const [isMaintenance, setIsMaintenance] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 1024);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    const handleMaintenance = () => setIsMaintenance(true);
+    window.addEventListener('system-maintenance', handleMaintenance);
+    
+    // 启动瞬间进行健康探测
+    const checkHealth = async () => {
+      try {
+        await request.get('/health');
+      } catch (err) {
+        // 如果报错（拦截器会自动发出系统维护事件，这里只需捕获防止未处理异常）
+      }
+    };
+    checkHealth();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('system-maintenance', handleMaintenance);
+    };
   }, []);
+
+  if (isMaintenance) {
+    return <MaintenanceModal />;
+  }
 
   const renderWithLayout = (element) => {
     return isMobile ? <MobileLayout>{element}</MobileLayout> : <PCLayout>{element}</PCLayout>;
