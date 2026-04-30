@@ -213,82 +213,7 @@ const HomePage = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px' }}>
-      {/* 消息提示组件 (Toast) */}
-      {toast.visible && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: toast.type === 'error' ? '#fff1f0' : (toast.type === 'info' ? '#e6f7ff' : '#f6ffed'),
-          border: `1px solid ${toast.type === 'error' ? '#ffa39e' : (toast.type === 'info' ? '#91d5ff' : '#b7eb8f')}`,
-          padding: '12px 24px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          zIndex: 9999,
-          animation: 'slideDown 0.3s ease-out'
-        }}>
-          {toast.type === 'error' ? <X size={18} color="#f5222d" /> : <CheckCircle size={18} color="#52c41a" />}
-          <span style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>{toast.message}</span>
-          <X 
-            size={14} 
-            color="#999" 
-            style={{ cursor: 'pointer', marginLeft: '10px' }} 
-            onClick={() => setToast({ ...toast, visible: false })} 
-          />
-        </div>
-      )}
-
-      {/* 顶部导航栏 - 大师级质感微调 */}
-      <header style={{ height: '80px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '48px' }}>
-          <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--primary)', letterSpacing: '-1px' }}>Visionary</div>
-          <nav style={{ display: 'flex', gap: '24px', fontSize: '15px', fontWeight: '600', color: 'var(--text-secondary)' }}>
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'var(--transition)' }} onClick={() => navigate('/history')} onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
-              <Images size={18} strokeWidth={2} /> 我的创作
-            </span>
-            <span style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'var(--transition)' }} onClick={() => navigate('/pricing')} onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
-              <Coins size={18} strokeWidth={2} /> 价格
-            </span>
-            {userInfo?.is_admin && (
-              <span style={{ cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => navigate('/admin')}>
-                <ShieldCheck size={18} strokeWidth={2} /> 管理后台
-              </span>
-            )}
-          </nav>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ 
-            background: 'white', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '14px', 
-            fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', color: 'var(--primary)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-          }}>
-            <Coins size={16} strokeWidth={2.5} />
-            <span>{userInfo?.points || 0}</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div 
-              onClick={() => navigate('/profile')}
-              style={{ 
-                width: '40px', height: '40px', background: '#e0e0e3', borderRadius: '50%', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                transition: 'var(--transition)'
-              }}
-              onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <User size={20} strokeWidth={2} />
-            </div>
-            <button onClick={logout} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>退出</button>
-          </div>
-        </div>
-      </header>
-
+    <>
       {/* 主工作台 (双栏) */}
       <main className="desktop-main-layout">
         {/* 左侧：参数调节区 - 300px 侧边栏 */}
@@ -409,7 +334,7 @@ const HomePage = () => {
         </div>
 
         <div className="preview-container" style={{ 
-          padding: '24px', flex: 1, background: 'var(--bg-main)', borderRadius: 'var(--radius-xl)',
+          padding: '24px', flex: 1, background: 'rgba(255, 255, 255, 0.4)', borderRadius: 'var(--radius-xl)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           minHeight: '600px', height: '100%', position: 'relative', overflow: 'hidden', border: '1px solid var(--border)'
         }}>
@@ -685,7 +610,7 @@ const HomePage = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

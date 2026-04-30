@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visionary Ultimate Art-Level Pricing</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+        :root {
+            --primary: #e66b33;
+            --primary-dark: #cf5a28;
+            --bg: #0a0a0c;
+            --glass-white: rgba(255, 255, 255, 0.03);
+            --border-light: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            background-color: #0d0d10; /* 深邃高级黑 */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+            z-index: 10;
+        }
+
+        .header span {
+            letter-spacing: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.8;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 900;
+            margin: 0;
+            letter-spacing: -2px;
+            background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .pricing-grid {
+            display: flex;
+            gap: 40px;
+            perspective: 2000px;
+            z-index: 10;
+        }
+
+        /* 3D 容器 */
+        .card-container {
+            width: 360px;
+            height: 540px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out; /* 用于跟随鼠标的实时响应 */
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 翻转逻辑由 JS 控制更精准，但 CSS 作为后备 */
+        .card-container.is-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 44px;
+            padding: 60px 45px;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.3);
+        }
+
+        /* 动态高光层 (Glint) */
+        .glint {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.15) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .card-container:hover .glint {
+            opacity: 1;
+        }
+
+        /* 液态金属边框 (仅专业版) */
+        .liquid-border {
+            position: absolute;
+            inset: -2px;
+            background: conic-gradient(from var(--angle), transparent 70%, var(--primary) 85%, #ffcc00 100%);
+            border-radius: 46px;
+            z-index: -1;
+            opacity: 0;
+            animation: rotate-border 4s linear infinite;
+        }
+
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes rotate-border {
+            to { --angle: 360deg; }
+        }
+
+        /* 正面内容 */
+        .card-front { z-index: 2; }
+        .card-back { 
+            transform: rotateY(180deg); 
+            background: rgba(255, 255, 255, 0.08);
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+        }
+
+        /* --- 抽象粒子图标 --- */
+        .icon-stage {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* 初探版：脉动粒子 */
+        .particle-core {
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: pulse 2s infinite ease-in-out;
+            box-shadow: 0 0 30px var(--primary);
+        }
+
+        /* 进阶版：绕转粒子 */
+        .orbit-container {
+            width: 60px;
+            height: 60px;
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 50%;
+            animation: spin 6s linear infinite;
+        }
+
+        .orbit-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #fff;
+            border-radius: 50%;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 15px #fff;
+        }
+
+        /* 专业版：自转晶格 */
+        .lattice {
+            width: 50px;
+            height: 50px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: spin-3d 8s linear infinite;
+        }
+
+        .lattice div {
+            position: absolute;
+            inset: 0;
+            border: 1.5px solid var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.5); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin-3d { to { transform: rotateX(360deg) rotateY(360deg); } }
+
+        /* 文字排版 */
+        .title { font-size: 32px; font-weight: 800; margin-bottom: 12px; letter-spacing: -1px; }
+        .subtitle { font-size: 15px; color: rgba(255,255,255,0.4); margin-bottom: 40px; line-height: 1.6; }
+
+        .feature-item {
+            display: grid;
+            grid-template-columns: 20px 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+
+        .feature-icon { width: 6px; height: 6px; background: var(--primary); border-radius: 50%; }
+        .feature-text { font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.7); }
+
+        /* 背面价格 */
+        .price-big { font-size: 84px; font-weight: 900; margin: 0; }
+        .price-info { font-size: 18px; font-weight: 600; color: var(--primary); margin-bottom: 40px; }
+
+        .buy-btn {
+            width: 100%;
+            padding: 24px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: #fff;
+            color: #000;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .buy-btn:hover { transform: scale(1.02); box-shadow: 0 15px 40px rgba(255,255,255,0.2); }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <span>QUANTUM ENERGY TIER</span>
+        <h1>注入无限创作能量</h1>
+    </div>
+
+    <div class="pricing-grid">
+        <!-- 卡片 1 -->
+        <div class="card-container" onmousemove="handleTilt(event, this)" onmouseleave="resetTilt(this)" onclick="this.classList.toggle('is-flipped')">
+            <div class="card-inner">
+                <div class="card-face card-front">
+                    <div class="glint"></div>
+                    <div class="icon-stage">
+                        <div class="particle-core"></div>
+                    </div>
+                    <h3 class="title">初探版</h3>
+                    <p class="subtitle">适合艺术探索者，开启 AI 视觉的初步感知力</p>
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <span class="feature-text">100 创作积分永久有效</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <span class="feature-text">标准创作引擎接入</span>
+                    </div>
+                </div>
+                <div class="card-face card-back">
+                    <div>
+                        <p class="price-big">100</p>
+                        <p class="price-info">POINTS · ¥10.00</p>
+                    </div>
+                    <button class="buy-btn">立即获取</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 卡片 2 -->
+        <div class="card-container" onmousemove="handleTilt(event, this)" onmouseleave="resetTilt(this)" onclick="this.classList.toggle('is-flipped')">
+            <div class="card-inner">
+                <div class="card-face card-front" style="border-color: var(--primary);">
+                    <div class="glint"></div>
+                    <div class="icon-stage">
+                        <div class="orbit-container">
+                            <div class="orbit-particle"></div>
+                            <div class="orbit-particle" style="top:auto; bottom:-4px;"></div>
+                        </div>
+                        <div class="particle-core" style="position:absolute; width:12px; height:12px; background:#fff;"></div>
+                    </div>
+                    <h3 class="title">进阶版</h3>
+                    <p class="subtitle">为高频创作者而生，解锁更高次元的画质精度</p>
+                    <div class="feature-item">
+                        <div class="feature-icon" style="background:#fff;"></div>
+                        <span class="feature-text">450 创作积分永久有效</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon" style="background:#fff;"></div>
+                        <span class="feature-text">HD 高清视觉推演支持</span>
+                    </div>
+                </div>
+                <div class="card-face card-back" style="background: var(--primary);">
+                    <div>
+                        <p class="price-big">450</p>
+                        <p class="price-info">POINTS · ¥45.00</p>
+                    </div>
+                    <button class="buy-btn" style="background: #000; color:#fff;">立即获取</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 卡片 3 (极致专业版) -->
+        <div class="card-container" onmousemove="handleTilt(event, this)" onmouseleave="resetTilt(this)" onclick="this.classList.toggle('is-flipped')">
+            <div class="liquid-border" style="opacity: 0.8;"></div>
+            <div class="card-inner">
+                <div class="card-face card-front" style="background: rgba(230, 107, 51, 0.05);">
+                    <div class="glint"></div>
+                    <div class="icon-stage">
+                        <div class="lattice">
+                            <div style="transform: rotateX(45deg) rotateY(45deg);"></div>
+                            <div style="transform: rotateX(-45deg) rotateY(-45deg);"></div>
+                            <div style="transform: rotateY(90deg);"></div>
+                        </div>
+                    </div>
+                    <h3 class="title">专业版</h3>
+                    <p class="subtitle">大师级视觉引擎，掌控全商业化授权与顶级算力</p>
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <span class="feature-text">900 创作积分永久有效</span>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon"></div>
+                        <span class="feature-text">4K 极致视觉引擎通道</span>
+                    </div>
+                </div>
+                <div class="card-face card-back" style="background: #000;">
+                    <div class="glint"></div>
+                    <div>
+                        <p class="price-big" style="color: var(--primary);">900</p>
+                        <p class="price-info">POINTS · ¥90.00</p>
+                    </div>
+                    <button class="buy-btn" style="background: var(--primary); color:#fff; border:none;">立即获取</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function handleTilt(e, card) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = (y - centerY) / 10;
+            const rotateY = (centerX - x) / 10;
+            
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            
+            // 更新高光位置
+            const glint = card.querySelector('.glint');
+            const percentX = (x / rect.width) * 100;
+            const percentY = (y / rect.height) * 100;
+            glint.style.setProperty('--mouse-x', `${percentX}%`);
+            glint.style.setProperty('--mouse-y', `${percentY}%`);
+        }
+
+        function resetTilt(card) {
+            card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+        }
+    </script>
+</body>
+</html>

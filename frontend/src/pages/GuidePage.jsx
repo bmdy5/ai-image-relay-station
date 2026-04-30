@@ -38,16 +38,18 @@ const GuidePage = () => {
 
   return (
     <div style={{ maxWidth: '900px', margin: '40px auto', padding: '0 20px', animation: 'fadeIn 0.5s ease' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '50px' }}>
-        <button 
-          onClick={() => navigate('/')} 
-          style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}
-        >
-          <ArrowLeft size={20} /> 返回首页
-        </button>
-        <h1 style={{ fontSize: '28px', fontWeight: 'bold', textAlign: 'center', flex: 1 }}>使用指南</h1>
-        <div style={{ width: '100px' }}></div>
-      </header>
+      {window.innerWidth <= 1024 && (
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '50px' }}>
+          <button 
+            onClick={() => navigate('/')} 
+            style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px' }}
+          >
+            <ArrowLeft size={20} /> 返回首页
+          </button>
+          <h1 style={{ fontSize: '28px', fontWeight: 'bold', textAlign: 'center', flex: 1 }}>使用指南</h1>
+          <div style={{ width: '100px' }}></div>
+        </header>
+      )}
 
       {/* 新手教学 */}
       <section style={{ marginBottom: '60px' }}>
