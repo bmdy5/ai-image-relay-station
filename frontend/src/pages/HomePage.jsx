@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import { 
@@ -501,13 +502,13 @@ const HomePage = () => {
       {/* 落地页模块：核心优势 + 深度画廊 */}
       <Showcase setPreviewImage={setPreviewImage} />
 
-      {/* 图片预览 Modal */}
-      {previewImage && (
+      {/* 图片预览 Modal - 使用 Portal 解决 fixed 定位失效问题 */}
+      {previewImage && createPortal(
         <div 
           style={{ 
             position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', 
-            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
-            zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(15px)',
+            zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'zoom-out'
           }}
           onClick={() => setPreviewImage(null)}
@@ -517,10 +518,21 @@ const HomePage = () => {
           </button>
           <img 
             src={previewImage} 
-            style={{ maxHeight: '90vh', maxWidth: '95vw', borderRadius: '12px', boxShadow: '0 0 50px rgba(0,0,0,0.5)', objectFit: 'contain' }} 
+            style={{ 
+              maxHeight: '90vh', maxWidth: '95vw', borderRadius: '16px', 
+              boxShadow: '0 30px 100px rgba(0,0,0,0.5)', objectFit: 'contain',
+              animation: 'modalZoom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            }} 
             alt="Preview" 
           />
-        </div>
+          <style>{`
+            @keyframes modalZoom {
+              from { transform: scale(0.9); opacity: 0; }
+              to { transform: scale(1); opacity: 1; }
+            }
+          `}</style>
+        </div>,
+        document.body
       )}
       {/* 意见反馈悬浮按钮 */}
       <button

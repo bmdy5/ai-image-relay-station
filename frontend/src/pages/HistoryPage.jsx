@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import { 
@@ -95,13 +96,36 @@ const HistoryPage = ({ isMobile }) => {
     }
   };
 
+  const getFeatureLabel = (img) => {
+    const qMap = { 'standard': '标准', 'hd': '高清', 'master': '大师' };
+    const sMap = { 
+      'real': '极致写实', 'anime': '二次元', 'oil': '油画', 
+      'cyber': '赛博', '3d': '3D渲染', 'ink': '水墨', 'poster': '海报' 
+    };
+    const q = qMap[img.quality] || '标准';
+    const s = sMap[img.style] || '';
+    return s ? `${q} · ${s}` : `${q}版`;
+  };
+
   const MobileDetailDrawer = () => (
     <MobileDrawer isOpen={!!selectedImage && isMobile} onClose={() => setSelectedImage(null)} title="作品详情">
       {selectedImage && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <img src={selectedImage.image_url} alt="Preview" style={{ width: '100%', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }} />
-          <div style={{ background: '#F2F2F7', padding: '16px', borderRadius: '16px' }}>
-            <div style={{ fontSize: '12px', color: '#8E8E93', marginBottom: '8px' }}>提示词 (Prompt)</div>
+          <div style={{ background: '#F2F2F7', padding: '16px', borderRadius: '16px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', color: '#8E8E93' }}>提示词 (Prompt)</div>
+              <div style={{ 
+                fontSize: '10px', 
+                color: selectedImage.quality === 'master' ? 'var(--master)' : '#8E8E93',
+                background: selectedImage.quality === 'master' ? 'rgba(124, 77, 255, 0.1)' : 'rgba(0,0,0,0.05)',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                fontWeight: '800'
+              }}>
+                {selectedImage.quality === 'master' && '✦ '}{getFeatureLabel(selectedImage)}
+              </div>
+            </div>
             <div style={{ fontSize: '14px', color: '#1D1D1F', lineHeight: '1.6' }}>{selectedImage.prompt}</div>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -143,7 +167,21 @@ const HistoryPage = ({ isMobile }) => {
                    <img src={img.image_url} alt={img.prompt} style={{ width: '100%', objectFit: 'cover' }} />
                    {!isMobile && (
                      <div className="gallery-info">
-                       <div className="gallery-prompt">{img.prompt}</div>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '8px' }}>
+                          <div className="gallery-prompt" style={{ flex: 1 }}>{img.prompt}</div>
+                          <div style={{ 
+                            fontSize: '10px', 
+                            color: img.quality === 'master' ? 'var(--master)' : '#999', 
+                            background: img.quality === 'master' ? 'rgba(124, 77, 255, 0.08)' : '#f5f5f7',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            fontWeight: '700',
+                            whiteSpace: 'nowrap',
+                            marginTop: '2px'
+                          }}>
+                            {img.quality === 'master' && '✦ '}{getFeatureLabel(img)}
+                          </div>
+                        </div>
                        <button className="reuse-btn-mini" onClick={(e) => { e.stopPropagation(); handleReuse(img.prompt); }}>复用</button>
                      </div>
                    )}
@@ -168,16 +206,48 @@ const HistoryPage = ({ isMobile }) => {
 
       <MobileDetailDrawer />
 
-      {!isMobile && selectedImage && (
-        <div className="modal-overlay" onClick={() => setSelectedImage(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <img src={selectedImage.image_url} alt="Preview" />
-            <div className="modal-actions">
-              <button className="btn-primary" onClick={() => handleDownload(selectedImage)}>下载</button>
-              <button className="btn-primary" style={{ background: '#e66b33' }} onClick={() => handleReuse(selectedImage.prompt)}>复用</button>
+      {!isMobile && selectedImage && createPortal(
+        <div 
+          className="modal-overlay" 
+          style={{ 
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', 
+            backdropFilter: 'blur(15px)', zIndex: 10000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}
+          onClick={() => setSelectedImage(null)}
+        >
+          <div 
+            className="modal-content" 
+            style={{ 
+              position: 'relative', display: 'flex', flexDirection: 'column', 
+              alignItems: 'center', animation: 'modalZoom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <img 
+              src={selectedImage.image_url} 
+              alt="Preview" 
+              style={{ maxHeight: '85vh', maxWidth: '90vw', borderRadius: '16px', boxShadow: '0 30px 70px rgba(0,0,0,0.5)' }} 
+            />
+            <div className="modal-actions" style={{ marginTop: '24px', display: 'flex', gap: '16px' }}>
+              <button className="btn-primary" onClick={() => handleDownload(selectedImage)}>下载图片</button>
+              <button className="btn-primary" style={{ background: '#e66b33' }} onClick={() => handleReuse(selectedImage.prompt)}>复用提示词</button>
             </div>
+            <button 
+              onClick={() => setSelectedImage(null)}
+              style={{ position: 'absolute', top: '-50px', right: '-50px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}
+            >
+              <X size={32} />
+            </button>
           </div>
-        </div>
+          <style>{`
+            @keyframes modalZoom {
+              from { transform: scale(0.9); opacity: 0; }
+              to { transform: scale(1); opacity: 1; }
+            }
+          `}</style>
+        </div>,
+        document.body
       )}
     </div>
   );
