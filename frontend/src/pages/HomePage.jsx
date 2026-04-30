@@ -29,6 +29,7 @@ import {
   Edit3
 } from 'lucide-react';
 import Showcase from '../components/Showcase';
+import MaintenanceModal from '../components/MaintenanceModal';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -49,6 +50,7 @@ const HomePage = () => {
   const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '基于提示词的原生艺术呈现', icon: '✨' });
   const [particles, setParticles] = useState([]);
   const [showNotes, setShowNotes] = useState(false);
+  const [isMaintenance, setIsMaintenance] = useState(false);
   
   // 用于实时日志记录的状态追踪
   const lastStatus = React.useRef(null);
@@ -83,6 +85,10 @@ const HomePage = () => {
     fetchUserInfo();
     fetchConfig();
     checkPendingPrompt();
+
+    const handleMaintenance = () => setIsMaintenance(true);
+    window.addEventListener('system-maintenance', handleMaintenance);
+    return () => window.removeEventListener('system-maintenance', handleMaintenance);
   }, []);
 
   const fetchConfig = async () => {
@@ -616,6 +622,7 @@ const HomePage = () => {
           </div>
         </div>
       )}
+      {isMaintenance && <MaintenanceModal />}
     </>
   );
 };
