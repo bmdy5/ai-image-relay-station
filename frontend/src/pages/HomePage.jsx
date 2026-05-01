@@ -90,18 +90,25 @@ const HomePage = () => {
   });
 
   const styles = [
-    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
-    { id: 'real', name: '极致写实', desc: '4K 相机级质感', icon: '📷', pts: 'All', placeholder: '主题：【在此输入你想生成的真实画面】' },
-    { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛍️', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
-    { id: 'tech_poster', name: '科技海报', desc: '未来感排版', icon: '🚀', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
-    { id: 'travel', name: '旅游海报', desc: '城市名片定制', icon: '🗺️', pts: 'HD+', placeholder: '城市名称：【在此输入城市】' },
-    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🏠', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
-    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📱', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】' },
-    { id: 'eri_silhouette', name: '侧脸叙事', desc: '史诗剪影宇宙', icon: '👤', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
-    { id: 'silk_road', name: '丝绸山河', desc: 'S型流动构图', icon: '🏮', pts: 'Master', placeholder: '宣传城市/主题：【在此输入名称】' },
-    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '📟', pts: 'Master', placeholder: '拍摄地点：【在此输入具体地点】', requiresImage: true },
-    { id: 'relation_map', name: '关系图谱', desc: '作品逻辑梳理', icon: '🔗', pts: 'Master', placeholder: '作品/事件名称：【在此输入】' },
-    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '📖', pts: 'Master', placeholder: '科普对象：【在此输入】' }
+    // --- 基础梯队 (标准版) ---
+    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✦', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
+    { id: 'real', name: '极致写实', desc: '仿真现实模拟', icon: '📸', pts: 'All', placeholder: '主题：【在此输入人像或画面，支持多样化构图生成】' },
+    { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛒', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
+    { id: 'tech_poster', name: '科技海报', desc: '高级感信息排版', icon: '🎨', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
+
+    // --- 专业梯队 (专业版) ---
+    { id: 'travel', name: '旅游海报', desc: '多场景杂志长图', icon: '✈️', pts: 'HD+', placeholder: '主题：【在此输入城市或景点，如：雪后故宫、雨中西湖】' },
+    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🛋️', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
+    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📡', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】', requiresImage: true },
+    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '🎞️', pts: 'HD+', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true },
+    { id: 'ccd_snap', name: 'CCD 随手抓拍', desc: '闪光灯氛围', icon: '⚡', pts: 'HD+', placeholder: '人物：【在此输入，支持多样化构图】 环境：【如：深夜旺角街头、雨夜霓虹】', requiresImage: true },
+    { id: 'restore_old', name: '老照片修复', desc: '质感修复与高清还原', icon: '🕰️', pts: 'HD+', placeholder: '描述照片背景或需要重点修复的细节（可选）', requiresImage: true },
+
+    // --- 旗舰梯队 (旗舰版) ---
+    { id: 'eri_silhouette', name: '轮廓宇宙', desc: '史诗级叙事海报', icon: '🌑', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
+    { id: 'silk_road', name: '国风月夜', desc: '宋代山水意境', icon: '🎋', pts: 'Master', placeholder: '主题：【在此输入主题名称】' },
+    { id: 'relation_map', name: '人物关系图谱', desc: '作品逻辑梳理', icon: '🕸️', pts: 'Master', placeholder: '作品：【在此输入名称】' },
+    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】' }
   ];
 
   useEffect(() => {
@@ -264,8 +271,8 @@ const HomePage = () => {
             <div style={{ display: 'flex', background: '#ededf0', padding: '4px', borderRadius: '14px' }}>
               {[
                 { id: 'standard', name: '标准版' },
-                { id: 'hd', name: '高清版' },
-                { id: 'master', name: '大师版' }
+                { id: 'hd', name: '专业版' },
+                { id: 'master', name: '旗舰版' }
               ].map(t => (
                 <button
                   key={t.id}
@@ -331,8 +338,8 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* 4. 高级工具 (Task 3.4) */}
-          <div style={{ opacity: quality === 'standard' ? 0.4 : 1, pointerEvents: quality === 'standard' ? 'none' : 'auto', transition: 'all 0.5s' }}>
+          {/* 4. 高级工具 (图生图全员可用) */}
+          <div style={{ transition: 'all 0.5s' }}>
             <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>
               高级工具 <span style={{ fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '5px' }}>PRO</span>
             </div>
@@ -461,7 +468,7 @@ const HomePage = () => {
                 }}></div>
               )}
               <div style={{ color: 'var(--text-main)', fontSize: '20px', fontWeight: '800', marginTop: '20px' }}>
-                {quality === 'master' ? '大师引擎深度构建中...' : 'AI 正在捕获灵感...'}
+                {quality === 'master' ? '旗舰引擎深度构建中...' : 'AI 正在捕获灵感...'}
               </div>
               <div style={{ width: '240px', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', margin: '24px auto', overflow: 'hidden' }}>
                 <div style={{ width: `${progress}%`, height: '100%', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', transition: 'width 0.5s ease' }}></div>
@@ -532,39 +539,42 @@ const HomePage = () => {
                     STYLE LAB · 风格实验室
                   </div>
                   <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>定义您的艺术维度</h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{quality === 'standard' ? '标准版仅支持部分风格，升级高清版解锁全部' : '请选择一个艺术模板开始创作'}</p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{quality === 'standard' ? '标准版仅支持部分风格，升级专业版解锁全部' : '请选择一个艺术模板开始创作'}</p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-                  {styles.map((s) => {
-                    // 严格等级压制逻辑 (Fix: Tier Unlocking Bug)
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(4, 1fr)', 
+                  gap: '16px'
+                }}>
+                  {styles.map(s => {
+                    // 严格等级压制逻辑
                     let isLocked = false;
                     if (quality === 'standard') {
-                      // 标准版只能用基础风格
-                      isLocked = !['default', 'real', 'product', 'tech_poster'].includes(s.id);
+                      isLocked = s.pts !== 'All';
                     } else if (quality === 'hd') {
-                      // 高清版不能用大师版风格
                       isLocked = s.pts === 'Master';
                     }
-                    // 大师版解锁所有
+                    // Master 模式解锁所有
                     
                     return (
                       <div 
                         key={s.id} 
                         onClick={() => {
                           if (!isLocked) {
-                            // 智能填词与覆盖逻辑 (Task 3.2)
                             const currentPlaceholder = selectedStyle.placeholder;
                             const isInputEmpty = !prompt.trim() || prompt === currentPlaceholder;
                             
-                            const applyStyle = () => {
-                              setSelectedStyle(s);
-                              setPrompt(s.placeholder || '');
-                              setShowLab(false);
-                              if (s.requiresImage) {
-                                showToast('✨ 此风格需要上传图片作为参考', 'success');
-                              }
-                            };
+                              const applyStyle = () => {
+                                setSelectedStyle(s);
+                                setPrompt(s.placeholder || '');
+                                setShowLab(false);
+                                if (s.requiresImage) {
+                                  showToast('✨ 此风格需要上传图片作为参考', 'success');
+                                } else if (refImageUrl) {
+                                  showToast('📸 当前带有参考图，生图将参考此图', 'info');
+                                }
+                              };
 
                             if (isInputEmpty) {
                               applyStyle();
@@ -572,7 +582,6 @@ const HomePage = () => {
                               if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前的内容。')) {
                                 applyStyle();
                               } else {
-                                // 仅切换风格，不覆盖文字
                                 setSelectedStyle(s);
                                 setShowLab(false);
                               }
@@ -593,7 +602,7 @@ const HomePage = () => {
                         <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>{s.name}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{s.desc}</div>
                         {isLocked && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: '#ccc', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>🔒</div>}
-                        {!isLocked && s.pts !== 'All' && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>{s.pts}</div>}
+                        {!isLocked && s.pts !== 'All' && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: s.pts === 'Master' ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>{s.pts === 'Master' ? '旗舰' : '专业'}</div>}
                       </div>
                     );
                   })}
@@ -601,7 +610,7 @@ const HomePage = () => {
 
                 <div style={{ marginTop: '40px', textAlign: 'center', background: '#f5f5f7', padding: '20px', borderRadius: '20px' }}>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    💡 想要更多？高清版与大师版正在研发更多专属风格模型。
+                    💡 想要更多？专业版与旗舰版正在研发更多专属风格模型。
                   </p>
                 </div>
               </div>
