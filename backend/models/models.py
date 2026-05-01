@@ -16,7 +16,7 @@ class User(Base):
     uid = Column(String(20), unique=True, index=True)
     last_ip = Column(String)
     is_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
 
     # 关联
     image_logs = relationship("ImageLog", back_populates="owner")
@@ -28,12 +28,13 @@ class ImageLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     prompt = Column(Text)
-    quality = Column(String)  # low / mid / high
+    quality = Column(String)  # standard / hd / master
+    style = Column(String, default="default")  # 风格标注
     cost_points = Column(Integer)
     image_url = Column(String)
     status = Column(String)  # success / failed
     error_msg = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
     
     # Performance tracking (Task: Timing Analysis)
     queue_duration = Column(Integer, default=0)       # 队列排队时间 (ms)
@@ -58,7 +59,7 @@ class RechargeLog(Base):
     out_trade_no = Column(String(64), unique=True, index=True, nullable=True)  # 商户订单号
     trade_no = Column(String(64), unique=True, index=True, nullable=True)  # 支付平台交易号
     payment_method = Column(String(20), nullable=True)  # 支付方式 (wxpay/alipay)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
 
     target_user = relationship("User", back_populates="recharge_logs")
 
@@ -80,7 +81,7 @@ class Feedback(Base):
     contact = Column(String(100))
     status = Column(String, default="pending")
     admin_note = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
 
     user = relationship("User")
 
@@ -92,4 +93,4 @@ class VerificationCode(Base):
     code = Column(String(10))
     expires_at = Column(DateTime)
     is_used = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))

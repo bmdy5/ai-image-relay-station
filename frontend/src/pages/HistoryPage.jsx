@@ -100,11 +100,12 @@ const HistoryPage = ({ isMobile }) => {
     const qMap = { 'standard': '标准', 'hd': '高清', 'master': '大师' };
     const sMap = { 
       'real': '极致写实', 'anime': '二次元', 'oil': '油画', 
-      'cyber': '赛博', '3d': '3D渲染', 'ink': '水墨', 'poster': '海报' 
+      'cyber': '赛博', '3d': '3D渲染', 'ink': '水墨', 'poster': '海报',
+      'default': '默认', '': '默认'
     };
     const q = qMap[img.quality] || '标准';
-    const s = sMap[img.style] || '';
-    return s ? `${q} · ${s}` : `${q}版`;
+    const s = sMap[img.style] || '默认';
+    return `${q}版 - ${s}`;
   };
 
   const MobileDetailDrawer = () => (
@@ -163,23 +164,47 @@ const HistoryPage = ({ isMobile }) => {
           <>
             <div className="gallery-grid">
               {images.map(img => (
-                <div key={img.id} className="gallery-item" onClick={() => img.status === 'success' && setSelectedImage(img)}>
-                   <img src={img.image_url} alt={img.prompt} style={{ width: '100%', objectFit: 'cover' }} />
+                <div key={img.id} className={`gallery-item ${img.status !== 'success' ? 'is-loading' : ''}`} onClick={() => img.status === 'success' && setSelectedImage(img)}>
+                   <button 
+                     className="delete-btn-quick" 
+                     onClick={(e) => handleDelete(e, img.id)}
+                     title="删除此作品"
+                   >
+                     <Trash2 size={16} />
+                   </button>
+
+                   {img.status === 'success' ? (
+                     <img src={img.image_url} alt={img.prompt} style={{ width: '100%', objectFit: 'cover' }} />
+                   ) : img.status === 'failed' ? (
+                     <div className="pending-card" style={{ background: '#fff1f0', border: '1px dashed #ff4d4f' }}>
+                       <X size={32} color="#ff4d4f" style={{ opacity: 0.5 }} />
+                       <div style={{ color: '#ff4d4f', fontSize: '12px', marginTop: '10px', fontWeight: 'bold' }}>生成失败</div>
+                     </div>
+                   ) : (
+                     <div className="pending-card">
+                       <div className="skeleton" style={{ position: 'absolute', inset: 0, opacity: 0.5 }}></div>
+                       <RefreshCw className="spin" size={32} color="var(--primary)" style={{ opacity: 0.5, position: 'relative' }} />
+                       <div className="pulse-text" style={{ position: 'relative' }}>AI 创作中...</div>
+                     </div>
+                   )}
+                   
                    {!isMobile && (
                      <div className="gallery-info">
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '8px' }}>
-                          <div className="gallery-prompt" style={{ flex: 1 }}>{img.prompt}</div>
-                          <div style={{ 
-                            fontSize: '10px', 
-                            color: img.quality === 'master' ? 'var(--master)' : '#999', 
-                            background: img.quality === 'master' ? 'rgba(124, 77, 255, 0.08)' : '#f5f5f7',
-                            padding: '2px 8px',
-                            borderRadius: '6px',
-                            fontWeight: '700',
-                            whiteSpace: 'nowrap',
-                            marginTop: '2px'
-                          }}>
-                            {img.quality === 'master' && '✦ '}{getFeatureLabel(img)}
+                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                            <div className="gallery-prompt" style={{ flex: 1, fontSize: '13px', color: '#1D1D1F', fontWeight: '500' }}>{img.prompt}</div>
+                            <div style={{ 
+                              fontSize: '10px', 
+                              color: img.quality === 'master' ? 'var(--master)' : '#8E8E93', 
+                              background: img.quality === 'master' ? 'rgba(124, 77, 255, 0.08)' : 'rgba(0,0,0,0.04)',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              fontWeight: '700',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}>
+                              {img.quality === 'master' && '✦ '}{getFeatureLabel(img)}
+                            </div>
                           </div>
                         </div>
                        <button className="reuse-btn-mini" onClick={(e) => { e.stopPropagation(); handleReuse(img.prompt); }}>复用</button>
