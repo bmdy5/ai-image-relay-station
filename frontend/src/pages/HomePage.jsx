@@ -148,8 +148,8 @@ const HomePage = () => {
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
       
       const toastMsg = quality === 'master' 
-        ? '🚀 大师版正在进行深度视觉推理...' 
-        : '🚀 任务已提交，AI 正在为您精心创作！';
+        ? '✦ 大师引擎已启动！您可以继续输入新灵感，后台支持 3 路并行，任务完成后自动存入历史。' 
+        : '🚀 任务提交成功！支持 3 个任务并行，您可以离开此页面，完成后请在“我的创作”中查看。';
       showToast(toastMsg, 'success');
 
       let pollCount = 0;
@@ -628,6 +628,27 @@ const HomePage = () => {
           </div>
         </div>
       )}
+
+      {/* 消息提示渲染 */}
+      {toast.visible && (
+        <div style={{
+          position: 'fixed', top: '40px', left: '50%', transform: 'translateX(-50%)',
+          background: toast.type === 'error' ? 'rgba(255, 77, 79, 0.9)' : 'rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(10px)', color: 'white', padding: '12px 24px', borderRadius: '16px',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '12px',
+          zIndex: 10002, animation: 'toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+        }}>
+          {toast.type === 'error' ? <X size={18} /> : <CheckCircle size={18} color="#52c41a" />}
+          <span style={{ fontSize: '14px', fontWeight: '600' }}>{toast.message}</span>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes toastIn {
+          from { transform: translate(-50%, -20px); opacity: 0; }
+          to { transform: translate(-50%, 0); opacity: 1; }
+        }
+      `}</style>
     </>
   );
 };

@@ -87,7 +87,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
         # 处理风格后缀增强
         prompt_to_send = prompt
         if style == "real":
-            prompt_to_send = f"{prompt}, 要求仿真现实"
+            prompt_to_send = f"{prompt}, 8k resolution, photorealistic, masterpiece, highly detailed, professional cinematic lighting, sharp focus, ultra-detailed textures"
 
         for attempt in range(3):  # 最多尝试 3 次 (初始 + 2次重试)
             try:
@@ -193,8 +193,8 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
 @router.post("/generate")
 async def generate_image(payload: image_schema.ImageCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     active_count = image_crud.count_active_tasks(db, current_user.id)
-    if active_count >= 2:
-        raise HTTPException(status_code=429, detail="当前有 2 个活动任务正在进行，请稍候再试")
+    if active_count >= 3:
+        raise HTTPException(status_code=429, detail="当前有 3 个活动任务正在进行，请稍候再试")
 
     # Prompt 字数限制 (Task: Security)
     if len(payload.prompt) > 1000:
