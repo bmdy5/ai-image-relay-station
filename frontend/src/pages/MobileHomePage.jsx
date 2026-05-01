@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
 import { 
-  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images
+  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp
 } from 'lucide-react';
 import MobileDrawer from '../components/MobileDrawer';
 import NeuralPlexus from '../components/NeuralPlexus';
@@ -14,10 +14,11 @@ const STYLE_NAME_MAP = {
   'default': '默认', 'product': '电商白底', 'tech_poster': '科技海报',
   'travel': '旅游海报', 'interior': '室内设计', 'live_stream': '直播截图',
   'eri_silhouette': '侧脸叙事', 'silk_road': '丝绸山河', 'vintage_5s': '复古纪实',
+  'ccd_snap': 'CCD 随手抓拍', 'restore_old': '老照片修复',
   'relation_map': '关系图谱', 'encyclopedia': '科普百科', 'default': '默认'
 };
 
-const QUALITY_NAME_MAP = { 'standard': '标准版', 'hd': '高清版', 'master': '大师版' };
+const QUALITY_NAME_MAP = { 'standard': '标准版', 'hd': '专业版', 'master': '旗舰版' };
 
 // 结果卡片组件
 const ResultCard = ({ job, onOpenNotes }) => {
@@ -34,6 +35,8 @@ const ResultCard = ({ job, onOpenNotes }) => {
       boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
       border: isMaster ? '1px solid rgba(138,43,226,0.1)' : '1px solid rgba(0,0,0,0.02)',
       position: 'relative',
+      flexShrink: 0,
+      marginBottom: '8px',
       animation: 'fadeIn 0.5s ease-out'
     }}>
       {/* 提示词与版本标注区 */}
@@ -165,31 +168,37 @@ const MobileHomePage = () => {
   };
 
   const styles = [
-    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
-    { id: 'real', name: '极致写实', desc: '4K 相机级质感', icon: '📷', pts: 'All', placeholder: '主题：【在此输入你想生成的真实画面】' },
-    { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛍️', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
-    { id: 'tech_poster', name: '科技海报', desc: '未来感排版', icon: '🚀', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
-    { id: 'travel', name: '旅游海报', desc: '城市名片定制', icon: '🗺️', pts: 'HD+', placeholder: '城市名称：【在此输入城市】' },
-    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🏠', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
-    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📱', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】' },
-    { id: 'eri_silhouette', name: '侧脸叙事', desc: '史诗剪影宇宙', icon: '👤', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
-    { id: 'silk_road', name: '丝绸山河', desc: 'S型流动构图', icon: '🏮', pts: 'Master', placeholder: '宣传城市/主题：【在此输入名称】' },
-    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '📟', pts: 'Master', placeholder: '拍摄地点：【在此输入具体地点】', requiresImage: true },
-    { id: 'relation_map', name: '关系图谱', desc: '作品逻辑梳理', icon: '🔗', pts: 'Master', placeholder: '作品/事件名称：【在此输入】' },
-    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '📖', pts: 'Master', placeholder: '科普对象：【在此输入】' }
+    // --- 基础梯队 ---
+    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✦', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
+    { id: 'real', name: '极致写实', desc: '仿真现实模拟', icon: '📸', pts: 'All', placeholder: '主题：【在此输入人像或画面，支持多样化构图生成】' },
+    { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛒', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
+    { id: 'tech_poster', name: '科技海报', desc: '高级感信息排版', icon: '🎨', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
+
+    // --- 专业梯队 ---
+    { id: 'travel', name: '旅游海报', desc: '多场景杂志长图', icon: '✈️', pts: 'HD+', placeholder: '主题：【在此输入城市或景点，如：雪后故宫、雨中西湖】' },
+    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🛋️', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
+    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📡', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】', requiresImage: true },
+    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '🎞️', pts: 'HD+', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true },
+    { id: 'ccd_snap', name: 'CCD 随手抓拍', desc: '闪光灯氛围', icon: '⚡', pts: 'HD+', placeholder: '人物：【在此输入，支持多样化构图】 环境：【如：深夜旺角街头、雨夜霓虹】', requiresImage: true },
+    { id: 'restore_old', name: '老照片修复', desc: '质感修复与高清还原', icon: '🕰️', pts: 'HD+', placeholder: '描述照片背景或需要重点修复的细节（可选）', requiresImage: true },
+
+    // --- 旗舰梯队 ---
+    { id: 'eri_silhouette', name: '轮廓宇宙', desc: '史诗级叙事海报', icon: '🌑', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
+    { id: 'silk_road', name: '国风月夜', desc: '宋代山水意境', icon: '🎋', pts: 'Master', placeholder: '主题：【在此输入主题名称】' },
+    { id: 'relation_map', name: '人物关系图谱', desc: '作品逻辑梳理', icon: '🕸️', pts: 'Master', placeholder: '作品：【在此输入名称】' },
+    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】' }
   ];
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
     if (selectedStyle.requiresImage && !refImageUrl) {
-      alert('✨ 此风格必须上传参考图以获得最佳效果，请在“PRO 工具”中上传。');
-      setActiveDrawer('pro');
+      alert('✨ 此风格必须上传参考图以获得最佳效果，请点击左侧 + 号上传。');
       return;
     }
 
-    const newJob = { id: Date.now().toString(), prompt, quality, style: selectedStyle.id, status: 'pending', progress: 0 };
-    setJobs(prev => [...prev, newJob]);
+    const newJob = { id: Date.now().toString(), prompt, quality, style: selectedStyle.id, status: 'pending', progress: 0, ref_image_url: refImageUrl };
+    setJobs(prev => [newJob, ...prev]); // 新任务置顶
     setPrompt('');
     try {
       const res = await request.post('/image/generate', { 
@@ -250,35 +259,89 @@ const MobileHomePage = () => {
           jobs.map(job => <ResultCard key={job.id} job={job} onOpenNotes={(j) => { setSelectedJob(j); setActiveDrawer('notes'); }} />)
         )}
       </main>
-
-      <div style={{ padding: '16px 16px 24px', background: 'linear-gradient(to top, var(--bg-main) 60%, transparent)' }}>
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-          <div onClick={() => setActiveDrawer('tier')} style={{ padding: '10px 14px', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', color: 'white', borderRadius: '14px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{ padding: '16px 16px 24px', background: 'linear-gradient(to top, var(--bg-main) 60%, transparent)', position: 'relative' }}>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
+          <div onClick={() => setActiveDrawer('tier')} style={{ flexShrink: 0, padding: '10px 14px', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', color: 'white', borderRadius: '14px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
             {quality === 'master' ? <Sparkles size={14} /> : <Zap size={14} />}
-            {quality === 'master' ? '大师版 ✦' : quality === 'hd' ? '高清版' : '标准版'}
+            {quality === 'master' ? '旗舰版 ✦' : quality === 'hd' ? '专业版' : '标准版'}
           </div>
-          <div onClick={() => setActiveDrawer('style')} style={{ padding: '10px 14px', background: '#fff', borderRadius: '14px', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(0,0,0,0.03)' }}>
+          <div onClick={() => setActiveDrawer('style')} style={{ flexShrink: 0, padding: '10px 14px', background: '#fff', borderRadius: '14px', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(0,0,0,0.03)' }}>
             <Palette size={14} /> {selectedStyle.name}
           </div>
-          {quality !== 'standard' && (
-            <div onClick={() => setActiveDrawer('pro')} style={{ padding: '10px 14px', background: 'var(--primary-glow)', color: 'var(--primary)', borderRadius: '14px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Settings2 size={14} /> PRO 工具
+          
+          {/* 比例切换器 */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ background: '#F2F2F7', padding: '4px', borderRadius: '20px', display: 'flex', gap: '4px' }}>
+              {['1:1', '9:16', '16:9'].map(ratio => (
+                <div 
+                  key={ratio}
+                  onClick={() => setAspectRatio(ratio)}
+                  style={{ 
+                    padding: '6px 12px', borderRadius: '16px', fontSize: '11px', fontWeight: '800', cursor: 'pointer',
+                    background: aspectRatio === ratio ? 'white' : 'transparent',
+                    color: aspectRatio === ratio ? 'var(--primary)' : '#8E8E93',
+                    boxShadow: aspectRatio === ratio ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {ratio}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
-        <div style={{ background: '#fff', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: '0 8px 0 20px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
+
+        {/* 预览已上传的图片 */}
+        {refImageUrl && (
+          <div style={{ position: 'absolute', top: '-50px', left: '16px', display: 'flex', alignItems: 'center', gap: '8px', background: 'white', padding: '4px', borderRadius: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+            <img src={refImageUrl} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+            <button onClick={() => setRefImageUrl('')} style={{ border: 'none', background: '#eee', color: '#ff4d4f', width: '18px', height: '18px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={10} />
+            </button>
+          </div>
+        )}
+
+        <div style={{ background: '#fff', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: '0 8px 0 12px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+          {/* 左侧加号上传 */}
+          <button 
+            onClick={() => document.getElementById('mobile-upload').click()}
+            style={{ border: 'none', background: '#F2F2F7', color: '#666', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px' }}
+          >
+            <Plus size={20} />
+          </button>
+          
           <input 
             type="text" 
-            placeholder="描述你的灵感画面..." 
+            placeholder={selectedStyle.requiresImage ? '⚠️ 请上传图片并输入灵感...' : '描述你的灵感画面...'} 
             value={prompt} 
             onChange={(e) => setPrompt(e.target.value)} 
             onPaste={handlePaste}
             onKeyDown={(e) => e.key === 'Enter' && handleGenerate()} 
-            style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px' }} 
+            style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px', background: 'transparent' }} 
           />
-          <button onClick={handleGenerate} disabled={!prompt.trim()} style={{ width: '44px', height: '44px', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', borderRadius: '50%', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ArrowUpCircle size={24} />
+          
+          <button 
+            onClick={handleGenerate} 
+            disabled={!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)} 
+            style={{ 
+              width: '40px', height: '40px', 
+              background: quality === 'master' ? 'var(--master)' : 'var(--primary)', 
+              borderRadius: '50%', border: 'none', color: 'white', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: (!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)) ? 0.5 : 1
+            }}
+          >
+            <ArrowUp size={22} />
           </button>
+          
+          <input id="mobile-upload" type="file" accept="image/*" hidden onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (ev) => setRefImageUrl(ev.target.result);
+              reader.readAsDataURL(file);
+            }
+          }} />
         </div>
       </div>
 
@@ -286,8 +349,8 @@ const MobileHomePage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {[
             { id: 'standard', name: '标准版', desc: '快速捕捉灵感', pts: pricingMap.standard, color: 'var(--primary)', icon: <Zap size={18} /> },
-            { id: 'hd', name: '高清版', desc: '细节质感升级', pts: pricingMap.hd, color: '#3b82f6', icon: <Diamond size={18} /> },
-            { id: 'master', name: '大师版 ✦', desc: '电影级光影重构', pts: pricingMap.master, color: 'var(--master)', icon: <Sparkles size={18} /> }
+            { id: 'hd', name: '专业版', desc: '生产力全开', pts: pricingMap.hd, color: '#3b82f6', icon: <Diamond size={18} /> },
+            { id: 'master', name: '旗舰版 ✦', desc: '顶级光影构建', pts: pricingMap.master, color: 'var(--master)', icon: <Sparkles size={18} /> }
           ].map(t => (
             <div 
               key={t.id} 
@@ -313,7 +376,12 @@ const MobileHomePage = () => {
       <MobileDrawer isOpen={activeDrawer === 'style'} onClose={() => setActiveDrawer(null)} title="艺术风格实验室">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           {styles.map(s => {
-            const isLocked = quality === 'standard' && s.id !== 'default' && s.id !== 'real';
+            let isLocked = false;
+            if (quality === 'standard') {
+              isLocked = s.pts !== 'All';
+            } else if (quality === 'hd') {
+              isLocked = s.pts === 'Master';
+            }
             return (
               <div 
                 key={s.id} 
@@ -325,6 +393,13 @@ const MobileHomePage = () => {
                         setPrompt(s.placeholder);
                       }
                       setActiveDrawer(null);
+                      if (refImageUrl && !s.requiresImage) {
+                        const tip = document.createElement('div');
+                        tip.innerHTML = '📸 当前带有参考图，生图将参考此图';
+                        tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 2s forwards;border:1px solid rgba(255,255,255,0.1);';
+                        document.body.appendChild(tip);
+                        setTimeout(() => tip.remove(), 2000);
+                      }
                     };
 
                     if (prompt && prompt !== s.placeholder && !prompt.includes('【')) {

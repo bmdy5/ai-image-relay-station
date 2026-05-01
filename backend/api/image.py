@@ -33,34 +33,60 @@ PRICING = {"standard": 5, "hd": 10, "master": 15}
 COST_RMB = {"standard": 0.45, "hd": 0.58, "master": 0.58}
 
 STYLE_PROMPT_TEMPLATES = {
-    "default": "【主题】",
-    "anime": "Anime style, high quality illustration of 【主题】, vibrant colors, detailed eyes, masterpiece",
-    "cyberpunk": "Cyberpunk aesthetic, neon lights, futuristic city background, 【主题】, cinematic lighting, highly detailed",
-    "oil_painting": "Oil painting style, thick brushwork, artistic texture, 【主题】, rich colors, museum quality",
-    "sketch": "Hand-drawn pencil sketch of 【主题】, clean lines, minimalist, white background",
-    "vintage_5s": "iPhone 5s documentary style, low dynamic range, high digital noise, 2013 mobile photography, flat lighting, casual snap of 【主题】, nostalgic mobile aesthetic",
-    "interior": "Luxury interior photography, wide angle, soft natural lighting, elegant 【主题】 room design, 8k resolution, architectural digest style",
-    "poster_pro": "Professional advertising poster for 【主题】, clean minimalist design, high-end commercial lighting, symmetrical composition, 8k resolution",
-    "encyclopedia": "Encyclopedia infographic style, detailed scientific illustration of 【主题】, labeled parts, clean background, educational layout"
+    "default": "请根据【主题】自动生成一张高质量、高审美的作品。",
+    "real": "极致写实风格，要求仿真现实，追求 8K 摄影级画质，皮肤纹理清晰，光影自然，主体与背景深度融合。内容：【主题】",
+    "product": "桌面摆件，做成白底电商主图，针对【主题】进行重新打光，产品更精致，纯白背景，柔光效果，突出产品主体。",
+    "tech_poster": "封面海报，围绕【主题】展开，深色调，信息量大，具有高级科技感，色彩克制，信息主次清晰，排版考究。",
+    "travel": "竖版长图，旅游主题海报，展示与【主题】相关的多个核心场景。每个模块包含精致插画 + 艺术书法 + 文字简介，高端杂志排版，留白合理。主题：【主题】",
+    "interior": "高端室内设计图，围绕【主题】展示空间重构方案。包含平面图与 3D 渲染图组合，空间通透，大面积留白，暖光氛围，极致干净高级感。主题：【主题】",
+    "live_stream": "生成真实的移动端直播间截图，直播内容为【主题】。包含真实的直播界面 UI（如在线人数、热度、评论弹幕、礼物特效等），界面真实可辨，极具临场感。",
+    "eri_silhouette": "请根据【主题】自动生成一张高审美的“轮廓宇宙 / 收藏版叙事海报”风格作品。不要将画面局限于固定器物或常见容器，不要优先默认瓶子、沙漏、玻璃罩、怀表之类的常规载体，而是由AI根据主题自行判断并选择一个最契合、最有象征意义、轮廓最强、最适合承载完整叙事世界的主轮廓载体。这个主轮廓可以是器物、建筑、门、塔、拱门、穹顶、楼梯井、长廊、雕像、侧脸、眼睛、手掌、头骨、羽翼、面具、镜面、王座、圆环、裂缝、光幕、阴影、几何结构、空间切面、舞台框景、抽象符号或其他更有创意与主题代表性的视觉轮廓，要求合理布局。轮廓内部或边界中需要自动生成与主题强绑定的完整叙事世界，内容应当丰富、饱满、层次清晰。风格融合收藏版电影海报构图、高级叙事型视觉设计、梦幻水彩质感与纸张印刷品气质，整体气质要高级、诗意、宏大、神圣、怀旧、安静、具有传说感和叙事感。",
+    "silk_road": "宋代山水意境的中式国风插画，细腻的水墨勾线与柔和矿物颜料设色，银色月光洒落并映照水面，整体以浅蓝、青玉色为主调，点缀柔和粉色花枝，空气中带有朦胧雾气，河面流动倒影细腻，辅以若有若无的淡金色微光，电影感、诗意化灯光，空灵东方美学，高级国风绘本插画质感，4K 细节。近景特写：一位年轻女子倚坐在木窗边，安静地望向窗外月下流动的江河。主题：【主题】",
+    "vintage_5s": "iPhone 5s 怀旧纪实风格摄影。采用柯达 Portra 400 胶片色调，具有明显的 2013 年移动摄影质感，色彩怀旧。重点渲染环境氛围：【环境】。",
+    "ccd_snap": "CCD/iPhone 5s 闪光灯随手抓拍质感，模拟夜拍氛围。拍摄对象为人像：【主题】。拍摄场景环境：【环境】。要求：真实的光学镜头感，模拟 iPhone 5s 闪光灯带来的高对比度与真实肤色表现。严格保留参考图中的原生五官、皮肤肌理与毛孔质感，拒绝过度美颜和假皮肤。背景需呈现低饱和暗复古色调，朦胧感拉满，轻微胶片颗粒，背景虚化。",
+    "relation_map": "请根据【主题】，生成一张高设计感的人物关系图海报。要求这张图不是普通插画，而是兼具信息可视化、叙事结构、海报设计感和作品风格还原度的人物关系图。识别并展示关键人物关系，包括血缘、爱情、友情、联盟、敌对、师徒、主从、操控、背叛、秘密关系等。风格还原作品气质，用不同颜色、线型、箭头区分不同关系，保证线条清晰、层次分明、不杂乱。",
+    "encyclopedia": "请根据【主题】生成一张高质量竖版「科普百科图」。包含主视觉、局部特征放大、模块化信息分区、清楚标题层级与重点标签。浅色干净背景，柔和配色，轻阴影，精致小图标，圆角信息框，整洁排版。整体像真正可以发布、阅读、收藏的科普百科卡。",
+    "restore_old": "专业老照片修复。要求：严格保留人物的原始五官、神态、发型和服饰特征，不做任何改动。去除照片上的所有污渍、划痕、霉斑、泛黄和褪色，还原面部的皮肤纹理、五官细节，以及帽子和衣领的材质质感。提升整体清晰度，修正模糊，优化黑白照片的光影层次，让画面干净自然，真实还原老照片的质感，不添加任何虚假或AI生成的额外细节。仿真现实。"
 }
 
 def wrap_prompt(style_id: str, raw_prompt: str, quality: str) -> str:
-    """提示词包装引擎 (V2.1 强化版)"""
+    """提示词包装引擎 (V2.2 深度同步版)"""
     template = STYLE_PROMPT_TEMPLATES.get(style_id)
     
-    # 图生图风格强制约束
+    # 人像仿真补丁 (Portrait Fusion Patch)
+    portrait_fusion = ""
+    if style_id in ["real", "vintage_5s", "ccd_snap", "live_stream", "anime", "eri_silhouette"]:
+        portrait_fusion = " (画面要求：整体光影必须统一，主体与环境之间有自然的阴影遮蔽和反光交互，严禁背景突兀，确保主体与背景深度融合。) "
+    
+    # 人像真实度与灵动构图补丁 (Diverse Poses & Face Preservation)
+    realism_patch = ""
+    if style_id in ["vintage_5s", "ccd_snap", "real", "restore_old"]:
+        realism_patch = (
+            " (人像核心要求：构图需自然多样（支持全身照、坐姿、站姿、侧身等多种生动角度），服饰搭配需高度统一、精致且具有质感。要求AI必须严丝合缝地保留参考图中的面部五官特征、比例与眼神，"
+            "严禁任何形式的五官变形或面部重塑。画面呈现必须完全自然，禁止过度锐化或假脸美颜，保留皮肤毛孔细节，确保光学镜头般的写实度与肢体协调感。) "
+        )
+
+    # 图生图参考一致性强制约束 (Legacy Support)
     ref_consistency = ""
-    if style_id in ["vintage_5s", "interior"]:
+    if style_id in ["vintage_5s", "ccd_snap", "interior"]:
         ref_consistency = " (CRITICAL: Strictly maintain identity/gender of reference image) "
 
     if not template:
-        final_prompt = f"{raw_prompt}{ref_consistency}"
+        final_prompt = f"{raw_prompt}{ref_consistency}{portrait_fusion}{realism_patch}"
     else:
         pattern = r"【(.*?)】"
         matches = re.findall(pattern, raw_prompt)
-        if not matches and (":" in raw_prompt or "：" in raw_prompt):
-            clean_input = re.split(r"[:：]", raw_prompt)[-1].strip()
-            if clean_input: matches = [clean_input]
+        if not matches:
+            # 兼容模式：支持 @ 或 # 作为参数分隔符
+            for sep in [" @ ", "@", " # ", "#"]:
+                if sep in raw_prompt:
+                    matches = [p.strip() for p in raw_prompt.split(sep) if p.strip()]
+                    break
+            
+            # 传统的冒号兼容
+            if not matches and (":" in raw_prompt or "：" in raw_prompt):
+                clean_input = re.split(r"[:：]", raw_prompt)[-1].strip()
+                if clean_input: matches = [clean_input]
 
         if matches:
             user_val = matches[0]
@@ -73,7 +99,7 @@ def wrap_prompt(style_id: str, raw_prompt: str, quality: str) -> str:
             final_prompt = re.sub(r"【.*?】", raw_prompt, template, count=1)
             final_prompt = re.sub(r"【.*?】", "", final_prompt)
         
-        final_prompt = f"{final_prompt}{ref_consistency}"
+        final_prompt = f"{final_prompt}{ref_consistency}{portrait_fusion}{realism_patch}"
 
     # 画质增强
     if quality == "master":

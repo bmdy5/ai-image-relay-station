@@ -249,28 +249,28 @@ const PCPricingPage = () => {
   const tiers = [
     { 
       id: 'basic',
-      name: '初探版', 
+      name: '标准版', 
       price: 10, 
-      points: 100, 
+      points: 150, 
       description: '开启 AI 艺术之旅，体验初步感知力',
-      features: ['100 创作积分永久有效', '标准生成引擎支持', '约可创作 20 张艺术作品'] 
+      features: ['150 创作积分永久有效', '标准生成引擎支持', '移动端全功能同步'] 
     },
     { 
       id: 'advanced',
-      name: '进阶版', 
-      price: 45, 
-      points: 450, 
-      description: '为高频创作者而生，解锁更高画质',
-      features: ['450 创作积分永久有效', '解锁 HD 高清生成模式', '优先创作队列 (无须等待)'],
+      name: '专业版', 
+      price: 30, 
+      points: 500, 
+      description: '生产力全开，解锁更高画质与细节',
+      features: ['500 创作积分永久有效', '解锁专业级生成模式', '优先创作队列支持'],
       recommended: true 
     },
     { 
       id: 'master',
-      name: '专业版', 
-      price: 90, 
-      points: 900, 
-      description: '大师级视觉引擎，掌控顶级算力',
-      features: ['900 创作积分永久有效', '4K 极致视觉引擎通道', '全商业用途授权许可'] 
+      name: '旗舰版', 
+      price: 50, 
+      points: 800, 
+      description: '顶级光影构建，掌控顶级算力',
+      features: ['800 创作积分永久有效', '4K 旗舰视觉引擎通道', '全商业用途授权许可'] 
     }
   ];
 
