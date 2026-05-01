@@ -15,8 +15,15 @@ def create_recharge_apply(db: Session, user_id: int, money_amount: int, screensh
             detail="您已有申请正在审核中，请稍后再试"
         )
     
-    # 1元 = 10积分
-    points_amount = money_amount * 10
+    # 优惠套餐逻辑：10->150, 30->500, 50->800, 其余 1:10
+    if money_amount == 10:
+        points_amount = 150
+    elif money_amount == 30:
+        points_amount = 500
+    elif money_amount == 50:
+        points_amount = 800
+    else:
+        points_amount = money_amount * 10
     
     db_log = models.RechargeLog(
         user_id=user_id,

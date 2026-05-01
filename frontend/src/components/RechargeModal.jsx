@@ -11,7 +11,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   const [payStatus, setPayStatus] = useState('pending'); // pending, success
   const pollTimer = useRef(null);
 
-  const tiers = [10, 45, 90, 500];
+  const tiers = [10, 30, 50, 500];
 
   // 清除轮询
   useEffect(() => {
@@ -75,7 +75,12 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   };
 
   const getPoints = (val) => {
-    return Math.floor(Number(val) * 10);
+    const v = Number(val);
+    if (v === 10) return 150;
+    if (v === 30) return 500;
+    if (v === 50) return 800;
+    if (v === 500) return 5000; // 500元默认 5000 积分（或按需调整）
+    return Math.floor(v * 10); // 自定义金额严格执行 1元=10积分
   };
 
   const renderContent = () => {
@@ -98,7 +103,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
                   }}
                 >
                   ¥{t}
-                  {[45, 90].includes(t) && (
+                  {[30, 50].includes(t) && (
                     <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#f5222d', color: '#fff', fontSize: '10px', padding: '2px 5px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                       超值
                     </span>
