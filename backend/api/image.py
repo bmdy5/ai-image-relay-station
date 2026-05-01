@@ -136,33 +136,41 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                             if img_resp.status_code == 200:
                                 image_data = img_resp.content
 
-                    # 基础 Payload (文本参数)
+                    # 终极稳定版：回归二进制 Multipart 协议 (验证通过的物理链路)
+                    api_path = "/images/generations"
                     data = {
                         "model": "gpt-image-2", 
                         "prompt": final_api_prompt, 
                         "n": 1,
-                        "size": config["size"], 
-                        "response_format": "url"
+                        "response_format": "url",
+                        "input_fidelity": "high"
                     }
-                    
-                    files = {}
-                    if image_data:
-                        # 核心修正：以文件形式发送参考图 (Respecting OhMyGPT Doc)
-                        files = {"image": ("ref.png", image_data, "image/png")}
-                        data["input_fidelity"] = "high"
-                        if quality == "master": data["quality"] = "high"
-                        elif quality == "hd": data["quality"] = "medium"
 
+                    # 极致省钱模式：全员强制 low 质量 + low 保真度 (Task: Cost Optimization)
+                    data["quality"] = "low"
+                    data["input_fidelity"] = "low"
+
+                    # 分辨率强制合规 (Task: Resolution Mapping)
                     if aspect_ratio == "9:16": data["size"] = "1024x1536"
                     elif aspect_ratio == "16:9": data["size"] = "1536x1024"
+                    else: data["size"] = "1024x1024"
 
-                    print(f"--- [API Request] ID: {log_id} | Model: {data['model']} | Protocol: {'Multipart' if files else 'JSON'} ---")
+                    files = {}
+                    if image_data:
+                        # 使用二进制文件流形式发送核心图片
+                        files = {"image": ("ref.png", image_data, "image/png")}
+                        data["image_url"] = processed_ref_url
+                        data["ref_image"] = processed_ref_url
+
+                    print(f"--- [API Request] ID: {log_id} | Model: {data['model']} | Quality: {data['quality']} | Img2Img: {'YES' if files else 'NO'} ---")
                     
                     api_start = time.time()
                     if files:
-                        resp = await client.post(f"{base_url}/images/generations", headers={"Authorization": f"Bearer {api_key}"}, data=data, files=files)
+                        # 有图时使用 data + files (Multipart)
+                        resp = await client.post(f"{base_url}{api_path}", headers={"Authorization": f"Bearer {api_key}"}, data=data, files=files)
                     else:
-                        resp = await client.post(f"{base_url}/images/generations", headers={"Authorization": f"Bearer {api_key}"}, json=data)
+                        # 无图时使用纯 JSON
+                        resp = await client.post(f"{base_url}{api_path}", headers={"Authorization": f"Bearer {api_key}"}, json=data)
                     
                     api_ms = int((time.time() - api_start) * 1000)
                 
