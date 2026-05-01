@@ -41,7 +41,15 @@ def create_payment(
         points_amount = 8000
     else:
         # 普通自定义金额按 1:10
-        points_amount = money_int * 10
+        # 优惠套餐逻辑：10->150, 30->500, 50->800, 其余 1:10
+        if money_int == 10:
+            points_amount = 150
+        elif money_int == 30:
+            points_amount = 500
+        elif money_int == 50:
+            points_amount = 800
+        else:
+            points_amount = money_int * 10
     
     # 1. 持久化订单到数据库
     db_log = models.RechargeLog(

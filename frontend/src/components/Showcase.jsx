@@ -187,12 +187,12 @@ const Showcase = ({ setPreviewImage, isMobile: propIsMobile }) => {
                   overflow: 'hidden', 
                   boxShadow: '0 30px 60px rgba(0,0,0,0.12)' 
                 }}>
-                  <div style={{ flex: 1, position: 'relative' }}>
-                    <img src={item.beforeImg} style={{ width: '100%', height: isMobile ? '200px' : 'auto', objectFit: 'cover', display: 'block' }} alt="Before" />
+                  <div style={{ flex: 1, position: 'relative', height: isMobile ? '200px' : '460px' }}>
+                    <img src={item.beforeImg} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="Before" />
                     <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.4)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>BEFORE</div>
                   </div>
-                  <div style={{ flex: 1, position: 'relative' }}>
-                    <img src={item.img} style={{ width: '100%', height: isMobile ? '200px' : 'auto', objectFit: 'cover', display: 'block' }} alt="After" />
+                  <div style={{ flex: 1, position: 'relative', height: isMobile ? '200px' : '460px' }}>
+                    <img src={item.img} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} alt="After" />
                     <div style={{ position: 'absolute', top: isMobile ? '10px' : '10px', right: '10px', background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>AFTER</div>
                   </div>
                 </div>
