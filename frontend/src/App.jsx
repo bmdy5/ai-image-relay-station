@@ -16,6 +16,7 @@ import PrivateRoute from './components/PrivateRoute';
 import MobileLayout from './components/MobileLayout';
 import PCLayout from './components/PCLayout';
 import MaintenanceModal from './components/MaintenanceModal';
+import AnnouncementModal from './components/AnnouncementModal';
 import './App.css';
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
 
   return (
     <Router>
+      <AnnouncementModal />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
