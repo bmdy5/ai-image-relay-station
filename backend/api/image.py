@@ -3,6 +3,7 @@ import time
 import uuid
 import httpx
 import asyncio
+import re
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
@@ -18,7 +19,7 @@ from starlette.concurrency import run_in_threadpool
 
 router = APIRouter(prefix="/image", tags=["image"])
 
-# 档次配置矩阵
+# 档次配置矩阵 (Task 1.1)
 TIER_CONFIG = {
     "standard": {"size": "1024x1024", "quality": "standard"},
     "hd": {"size": "1024x1536", "quality": "standard"},
@@ -26,215 +27,260 @@ TIER_CONFIG = {
 }
 
 # 计费标准 (用户支付积分)
-PRICING = {"standard": 5, "hd": 15, "master": 30}
+PRICING = {"standard": 5, "hd": 10, "master": 15}
 
-# 成本矩阵 (RMB) - 基于 API 实际支出估算
-COST_RMB = {
-    "standard": 0.45,
-    "hd": 0.58,
-    "master": 0.58
+# 成本矩阵 (RMB)
+COST_RMB = {"standard": 0.45, "hd": 0.58, "master": 0.58}
+
+STYLE_PROMPT_TEMPLATES = {
+    "default": "【主题】",
+    "anime": "Anime style, high quality illustration of 【主题】, vibrant colors, detailed eyes, masterpiece",
+    "cyberpunk": "Cyberpunk aesthetic, neon lights, futuristic city background, 【主题】, cinematic lighting, highly detailed",
+    "oil_painting": "Oil painting style, thick brushwork, artistic texture, 【主题】, rich colors, museum quality",
+    "sketch": "Hand-drawn pencil sketch of 【主题】, clean lines, minimalist, white background",
+    "vintage_5s": "iPhone 5s documentary style, low dynamic range, high digital noise, 2013 mobile photography, flat lighting, casual snap of 【主题】, nostalgic mobile aesthetic",
+    "interior": "Luxury interior photography, wide angle, soft natural lighting, elegant 【主题】 room design, 8k resolution, architectural digest style",
+    "poster_pro": "Professional advertising poster for 【主题】, clean minimalist design, high-end commercial lighting, symmetrical composition, 8k resolution",
+    "encyclopedia": "Encyclopedia infographic style, detailed scientific illustration of 【主题】, labeled parts, clean background, educational layout"
 }
 
-@router.get("/config")
-async def get_config_info():
-    """获取生图档位与计费配置"""
-    return {
-        "pricing": PRICING,
-        "tiers": TIER_CONFIG
-    }
+def wrap_prompt(style_id: str, raw_prompt: str, quality: str) -> str:
+    """提示词包装引擎 (V2.1 强化版)"""
+    template = STYLE_PROMPT_TEMPLATES.get(style_id)
+    
+    # 图生图风格强制约束
+    ref_consistency = ""
+    if style_id in ["vintage_5s", "interior"]:
+        ref_consistency = " (CRITICAL: Strictly maintain identity/gender of reference image) "
 
-# 档次配置矩阵 (Task 1.1)
-TIER_CONFIG = {
-    "standard": {
-        "size": "1024x1024",
-        "quality": "standard"
-    },
-    "hd": {
-        "size": "1024x1536", # 纵向高清
-        "quality": "standard"
-    },
-    "master": {
-        "size": "1024x1792", # 电影海报级比例
-        "quality": "standard"      # 降级为标准模式
-    }
-}
+    if not template:
+        final_prompt = f"{raw_prompt}{ref_consistency}"
+    else:
+        pattern = r"【(.*?)】"
+        matches = re.findall(pattern, raw_prompt)
+        if not matches and (":" in raw_prompt or "：" in raw_prompt):
+            clean_input = re.split(r"[:：]", raw_prompt)[-1].strip()
+            if clean_input: matches = [clean_input]
 
-async def process_image_task(log_id: int, prompt: str, quality: str, style: str, cost: int, user_id: int, request_start_time: float):
-    """
-    后台任务 (精简版)：直接执行单次生图逻辑，不进行任何重试以保护资金安全。
-    """
+        if matches:
+            user_val = matches[0]
+            final_prompt = re.sub(r"【.*?】", user_val, template, count=1)
+            remaining_matches = matches[1:]
+            for val in remaining_matches:
+                final_prompt = re.sub(r"【.*?】", val, final_prompt, count=1)
+            final_prompt = re.sub(r"【.*?】", "", final_prompt)
+        else:
+            final_prompt = re.sub(r"【.*?】", raw_prompt, template, count=1)
+            final_prompt = re.sub(r"【.*?】", "", final_prompt)
+        
+        final_prompt = f"{final_prompt}{ref_consistency}"
+
+    # 画质增强
+    if quality == "master":
+        final_prompt += ", masterpiece, ultra-high definition, 8k, unreal engine 5 render, cinematic lighting"
+    elif quality == "hd":
+        final_prompt += ", high quality, 4k, sharp focus"
+        
+    return final_prompt
+
+async def process_image_task(log_id: int, prompt: str, quality: str, style: str, cost: int, user_id: int, request_start_time: float, ref_image_url: str = None, aspect_ratio: str = "1:1"):
+    """后台生图核心逻辑"""
     task_start_time = time.time()
     api_key = get_config("OPENAI_API_KEY")
     base_url = get_config("OPENAI_BASE_URL", "https://api.openai.com/v1")
     config = TIER_CONFIG.get(quality, TIER_CONFIG["standard"])
     
-    success = False
-    error_msg = ""
-    final_url = ""
-    api_ms = 0
-    store_ms = 0
-    gen_ms = 0
+    success, error_msg, final_url = False, "", ""
+    api_ms, store_ms, gen_ms = 0, 0, 0
 
     try:
-        # 1. 设置生成状态
+        with session_scope() as db:
+            user = db.query(models.User).filter(models.User.id == user_id).first()
+            username = user.username or f"uid_{user_id}"
+
+        # 1. 参考图转存
+        processed_ref_url = ref_image_url
+        if ref_image_url and (ref_image_url.startswith("data:image") or len(ref_image_url) > 1000):
+            try:
+                safe_username = "".join([c for c in username if c.isalnum() or c in ("_", "-")])
+                ref_filename = f"user_{safe_username}_ref_{uuid.uuid4().hex[:6]}.png"
+                processed_ref_url = await run_in_threadpool(upload_base64_to_cos, ref_image_url, ref_filename)
+            except Exception as e:
+                raise Exception(f"参考图上传失败: {str(e)}")
+
+        # 2. 提示词包装与注入
+        prompt_to_send = wrap_prompt(style, prompt, quality)
+        final_api_prompt = prompt_to_send
+        if processed_ref_url and quality in ["hd", "master"]:
+            final_api_prompt = f"{processed_ref_url} {prompt_to_send}"
+
         with session_scope() as db:
             log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
-            if log: log.status = "generating"
+            if log:
+                log.status = "generating"
+                if hasattr(log, "final_prompt"): log.final_prompt = prompt_to_send
 
-        # 2. 调用 AI 接口 (安全重试机制：仅针对不扣费的连接失败)
-        api_start = time.time()
-        
-        # 处理风格后缀增强
-        prompt_to_send = prompt
-        if style == "real":
-            prompt_to_send = f"{prompt}, 8k resolution, photorealistic, masterpiece, highly detailed, professional cinematic lighting, sharp focus, ultra-detailed textures"
-
-        for attempt in range(3):  # 最多尝试 3 次 (初始 + 2次重试)
+        # 3. API 调用 (针对 gpt-image 系列改用 multipart/form-data 以支持参考图)
+        for attempt in range(3):
             try:
                 async with httpx.AsyncClient(timeout=180.0) as client:
-                    payload = {
-                        "model": "gpt-image-2", "prompt": prompt_to_send, "n": 1,
-                        "size": config["size"], "response_format": "url"
+                    # 准备二进制图片数据 (Task: Binary Stream Support)
+                    image_data = None
+                    if processed_ref_url:
+                        if processed_ref_url.startswith("data:image"):
+                            import base64
+                            header, encoded = processed_ref_url.split(",", 1)
+                            image_data = base64.b64decode(encoded)
+                        elif processed_ref_url.startswith("http"):
+                            img_resp = await client.get(processed_ref_url)
+                            if img_resp.status_code == 200:
+                                image_data = img_resp.content
+
+                    # 基础 Payload (文本参数)
+                    data = {
+                        "model": "gpt-image-2", 
+                        "prompt": final_api_prompt, 
+                        "n": 1,
+                        "size": config["size"], 
+                        "response_format": "url"
                     }
-                    # 所有档位强制使用 standard，移除 quality: high 注入逻辑
                     
-                    response = await client.post(
-                        f"{base_url}/images/generations",
-                        headers={"Authorization": f"Bearer {api_key}"}, json=payload
-                    )
+                    files = {}
+                    if image_data:
+                        # 核心修正：以文件形式发送参考图 (Respecting OhMyGPT Doc)
+                        files = {"image": ("ref.png", image_data, "image/png")}
+                        data["input_fidelity"] = "high"
+                        if quality == "master": data["quality"] = "high"
+                        elif quality == "hd": data["quality"] = "medium"
+
+                    if aspect_ratio == "9:16": data["size"] = "1024x1536"
+                    elif aspect_ratio == "16:9": data["size"] = "1536x1024"
+
+                    print(f"--- [API Request] ID: {log_id} | Model: {data['model']} | Protocol: {'Multipart' if files else 'JSON'} ---")
+                    
+                    api_start = time.time()
+                    if files:
+                        resp = await client.post(f"{base_url}/images/generations", headers={"Authorization": f"Bearer {api_key}"}, data=data, files=files)
+                    else:
+                        resp = await client.post(f"{base_url}/images/generations", headers={"Authorization": f"Bearer {api_key}"}, json=data)
+                    
+                    api_ms = int((time.time() - api_start) * 1000)
                 
-                # 如果代码走到这里，说明连接已成功且收到了响应
-                if response.status_code != 200:
-                    raise Exception(f"API Error ({response.status_code}): {response.text}")
-                
-                # 成功获取响应，跳出重试循环
-                break
+                if resp.status_code == 200:
+                    res_json = resp.json()
+                    data_list = res_json.get("data", [])
+                    if data_list:
+                        final_url = data_list[0].get("url") or data_list[0].get("b64_json")
+                    elif res_json.get("images"):
+                        final_url = res_json["images"][0]
+                    
+                    if final_url:
+                        success = True
+                        break
+                raise Exception(f"API Error ({resp.status_code}): {resp.text}")
             except (httpx.ConnectError, httpx.ConnectTimeout) as ce:
-                if attempt < 2:
-                    print(f"--- [Retry] Connection failed (Attempt {attempt+1}): {repr(ce)}. Retrying in 1s... ---")
+                if attempt < 2: 
                     await asyncio.sleep(1)
                     continue
-                raise ce  # 超过重试次数，抛出异常进入退费流程
+                raise ce
             except Exception as e:
-                # 其他所有错误 (如 ReadTimeout, API Error) 均涉及资金风险，严禁重试
                 raise e
-        
-        api_ms = int((time.time() - api_start) * 1000)
-        
-        res_json = response.json()
-        image_url = ""
-        if "data" in res_json and res_json["data"]:
-            item = res_json["data"][0]
-            image_url = item.get("b64_json") or item.get("url")
-        elif "images" in res_json and res_json["images"]:
-            image_url = res_json["images"][0]
 
-        if not image_url: raise Exception("未获取到图片路径")
+        if not success: raise Exception("未获取到有效图片链接")
 
-        # 3. 设置转存状态
-        with session_scope() as db:
-            log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
-            if log: log.status = "storing"
-
-        # 4. 转存 COS
+        # 4. 结果转存 COS
         store_start = time.time()
         safe_prompt = "".join([c for c in prompt[:10] if c.isalnum()]).strip() or "image"
-        filename = f"user_{user_id}_{safe_prompt}_{uuid.uuid4().hex[:8]}.png"
+        cost_rmb = COST_RMB.get(quality, 0)
+        filename = f"user_{username}_{safe_prompt}_{cost_rmb}元_{uuid.uuid4().hex[:6]}.png"
         
-        if image_url.startswith("data:image") or len(image_url) > 1000:
-            final_url = await run_in_threadpool(upload_base64_to_cos, image_url, filename)
+        # 智能选择上传方式 (Task: Base64 Support)
+        if final_url.startswith("data:image") or len(final_url) > 2048:
+            final_cos_url = await run_in_threadpool(upload_base64_to_cos, final_url, filename)
         else:
-            final_url = await run_in_threadpool(upload_url_to_cos, image_url, filename)
-        
+            final_cos_url = await run_in_threadpool(upload_url_to_cos, final_url, filename)
+            
         store_ms = int((time.time() - store_start) * 1000)
-        gen_ms = int((time.time() - api_start) * 1000) - store_ms
-        success = True
+
+        # 5. 更新数据库并打印深度审计日志 (Task: Deep Transparency)
+        with session_scope() as db:
+            log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
+            user = db.query(models.User).filter(models.User.id == user_id).first()
+            if log and user:
+                log.status, log.image_url = "success", final_cos_url
+                log.ref_image_url = processed_ref_url # 存入参考图链接
+                log.api_duration, log.storage_duration = api_ms, store_ms
+                log.total_duration = int((time.time() - task_start_time) * 1000)
+                user.frozen_points = max(0, user.frozen_points - cost)
+
+                # 打印增强版控制台审计日志
+                print(f"\n--- [Task Audit] ID: {log_id} | SUCCESS ---")
+                print(f"Model: gpt-image-2 | Style: {style} | Quality: {quality}")
+                print(f"Img2Img: {'YES' if processed_ref_url else 'NO'}")
+                if processed_ref_url:
+                    print(f"Ref-Image URL: {processed_ref_url}")
+                print(f"Final Sent Prompt: {final_api_prompt[:200]}...")
+                print(f"Revenue: {cost/10:.2f} RMB | Cost: {cost_rmb:.2f} RMB | Profit: +{(cost/10)-cost_rmb:.2f} RMB")
+                print(f"Total Time: {log.total_duration/1000:.2f}s (API: {api_ms/1000:.2f}s, Store: {store_ms/1000:.2f}s)")
+                print("="*50 + "\n")
 
     except Exception as e:
-        error_raw = repr(e)
-        if "Timeout" in error_raw or "ConnectError" in error_raw:
-            error_msg = "网络请求超时或连接中断，积分已原路退还，请稍后重试。"
-        else:
-            error_msg = f"系统处理异常 ({error_raw[:50]})，积分已原路退还。"
-
-    # 5. 最终结算与归档
-    total_time_ms = int((time.time() - request_start_time) * 1000)
-    with session_scope() as db:
-        log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
-        user = db.query(models.User).filter(models.User.id == user_id).first()
-        if log and user:
-            log.total_duration = total_time_ms
-            log.queue_duration = int((task_start_time - request_start_time) * 1000)
-            if success:
-                log.status, log.image_url = "success", final_url
-                log.api_duration, log.storage_duration, log.generation_duration = api_ms, store_ms, gen_ms
-                user.frozen_points = max(0, user.frozen_points - cost)
-            else:
+        error_msg = repr(e)
+        print(f"--- [Task Error] ID:{log_id} | {error_msg} ---")
+        with session_scope() as db:
+            log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
+            user = db.query(models.User).filter(models.User.id == user_id).first()
+            if log and user:
                 log.status, log.error_msg = "failed", error_msg
-                user.points += cost # 失败退费
+                user.points += cost # 退费
                 user.frozen_points = max(0, user.frozen_points - cost)
 
-    # 6. 后台审计日志 (盈利分析版)
-    status_tag = "SUCCESS" if success else f"FAILED ({error_msg[:30]})"
-    refund_tag = " [Refunded]" if not success else ""
-    
-    user_pay_rmb = cost * 0.1
-    api_cost_rmb = COST_RMB.get(quality, 0) if success else 0
-    profit_rmb = user_pay_rmb - api_cost_rmb if success else 0
-
-    print(f"\n--- [Task Audit] ID:{log_id} | {status_tag}{refund_tag} ---")
-    if success:
-        print(f"Revenue: {user_pay_rmb:.2f} RMB | Cost: {api_cost_rmb:.2f} RMB | Profit: +{profit_rmb:.2f} RMB")
-    else:
-        print(f"Status: FAILED | Refund: {user_pay_rmb:.2f} RMB")
-    print(f"Total Time: {total_time_ms/1000:.2f}s (API: {api_ms/1000:.2f}s, Store: {store_ms/1000:.2f}s)")
-    print(f"{'='*50}\n")
+@router.get("/config")
+async def get_config_info():
+    return {"pricing": PRICING, "tiers": TIER_CONFIG}
 
 @router.post("/generate")
 async def generate_image(payload: image_schema.ImageCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     active_count = image_crud.count_active_tasks(db, current_user.id)
-    if active_count >= 3:
-        raise HTTPException(status_code=429, detail="当前有 3 个活动任务正在进行，请稍候再试")
-
-    # Prompt 字数限制 (Task: Security)
-    if len(payload.prompt) > 1000:
-        raise HTTPException(status_code=400, detail="提示词过长，请控制在 1000 字以内")
-
+    if active_count >= 3: raise HTTPException(status_code=429, detail="任务过多")
+    if len(payload.prompt) > 1000: raise HTTPException(status_code=400, detail="提示词过长")
+    
     cost = PRICING.get(payload.quality, 5)
     result = db.query(models.User).filter(models.User.id == current_user.id, models.User.points >= cost).update({"points": models.User.points - cost, "frozen_points": models.User.frozen_points + cost}, synchronize_session=False)
     if result == 0: raise HTTPException(status_code=403, detail="余额不足")
+    
     pending_log = image_crud.create_image_log(db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, style=payload.style, cost_points=cost, status="pending")
     db.commit()
-    background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time())
+    background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time(), payload.ref_image_url, payload.aspect_ratio)
     return {"id": pending_log.id, "status": "pending", "remaining_points": current_user.points}
 
 @router.get("/status/{id}")
 async def get_task_status(id: int, db: Session = Depends(get_db)):
     log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
-    if not log: raise HTTPException(status_code=404, detail="任务不存在")
-    return {"id": log.id, "status": log.status, "quality": log.quality, "style": log.style, "image_url": log.image_url, "error": log.error_msg, "cost_points": log.cost_points, "timings": {"queue": log.queue_duration, "api": log.api_duration, "generation": log.generation_duration, "storage": log.storage_duration, "total": log.total_duration} if log.status in ["success", "failed"] else None}
-
-@router.get("/batch-status")
-async def get_batch_status(ids: str = Query(...), db: Session = Depends(get_db)):
-    id_list = [int(i) for i in ids.split(",") if i.strip()]
-    logs = db.query(models.ImageLog).filter(models.ImageLog.id.in_(id_list)).all()
-    return [{"id": l.id, "status": l.status, "image_url": l.image_url, "timings": {"total": l.total_duration} if l.status in ["success", "failed"] else None} for l in logs]
+    if not log: raise HTTPException(status_code=404, detail="不存在")
+    return {"id": log.id, "status": log.status, "image_url": log.image_url, "final_prompt": getattr(log, "final_prompt", None), "error": log.error_msg}
 
 @router.get("/history")
 async def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     logs = image_crud.get_user_image_logs(db, current_user.id, skip=skip, limit=limit)
-    return [{"id": l.id, "prompt": l.prompt, "status": l.status, "quality": l.quality, "style": l.style, "image_url": l.image_url, "created_at": l.created_at, "timings": {"total": l.total_duration} if l.status in ["success", "failed"] else None} for l in logs]
-
-@router.get("/download")
-async def download_image(id: int, db: Session = Depends(get_db)):
-    log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
-    if not log or not log.image_url: raise HTTPException(status_code=404, detail="图片不存在")
-    return RedirectResponse(url=log.image_url)
+    return [
+        {
+            "id": l.id, 
+            "prompt": l.prompt, 
+            "final_prompt": getattr(l, "final_prompt", None), 
+            "status": l.status, 
+            "image_url": l.image_url, 
+            "ref_image_url": getattr(l, "ref_image_url", None), # 传回参考图
+            "quality": l.quality, # 传回质量档次
+            "style": l.style,     # 传回风格 ID
+            "created_at": l.created_at
+        } for l in logs
+    ]
 
 @router.delete("/{id}")
 async def delete_image(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
-    if not log or log.user_id != current_user.id: raise HTTPException(status_code=403, detail="无权操作")
+    if not log or log.user_id != current_user.id: raise HTTPException(status_code=403, detail="无权")
     db.delete(log)
     db.commit()
-    return {"message": "删除成功"}
+    return {"message": "ok"}

@@ -101,7 +101,10 @@ const HistoryPage = ({ isMobile }) => {
     const sMap = { 
       'real': '极致写实', 'anime': '二次元', 'oil': '油画', 
       'cyber': '赛博', '3d': '3D渲染', 'ink': '水墨', 'poster': '海报',
-      'default': '默认', '': '默认'
+      'default': '默认', 'product': '电商白底', 'tech_poster': '科技海报',
+      'travel': '旅游海报', 'interior': '室内设计', 'live_stream': '直播截图',
+      'eri_silhouette': '侧脸叙事', 'silk_road': '丝绸山河', 'vintage_5s': '复古纪实',
+      'relation_map': '关系图谱', 'encyclopedia': '科普百科', '': '默认'
     };
     const q = qMap[img.quality] || '标准';
     const s = sMap[img.style] || '默认';
@@ -113,6 +116,15 @@ const HistoryPage = ({ isMobile }) => {
       {selectedImage && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <img src={selectedImage.image_url} alt="Preview" style={{ width: '100%', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }} />
+          
+          {/* 参考图展示 (Mobile) */}
+          {selectedImage.ref_image_url && (
+             <div style={{ background: '#f5f5f7', padding: '12px', borderRadius: '12px', border: '1px solid #eee' }}>
+                <div style={{ fontSize: '11px', color: '#888', marginBottom: '8px' }}>创作参考图</div>
+                <img src={selectedImage.ref_image_url} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} alt="Ref" />
+             </div>
+          )}
+
           <div style={{ background: '#F2F2F7', padding: '16px', borderRadius: '16px', position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <div style={{ fontSize: '12px', color: '#8E8E93' }}>提示词 (Prompt)</div>
@@ -190,24 +202,32 @@ const HistoryPage = ({ isMobile }) => {
                    
                    {!isMobile && (
                      <div className="gallery-info">
-                       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                            <div className="gallery-prompt" style={{ flex: 1, fontSize: '13px', color: '#1D1D1F', fontWeight: '500' }}>{img.prompt}</div>
-                            <div style={{ 
-                              fontSize: '10px', 
-                              color: img.quality === 'master' ? 'var(--master)' : '#8E8E93', 
-                              background: img.quality === 'master' ? 'rgba(124, 77, 255, 0.08)' : 'rgba(0,0,0,0.04)',
-                              padding: '2px 8px',
-                              borderRadius: '6px',
-                              fontWeight: '700',
-                              whiteSpace: 'nowrap',
-                              flexShrink: 0
-                            }}>
-                              {img.quality === 'master' && '✦ '}{getFeatureLabel(img)}
-                            </div>
-                          </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                             <div className="gallery-prompt" style={{ flex: 1, fontSize: '12px', color: '#1D1D1F', fontWeight: '500', lineHeight: '1.4' }}>{img.prompt}</div>
+                             <div style={{ 
+                               fontSize: '9px', 
+                               color: img.quality === 'master' ? 'var(--master)' : '#8E8E93', 
+                               background: img.quality === 'master' ? 'rgba(124, 77, 255, 0.08)' : 'rgba(0,0,0,0.04)',
+                               padding: '2px 6px',
+                               borderRadius: '4px',
+                               fontWeight: '700',
+                               whiteSpace: 'nowrap',
+                               flexShrink: 0
+                             }}>
+                               {img.quality === 'master' && '✦ '}{getFeatureLabel(img)}
+                             </div>
+                           </div>
+                           
+                           {/* 参考图微缩预览 (New) */}
+                           {img.ref_image_url && (
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.03)', padding: '4px 8px', borderRadius: '8px' }}>
+                               <img src={img.ref_image_url} style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #eee' }} alt="Ref" />
+                               <span style={{ fontSize: '10px', color: '#888', fontWeight: '600' }}>参考原图</span>
+                             </div>
+                           )}
                         </div>
-                       <button className="reuse-btn-mini" onClick={(e) => { e.stopPropagation(); handleReuse(img.prompt); }}>复用</button>
+                        <button className="reuse-btn-mini" onClick={(e) => { e.stopPropagation(); handleReuse(img.prompt); }}>复用</button>
                      </div>
                    )}
                 </div>
@@ -252,8 +272,20 @@ const HistoryPage = ({ isMobile }) => {
             <img 
               src={selectedImage.image_url} 
               alt="Preview" 
-              style={{ maxHeight: '85vh', maxWidth: '90vw', borderRadius: '16px', boxShadow: '0 30px 70px rgba(0,0,0,0.5)' }} 
+              style={{ maxHeight: '75vh', maxWidth: '90vw', borderRadius: '16px', boxShadow: '0 30px 70px rgba(0,0,0,0.5)' }} 
             />
+            
+            {/* 详情页参考图对比 (Desktop Modal) */}
+            {selectedImage.ref_image_url && (
+               <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.1)', padding: '12px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <img src={selectedImage.ref_image_url} style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }} alt="Ref" />
+                  <div style={{ textAlign: 'left' }}>
+                     <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px' }}>SOURCE REFERENCE</div>
+                     <div style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>灵感参考图</div>
+                  </div>
+               </div>
+            )}
+
             <div className="modal-actions" style={{ marginTop: '24px', display: 'flex', gap: '16px' }}>
               <button className="btn-primary" onClick={() => handleDownload(selectedImage)}>下载图片</button>
               <button className="btn-primary" style={{ background: '#e66b33' }} onClick={() => handleReuse(selectedImage.prompt)}>复用提示词</button>

@@ -2,14 +2,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
 import { 
-  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award
+  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images
 } from 'lucide-react';
 import MobileDrawer from '../components/MobileDrawer';
 import NeuralPlexus from '../components/NeuralPlexus';
 
+// 风格映射字典
+const STYLE_NAME_MAP = { 
+  'real': '极致写实', 'anime': '二次元', 'oil': '油画', 
+  'cyber': '赛博', '3d': '3D渲染', 'ink': '水墨', 'poster': '海报',
+  'default': '默认', 'product': '电商白底', 'tech_poster': '科技海报',
+  'travel': '旅游海报', 'interior': '室内设计', 'live_stream': '直播截图',
+  'eri_silhouette': '侧脸叙事', 'silk_road': '丝绸山河', 'vintage_5s': '复古纪实',
+  'relation_map': '关系图谱', 'encyclopedia': '科普百科', 'default': '默认'
+};
+
+const QUALITY_NAME_MAP = { 'standard': '标准版', 'hd': '高清版', 'master': '大师版' };
+
 // 结果卡片组件
 const ResultCard = ({ job, onOpenNotes }) => {
   const isMaster = job.quality === 'master';
+  const qName = QUALITY_NAME_MAP[job.quality] || '标准版';
+  const sName = STYLE_NAME_MAP[job.style] || '默认';
   
   return (
     <div style={{
@@ -28,8 +42,8 @@ const ResultCard = ({ job, onOpenNotes }) => {
         background: '#FAFAFB',
         borderBottom: '1px solid rgba(0,0,0,0.02)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1 }}>{job.prompt}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1, lineHeight: '1.4' }}>{job.prompt}</div>
           <div style={{ 
             fontSize: '9px', 
             color: isMaster ? 'var(--master)' : '#8E8E93',
@@ -40,17 +54,17 @@ const ResultCard = ({ job, onOpenNotes }) => {
             whiteSpace: 'nowrap',
             flexShrink: 0
           }}>
-            {isMaster && '✦ '}{job.quality === 'master' ? '大师版' : job.quality === 'hd' ? '高清版' : '标准版'} - {
-              job.style === 'real' ? '极致写实' : 
-              job.style === 'anime' ? '二次元' : 
-              job.style === 'oil' ? '油画' : 
-              job.style === 'cyber' ? '赛博' : 
-              job.style === '3d' ? '3D渲染' : 
-              job.style === 'ink' ? '水墨' : 
-              job.style === 'poster' ? '海报' : '默认'
-            }
+            {isMaster && '✦ '}{qName} - {sName}
           </div>
         </div>
+
+        {/* 参考图微缩预览 (New) */}
+        {job.ref_image_url && (
+           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.03)', padding: '6px 10px', borderRadius: '10px', marginTop: '4px' }}>
+              <img src={job.ref_image_url} style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} alt="Ref" />
+              <div style={{ fontSize: '11px', color: '#888', fontWeight: '700' }}>参考原图</div>
+           </div>
+        )}
       </div>
 
       {/* 图像显示/生成区 */}
@@ -61,14 +75,6 @@ const ResultCard = ({ job, onOpenNotes }) => {
             {isMaster && (
               <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(138, 43, 226, 0.9)', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: '800', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                  <Sparkles size={10} /> 大师版 ✦
-              </div>
-            )}
-            {isMaster && (
-              <div 
-                onClick={() => onOpenNotes(job)}
-                style={{ position: 'absolute', bottom: '12px', right: '12px', width: '40px', height: '40px', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--master)', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', cursor: 'pointer' }}
-              >
-                <Award size={22} />
               </div>
             )}
             <a href={job.result} download style={{ position: 'absolute', bottom: '12px', left: '12px', width: '40px', height: '40px', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
@@ -99,8 +105,11 @@ const MobileHomePage = () => {
   const [quality, setQuality] = useState('standard');
   const [jobs, setJobs] = useState([]); 
   const [activeDrawer, setActiveDrawer] = useState(null);
-  const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格' });
+  const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' });
+  const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [refImageUrl, setRefImageUrl] = useState('');
   const [pricingMap, setPricingMap] = useState({ 'standard': 5, 'hd': 15, 'master': 30 });
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     fetchConfig();
@@ -112,7 +121,6 @@ const MobileHomePage = () => {
     if (pending) {
       setPrompt(pending);
       sessionStorage.removeItem('pending_prompt');
-      // 延迟确保输入框已渲染，提升手机端聚焦成功率
       setTimeout(() => {
         const input = document.querySelector('input[type="text"]');
         if (input) input.focus();
@@ -134,18 +142,29 @@ const MobileHomePage = () => {
   };
 
   const styles = [
-    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All' },
-    { id: 'real', name: '极致写实', desc: '4K 相机级质感', icon: '📷', pts: 'All' },
-    { id: 'anime', name: '二次元', desc: '番剧级光影', icon: '🌸', pts: 'HD+' },
-    { id: 'oil', name: '古典油画', desc: '大师笔触复刻', icon: '🎨', pts: 'HD+' },
-    { id: 'cyber', name: '赛博朋克', desc: '霓虹幻境', icon: '🌆', pts: 'HD+' },
-    { id: '3d', name: '3D 渲染', desc: 'C4D 极致建模', icon: '🧊', pts: 'HD+' },
-    { id: 'ink', name: '水墨中国', desc: '东方韵味', icon: '🖌️', pts: 'HD+' },
-    { id: 'poster', name: '极简海报', desc: '排版美学', icon: '📐', pts: 'HD+' }
+    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
+    { id: 'real', name: '极致写实', desc: '4K 相机级质感', icon: '📷', pts: 'All', placeholder: '主题：【在此输入你想生成的真实画面】' },
+    { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛍️', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
+    { id: 'tech_poster', name: '科技海报', desc: '未来感排版', icon: '🚀', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
+    { id: 'travel', name: '旅游海报', desc: '城市名片定制', icon: '🗺️', pts: 'HD+', placeholder: '城市名称：【在此输入城市】' },
+    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🏠', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
+    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📱', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】' },
+    { id: 'eri_silhouette', name: '侧脸叙事', desc: '史诗剪影宇宙', icon: '👤', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
+    { id: 'silk_road', name: '丝绸山河', desc: 'S型流动构图', icon: '🏮', pts: 'Master', placeholder: '宣传城市/主题：【在此输入名称】' },
+    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '📟', pts: 'Master', placeholder: '拍摄地点：【在此输入具体地点】', requiresImage: true },
+    { id: 'relation_map', name: '关系图谱', desc: '作品逻辑梳理', icon: '🔗', pts: 'Master', placeholder: '作品/事件名称：【在此输入】' },
+    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '📖', pts: 'Master', placeholder: '科普对象：【在此输入】' }
   ];
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
+
+    if (selectedStyle.requiresImage && !refImageUrl) {
+      alert('✨ 此风格必须上传参考图以获得最佳效果，请在“PRO 工具”中上传。');
+      setActiveDrawer('pro');
+      return;
+    }
+
     const newJob = { id: Date.now().toString(), prompt, quality, style: selectedStyle.id, status: 'pending', progress: 0 };
     setJobs(prev => [...prev, newJob]);
     setPrompt('');
@@ -153,11 +172,12 @@ const MobileHomePage = () => {
       const res = await request.post('/image/generate', { 
         prompt: prompt, 
         quality: quality, 
-        style: selectedStyle.id 
+        style: selectedStyle.id,
+        aspect_ratio: aspectRatio,
+        ref_image_url: refImageUrl
       });
       const taskId = res.id;
       
-      // 弹出轻量级并行提示
       const tip = document.createElement('div');
       tip.innerHTML = '✨ 任务已进入后台，您可以继续创作（支持 3 路并行）';
       tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 3s forwards;border:1px solid rgba(255,255,255,0.1);';
@@ -171,9 +191,16 @@ const MobileHomePage = () => {
             if (j.id === newJob.id) {
               if (statusRes.status === 'success') { 
                 clearInterval(pollTimer); 
-                console.log(`%c🎨 生图任务完成 [${taskId}]`, 'color: #e66b33; font-weight: bold; font-size: 14px;');
-                console.table(statusRes.timings);
-                return { ...j, status: 'success', progress: 100, result: statusRes.image_url }; 
+                return { 
+                    ...j, 
+                    status: 'success', 
+                    progress: 100, 
+                    result: statusRes.image_url, 
+                    ref_image_url: statusRes.ref_image_url, // 同步参考图
+                    quality: statusRes.quality,           // 同步档次
+                    style: statusRes.style,               // 同步风格
+                    final_prompt: statusRes.final_prompt 
+                }; 
               }
               else if (statusRes.status === 'failed') { clearInterval(pollTimer); return { ...j, status: 'failed', error: statusRes.error }; }
               return { ...j, status: statusRes.status, progress: Math.min(j.progress + 5, 95) };
@@ -197,7 +224,7 @@ const MobileHomePage = () => {
             <p>开启您的创作之旅</p>
           </div>
         ) : (
-          jobs.map(job => <ResultCard key={job.id} job={job} onOpenNotes={() => setActiveDrawer('notes')} />)
+          jobs.map(job => <ResultCard key={job.id} job={job} onOpenNotes={(j) => { setSelectedJob(j); setActiveDrawer('notes'); }} />)
         )}
       </main>
 
@@ -210,6 +237,11 @@ const MobileHomePage = () => {
           <div onClick={() => setActiveDrawer('style')} style={{ padding: '10px 14px', background: '#fff', borderRadius: '14px', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(0,0,0,0.03)' }}>
             <Palette size={14} /> {selectedStyle.name}
           </div>
+          {quality !== 'standard' && (
+            <div onClick={() => setActiveDrawer('pro')} style={{ padding: '10px 14px', background: 'var(--primary-glow)', color: 'var(--primary)', borderRadius: '14px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Settings2 size={14} /> PRO 工具
+            </div>
+          )}
         </div>
         <div style={{ background: '#fff', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: '0 8px 0 20px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
           <input type="text" placeholder="描述你的灵感画面..." value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerate()} style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px' }} />
@@ -254,7 +286,28 @@ const MobileHomePage = () => {
             return (
               <div 
                 key={s.id} 
-                onClick={() => { if(!isLocked) { setSelectedStyle(s); setActiveDrawer(null); } }} 
+                onClick={() => { 
+                  if(!isLocked) { 
+                    const applyStyle = () => {
+                      setSelectedStyle(s);
+                      if (s.placeholder && (!prompt || prompt.includes('【'))) {
+                        setPrompt(s.placeholder);
+                      }
+                      setActiveDrawer(null);
+                    };
+
+                    if (prompt && prompt !== s.placeholder && !prompt.includes('【')) {
+                      if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前输入的内容。')) {
+                        applyStyle();
+                      } else {
+                        setSelectedStyle(s);
+                        setActiveDrawer(null);
+                      }
+                    } else {
+                      applyStyle();
+                    }
+                  } 
+                }} 
                 style={{ 
                   padding: '16px', borderRadius: '20px', background: selectedStyle.id === s.id ? 'var(--primary-glow)' : '#fff',
                   border: selectedStyle.id === s.id ? '2px solid var(--primary)' : '1px solid #F2F2F7',
@@ -264,6 +317,7 @@ const MobileHomePage = () => {
                 <div style={{ fontSize: '28px', marginBottom: '8px' }}>{s.icon}</div>
                 <div style={{ fontSize: '14px', fontWeight: '800', color: '#1D1D1F' }}>{s.name}</div>
                 <div style={{ fontSize: '10px', color: '#8E8E93', marginTop: '2px' }}>{s.desc}</div>
+                {s.requiresImage && <div style={{ fontSize: '9px', color: 'var(--primary)', marginTop: '4px', fontWeight: '700' }}>需参考图</div>}
                 {isLocked && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: '#eee', padding: '2px 6px', borderRadius: '6px' }}>🔒</div>}
               </div>
             );
@@ -271,9 +325,72 @@ const MobileHomePage = () => {
         </div>
       </MobileDrawer>
 
-      <MobileDrawer isOpen={activeDrawer === 'notes'} onClose={() => setActiveDrawer(null)} title="大师级创作笔记">
-        <div style={{ color: '#444', fontSize: '14px', lineHeight: '1.8', padding: '20px', background: '#F9F9FB', borderRadius: '20px' }}>
-          大师引擎已为您自动增强了画面的光影对比。
+      <MobileDrawer isOpen={activeDrawer === 'pro'} onClose={() => setActiveDrawer(null)} title="PRO 高级创作工具">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px', color: '#1D1D1F' }}>1. 构图比例</div>
+            <div style={{ display: 'flex', background: '#F2F2F7', padding: '4px', borderRadius: '14px' }}>
+              {['1:1', '9:16', '16:9'].map(r => (
+                <div 
+                  key={r} 
+                  onClick={() => setAspectRatio(r)}
+                  style={{ 
+                    flex: 1, textAlign: 'center', padding: '10px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                    background: aspectRatio === r ? '#fff' : 'transparent', color: aspectRatio === r ? 'var(--primary)' : '#8E8E93',
+                    boxShadow: aspectRatio === r ? '0 4px 10px rgba(0,0,0,0.05)' : 'none'
+                  }}
+                >
+                  {r}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px', color: '#1D1D1F' }}>2. 视觉参考图 (图生图)</div>
+            <div 
+              onClick={() => document.getElementById('mobile-ref-upload').click()}
+              style={{ 
+                height: '120px', borderRadius: '20px', border: '2px dashed #D1D1D6', background: '#F9F9FB',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+              }}
+            >
+              {refImageUrl ? (
+                <img src={refImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <>
+                  <Images size={24} color="#8E8E93" style={{ marginBottom: '8px' }} />
+                  <div style={{ fontSize: '12px', color: '#8E8E93' }}>点击上传参考图片</div>
+                </>
+              )}
+            </div>
+            {refImageUrl && (
+              <div onClick={() => setRefImageUrl('')} style={{ textAlign: 'center', marginTop: '8px', fontSize: '12px', color: '#ff4d4f', fontWeight: '700' }}>清除参考图</div>
+            )}
+            <input 
+              id="mobile-ref-upload" type="file" accept="image/*" hidden 
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setRefImageUrl(ev.target.result);
+                  reader.readAsDataURL(file);
+                }
+              }} 
+            />
+          </div>
+        </div>
+      </MobileDrawer>
+
+      <MobileDrawer isOpen={activeDrawer === 'notes'} onClose={() => setActiveDrawer(null)} title="创作笔记">
+        <div style={{ padding: '20px', background: '#F9F9FB', borderRadius: '24px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--primary)', marginBottom: '12px' }}>创作建议</div>
+          <div style={{ 
+            fontSize: '13px', color: '#444', lineHeight: '1.8', padding: '16px', background: '#fff', 
+            borderRadius: '16px', border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            AI 已根据您选择的风格自动优化了画面的细节。如果您对结果不满意，可以尝试在提示词中增加更多的描述性形容词。
+          </div>
         </div>
       </MobileDrawer>
 
