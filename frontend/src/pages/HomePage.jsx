@@ -53,6 +53,24 @@ const HomePage = () => {
   const [showNotes, setShowNotes] = useState(false);
   const [finalPrompt, setFinalPrompt] = useState('');
   
+  // 处理剪贴板粘贴图片 (Task: Paste to Ref Image)
+  const handlePaste = (e) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            setRefImageUrl(ev.target.result);
+            showToast('📸 图片已自动设置为参考图', 'success');
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  };
+  
   // 用于实时日志记录的状态追踪
   const lastStatus = React.useRef(null);
 
@@ -274,6 +292,7 @@ const HomePage = () => {
               placeholder="描述你脑海中的画面..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              onPaste={handlePaste}
               disabled={loading}
               style={{
                 width: '100%', height: '120px', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px',
