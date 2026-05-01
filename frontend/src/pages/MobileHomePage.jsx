@@ -173,9 +173,10 @@ const MobileHomePage = () => {
     { id: 'real', name: '极致写实', desc: '仿真现实模拟', icon: '📸', pts: 'All', placeholder: '主题：【在此输入人像或画面，支持多样化构图生成】' },
     { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛒', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
     { id: 'tech_poster', name: '科技海报', desc: '高级感信息排版', icon: '🎨', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
+    { id: 'travel_guide', name: '旅游攻略', desc: '手绘旅行手账', icon: '🧭', pts: 'All', placeholder: '目的地 @ 天数（如：大理 @ 3）' },
 
     // --- 专业梯队 ---
-    { id: 'travel', name: '旅游海报', desc: '多场景杂志长图', icon: '✈️', pts: 'HD+', placeholder: '主题：【在此输入城市或景点，如：雪后故宫、雨中西湖】' },
+    { id: 'travel', name: '旅游海报', desc: '高阶旅行杂志封面', icon: '✈️', pts: 'HD+', placeholder: '灵感：【如：京都极简小巷、霓虹下的东京、海岛日落】 氛围：【如：复古排版、莫兰迪色调】' },
     { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🛋️', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
     { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📡', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】', requiresImage: true },
     { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '🎞️', pts: 'HD+', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true },

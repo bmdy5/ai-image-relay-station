@@ -105,11 +105,52 @@ const Showcase = ({ setPreviewImage, isMobile: propIsMobile }) => {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '20px' : '40px', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
         {[
-          { id: '01', title: "复杂长图排版能力", color: "#e66b33", img: "/showcase/2.png", tags: ['高清输出', '文字精准'], featureLabel: "高清版 - 均衡模型", desc: "支持超长纵向画布输出，精准处理数千字的逻辑排版。无论是旅游攻略、购物清单还是工作流设计，都能做到字体清晰、布局优雅。" },
-          { id: '02', title: "知识图谱海报生成", color: "#3b82f6", img: "/showcase/3.png", tags: ['科普海报', '信息可视化'], featureLabel: "高清版 - 创意引擎", desc: "GPT Image V2 能够深度理解深奥的科学概念，并将其转化为极具亲和力的视觉语言。科普教育不再枯燥。" },
-          { id: '03', title: "中文字体与海报设计", color: "#8b5cf6", img: "/showcase/image.png", tags: ['精准中文', '意境融合'], featureLabel: "大师版 - 艺术引擎", desc: "攻克了 AI 绘图领域最难的中文字体精准排版。无论是武侠仙侠、科幻电影还是商业海报，都能实现震撼呈现。" },
-          { id: '04', title: "学术图表与复杂公式", color: "#ec4899", img: "/showcase/5.png", tags: ['逻辑架构', '专业设计'], featureLabel: "高清版 - 逻辑模型", desc: "只需输入正文逻辑和图表需求，即可生成排版完美的学术流程图或逻辑架构图。不再有乱码，只有严谨结构。" },
-          { id: '05', title: "极致微距细节", color: "#10b981", img: "/showcase/1.png", tags: ['微距画质', '商业级别'], featureLabel: "PRO - 极致写实", desc: "支持超高分辨率渲染，对瞳孔倒影、发丝细节、材质纹理有着极其恐怖的还原力。每一像素都经得起无限放大。" }
+          { 
+            id: '01', 
+            title: "时空修复：赋予旧照新生", 
+            color: "#e66b33", 
+            img: "/showcase/repair_after.png", 
+            beforeImg: "/showcase/repair_before.jpg",
+            tags: ['4K 超清修复', '人像细节重构'], 
+            featureLabel: "旗舰版 - 极致修复", 
+            desc: "攻克了老旧照片破损、模糊、噪点多的难题。GPT Image V2 能够深度感知人像结构，在保留真实神韵的同时，将每一根发丝、每一处眼神光都恢复至影院级清晰度。" 
+          },
+          { 
+            id: '02', 
+            title: "纪实风格：捕捉光影瞬间", 
+            color: "#3b82f6", 
+            img: "/showcase/documentary_realism.png", 
+            tags: ['电影级质感', '情绪光影'], 
+            featureLabel: "专业版 - 纪实引擎", 
+            desc: "不再是僵硬的 AI 生成感。我们追求极致的真实性，模拟徕卡、蔡司镜头的光学特性，让生成的画面具备浓郁的胶片色彩与细腻的颗粒感，每一张图都仿佛一段被定格的故事。" 
+          },
+          { 
+            id: '03', 
+            title: "极简海报：重定义视觉美学", 
+            color: "#8b5cf6", 
+            img: "/showcase/creative_poster.png", 
+            tags: ['艺术留白', '平面设计'], 
+            featureLabel: "标准版 - 创意引擎", 
+            desc: "突破传统 AI 画面过满的弊端。我们的模型深谙“留白”与“排版”的艺术，能自动生成具备顶级设计师水准的极简海报，文字与构图和谐统一，专为高端商业宣发而生。" 
+          },
+          { 
+            id: '04', 
+            title: "旅游手账：记录指尖的旅行感", 
+            color: "#10b981", 
+            img: "/showcase/travel_journal.png", 
+            tags: ['童趣手绘', '智能生成路线'], 
+            featureLabel: "标准版 - 旅游手账", 
+            desc: "我们的特色功能。只需输入目的地与天数，AI 即可自动生成一张充满童趣、带有虚线路线与手绘地标的旅行手账。让每一段旅程都拥有一份独一无二的视觉记忆。" 
+          },
+          { 
+            id: '05', 
+            title: "微距视界：每一像素都经得起推敲", 
+            color: "#ec4899", 
+            img: "/showcase/1.png", 
+            tags: ['极致写实', '8K 画质'], 
+            featureLabel: "旗舰版 - 极致写实", 
+            desc: "针对产品与静物进行了专项增强。对皮肤纹理、金属材质、瞳孔倒影有着令人惊叹的还原力，完美适配电商、时尚等高要求商业场景。" 
+          }
         ].map((item, idx) => (
           <div key={item.id} style={{ 
             background: idx % 2 === 0 ? '#fff' : (isMobile ? '#fff' : '#fafafa'), 
@@ -117,7 +158,7 @@ const Showcase = ({ setPreviewImage, isMobile: propIsMobile }) => {
             padding: isMobile ? '24px' : '60px', 
             boxShadow: isMobile ? '0 8px 24px rgba(0,0,0,0.04)' : 'none',
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr',
             gap: isMobile ? '24px' : '80px',
             alignItems: 'center'
           }}>
@@ -134,28 +175,59 @@ const Showcase = ({ setPreviewImage, isMobile: propIsMobile }) => {
             <div 
               style={{ cursor: 'zoom-in', position: 'relative', transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }} 
               onClick={() => setPreviewImage(item.img)}
+              className="showcase-img-wrapper"
             >
-              <div style={{ position: 'absolute', top: isMobile ? '12px' : '24px', right: isMobile ? '12px' : '24px', background: 'rgba(255,255,255,0.9)', padding: isMobile ? '8px' : '12px', borderRadius: '50%', zIndex: 1, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                <Maximize2 size={isMobile ? 14 : 20} color={item.color} />
-              </div>
+              {/* 修复对比特有的分屏布局 (手机端上下堆叠，PC端左右平铺) */}
+              {item.beforeImg ? (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: '4px', 
+                  borderRadius: isMobile ? '16px' : '24px', 
+                  overflow: 'hidden', 
+                  boxShadow: '0 30px 60px rgba(0,0,0,0.12)' 
+                }}>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <img src={item.beforeImg} style={{ width: '100%', height: isMobile ? '200px' : 'auto', objectFit: 'cover', display: 'block' }} alt="Before" />
+                    <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.4)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>BEFORE</div>
+                  </div>
+                  <div style={{ flex: 1, position: 'relative' }}>
+                    <img src={item.img} style={{ width: '100%', height: isMobile ? '200px' : 'auto', objectFit: 'cover', display: 'block' }} alt="After" />
+                    <div style={{ position: 'absolute', top: isMobile ? '10px' : '10px', right: '10px', background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>AFTER</div>
+                  </div>
+                </div>
+              ) : (
+                <img src={item.img} style={{ width: '100%', borderRadius: isMobile ? '16px' : '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)', display: 'block' }} alt={item.title} />
+              )}
+              
+              {/* 功能标签悬浮层 */}
               <div style={{ 
                 position: 'absolute', 
                 bottom: isMobile ? '12px' : '24px', 
                 left: isMobile ? '12px' : '24px', 
-                background: 'rgba(0,0,0,0.4)', 
+                background: 'rgba(0,0,0,0.6)', 
                 backdropFilter: 'blur(10px)',
                 color: '#fff',
-                padding: '4px 10px',
+                padding: '6px 12px',
                 borderRadius: '8px',
-                fontSize: '10px',
+                fontSize: '11px',
                 fontWeight: '700',
                 letterSpacing: '1px',
-                zIndex: 1,
-                opacity: 0.8
+                zIndex: 5
               }}>
                 {item.featureLabel}
               </div>
-              <img src={item.img} style={{ width: '100%', borderRadius: isMobile ? '16px' : '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.12)' }} alt={item.title} />
+              
+              <div style={{ position: 'absolute', top: isMobile ? '12px' : '24px', right: isMobile ? '12px' : '24px', background: 'rgba(255,255,255,0.9)', padding: isMobile ? '8px' : '12px', borderRadius: '50%', zIndex: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <Maximize2 size={isMobile ? 14 : 20} color={item.color} />
+              </div>
+              
+              {/* 装饰层 */}
+              <div style={{ 
+                position: 'absolute', inset: 0, borderRadius: isMobile ? '16px' : '24px',
+                background: 'linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.1) 100%)',
+                pointerEvents: 'none'
+              }} />
             </div>
           </div>
         ))}
