@@ -111,8 +111,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
         # 2. 提示词包装与注入
         prompt_to_send = wrap_prompt(style, prompt, quality)
         final_api_prompt = prompt_to_send
-        if processed_ref_url and quality in ["hd", "master"]:
-            final_api_prompt = f"{processed_ref_url} {prompt_to_send}"
+        # 注意：图生图不再手动将 URL 塞进 Prompt，而是通过 images 数组传递
 
         with session_scope() as db:
             log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
@@ -120,58 +119,38 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                 log.status = "generating"
                 if hasattr(log, "final_prompt"): log.final_prompt = prompt_to_send
 
-        # 3. API 调用 (针对 gpt-image 系列改用 multipart/form-data 以支持参考图)
+        # 3. API 调用 (GPT-Image-2 专用 Vision-JSON 协议)
         for attempt in range(3):
             try:
                 async with httpx.AsyncClient(timeout=180.0) as client:
-                    # 准备二进制图片数据 (Task: Binary Stream Support)
-                    image_data = None
-                    if processed_ref_url:
-                        if processed_ref_url.startswith("data:image"):
-                            import base64
-                            header, encoded = processed_ref_url.split(",", 1)
-                            image_data = base64.b64decode(encoded)
-                        elif processed_ref_url.startswith("http"):
-                            img_resp = await client.get(processed_ref_url)
-                            if img_resp.status_code == 200:
-                                image_data = img_resp.content
-
-                    # 终极稳定版：回归二进制 Multipart 协议 (验证通过的物理链路)
+                    # 终极实锤协议：/v1/images/edits + JSON
                     api_path = "/images/generations"
-                    data = {
+                    payload = {
                         "model": "gpt-image-2", 
                         "prompt": final_api_prompt, 
                         "n": 1,
                         "response_format": "url",
-                        "input_fidelity": "high"
+                        "quality": "low" # 极致省钱模式
                     }
 
-                    # 极致省钱模式：全员强制 low 质量 + low 保真度 (Task: Cost Optimization)
-                    data["quality"] = "low"
-                    data["input_fidelity"] = "low"
+                    # 图生图模式切换 (Verified Protocol)
+                    if processed_ref_url:
+                        api_path = "/images/edits"
+                        payload["images"] = [{"image_url": processed_ref_url}]
 
-                    # 分辨率强制合规 (Task: Resolution Mapping)
-                    if aspect_ratio == "9:16": data["size"] = "1024x1536"
-                    elif aspect_ratio == "16:9": data["size"] = "1536x1024"
-                    else: data["size"] = "1024x1024"
+                    # 分辨率强制合规
+                    if aspect_ratio == "9:16": payload["size"] = "1024x1536"
+                    elif aspect_ratio == "16:9": payload["size"] = "1536x1024"
+                    else: payload["size"] = "1024x1024"
 
-                    files = {}
-                    if image_data:
-                        # 使用二进制文件流形式发送核心图片
-                        files = {"image": ("ref.png", image_data, "image/png")}
-                        data["image_url"] = processed_ref_url
-                        data["ref_image"] = processed_ref_url
-
-                    print(f"--- [API Request] ID: {log_id} | Model: {data['model']} | Quality: {data['quality']} | Img2Img: {'YES' if files else 'NO'} ---")
+                    print(f"--- [API Request] ID: {log_id} | Model: gpt-image-2 | Quality: {payload['quality']} | Img2Img: {'YES' if processed_ref_url else 'NO'} ---")
                     
                     api_start = time.time()
-                    if files:
-                        # 有图时使用 data + files (Multipart)
-                        resp = await client.post(f"{base_url}{api_path}", headers={"Authorization": f"Bearer {api_key}"}, data=data, files=files)
-                    else:
-                        # 无图时使用纯 JSON
-                        resp = await client.post(f"{base_url}{api_path}", headers={"Authorization": f"Bearer {api_key}"}, json=data)
-                    
+                    resp = await client.post(
+                        f"{base_url}{api_path}", 
+                        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, 
+                        json=payload
+                    )
                     api_ms = int((time.time() - api_start) * 1000)
                 
                 if resp.status_code == 200:

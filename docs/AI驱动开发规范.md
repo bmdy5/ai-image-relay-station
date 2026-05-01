@@ -28,5 +28,15 @@
 - **先测后改**：修改后端逻辑后，必须通过 `curl` 或 Python 脚本验证接口返回的 JSON 结构是否符合预期。
 - **MVC 守则**：严格区分 Model (数据库), Controller (API 逻辑), View (React 前端)。
 
+## 6. 多协议探测与 Vision-JSON 对齐 (Multi-Protocol Probing)
+对于 GPT-Image-2 等 2026 年新款模型，严禁盲目依赖旧版 DALL·E 2 的 Multipart/Binary 协议。
+- **探测先行**：在遇到图生图失效（AI 忽略参考图）时，必须编写专门的 `probe` 脚本进行协议变体测试（JSON vs Multipart, image vs images），直到实锤 `image_tokens` 消耗或 API 接受参数。
+- **Vision 协议规范**：
+    - **端点路由**：图生图任务必须路由至 `/v1/images/edits`；纯文生图保留在 `/v1/images/generations`。
+    - **数据格式**：强制采用 **纯 JSON**。参考图通过 `images: [{"image_url": "URL"}]` 数组传递（注意字段名为复数 `images`）。
+    - **指令纯净化**：禁止在文本 Prompt 中混合图片 URL。图片必须作为独立的数据对象（Data Object）存在，以防 AI 语义混淆。
+- **极致交互 (Interaction UX)**：
+    - **剪贴板赋能**：前端输入框必须实现 `onPaste` 监听，支持直接粘贴图片并自动转换为参考图，缩短创作链路。
+
 ---
-*最后更新：2026-05-01 by Antigravity*
+*最后更新：2026-05-01 by Antigravity (Protocol Refactor Complete)*

@@ -110,6 +110,29 @@ const MobileHomePage = () => {
   const [refImageUrl, setRefImageUrl] = useState('');
   const [pricingMap, setPricingMap] = useState({ 'standard': 5, 'hd': 15, 'master': 30 });
   const [selectedJob, setSelectedJob] = useState(null);
+  
+  // 处理粘贴图片 (Task: Mobile Paste to Ref)
+  const handlePaste = (e) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            setRefImageUrl(ev.target.result);
+            // 简单的移动端提示
+            const tip = document.createElement('div');
+            tip.innerHTML = '📸 图片已自动设置为参考图';
+            tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 3s forwards;';
+            document.body.appendChild(tip);
+            setTimeout(() => tip.remove(), 3000);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     fetchConfig();
@@ -244,7 +267,15 @@ const MobileHomePage = () => {
           )}
         </div>
         <div style={{ background: '#fff', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: '0 8px 0 20px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
-          <input type="text" placeholder="描述你的灵感画面..." value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerate()} style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px' }} />
+          <input 
+            type="text" 
+            placeholder="描述你的灵感画面..." 
+            value={prompt} 
+            onChange={(e) => setPrompt(e.target.value)} 
+            onPaste={handlePaste}
+            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()} 
+            style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px' }} 
+          />
           <button onClick={handleGenerate} disabled={!prompt.trim()} style={{ width: '44px', height: '44px', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', borderRadius: '50%', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ArrowUpCircle size={24} />
           </button>
