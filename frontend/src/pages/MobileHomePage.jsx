@@ -84,7 +84,21 @@ const MobileHomePage = () => {
 
   useEffect(() => {
     fetchConfig();
+    checkPendingPrompt();
   }, []);
+
+  const checkPendingPrompt = () => {
+    const pending = sessionStorage.getItem('pending_prompt');
+    if (pending) {
+      setPrompt(pending);
+      sessionStorage.removeItem('pending_prompt');
+      // 延迟确保输入框已渲染，提升手机端聚焦成功率
+      setTimeout(() => {
+        const input = document.querySelector('input[type="text"]');
+        if (input) input.focus();
+      }, 300);
+    }
+  };
 
   useEffect(() => {
     if (stackRef.current) {
@@ -122,6 +136,14 @@ const MobileHomePage = () => {
         style: selectedStyle.id 
       });
       const taskId = res.id;
+      
+      // 弹出轻量级并行提示
+      const tip = document.createElement('div');
+      tip.innerHTML = '✨ 任务已进入后台，您可以继续创作（支持 3 路并行）';
+      tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 3s forwards;border:1px solid rgba(255,255,255,0.1);';
+      document.body.appendChild(tip);
+      setTimeout(() => tip.remove(), 3000);
+
       const pollTimer = setInterval(async () => {
         try {
           const statusRes = await request.get(`/image/status/${taskId}`);
@@ -233,6 +255,12 @@ const MobileHomePage = () => {
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeUpDown { 
+          0% { opacity: 0; transform: translate(-50%, -20px); }
+          15% { opacity: 1; transform: translate(-50%, 0); }
+          85% { opacity: 1; transform: translate(-50%, 0); }
+          100% { opacity: 0; transform: translate(-50%, -20px); }
+        }
       `}} />
     </div>
   );
