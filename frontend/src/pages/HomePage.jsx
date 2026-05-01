@@ -40,6 +40,7 @@ const HomePage = () => {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState(null);
   const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [refImageUrl, setRefImageUrl] = useState('');
   const [numImages, setNumImages] = useState(1);
   const [previewImage, setPreviewImage] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -47,9 +48,10 @@ const HomePage = () => {
   const [feedbackContent, setFeedbackContent] = useState('');
   const [feedbackContact, setFeedbackContact] = useState('');
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
-  const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '基于提示词的原生艺术呈现', icon: '✨' });
+  const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', placeholder: '主题：【在此输入你想生成的画面】' });
   const [particles, setParticles] = useState([]);
   const [showNotes, setShowNotes] = useState(false);
+  const [finalPrompt, setFinalPrompt] = useState('');
   
   // 用于实时日志记录的状态追踪
   const lastStatus = React.useRef(null);
@@ -70,14 +72,18 @@ const HomePage = () => {
   });
 
   const styles = [
-    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All' },
-    { id: 'real', name: '极致写实', desc: '4K 相机级质感', icon: '📷', pts: 'All' },
-    { id: 'anime', name: '二次元', desc: '番剧级光影', icon: '🌸', pts: 'HD+' },
-    { id: 'oil', name: '古典油画', desc: '大师笔触复刻', icon: '🎨', pts: 'HD+' },
-    { id: 'cyber', name: '赛博朋克', desc: '霓虹幻境', icon: '🌆', pts: 'HD+' },
-    { id: '3d', name: '3D 渲染', desc: 'C4D 极致建模', icon: '🧊', pts: 'HD+' },
-    { id: 'ink', name: '水墨中国', desc: '东方韵味', icon: '🖌️', pts: 'HD+' },
-    { id: 'poster', name: '极简海报', desc: '排版美学', icon: '📐', pts: 'HD+' }
+    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
+    { id: 'real', name: '极致写实', desc: '4K 相机级质感', icon: '📷', pts: 'All', placeholder: '主题：【在此输入你想生成的真实画面】' },
+    { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛍️', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
+    { id: 'tech_poster', name: '科技海报', desc: '未来感排版', icon: '🚀', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
+    { id: 'travel', name: '旅游海报', desc: '城市名片定制', icon: '🗺️', pts: 'HD+', placeholder: '城市名称：【在此输入城市】' },
+    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🏠', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
+    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📱', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】' },
+    { id: 'eri_silhouette', name: '侧脸叙事', desc: '史诗剪影宇宙', icon: '👤', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
+    { id: 'silk_road', name: '丝绸山河', desc: 'S型流动构图', icon: '🏮', pts: 'Master', placeholder: '宣传城市/主题：【在此输入名称】' },
+    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '📟', pts: 'Master', placeholder: '拍摄地点：【在此输入具体地点】', requiresImage: true },
+    { id: 'relation_map', name: '关系图谱', desc: '作品逻辑梳理', icon: '🔗', pts: 'Master', placeholder: '作品/事件名称：【在此输入】' },
+    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '📖', pts: 'Master', placeholder: '科普对象：【在此输入】' }
   ];
 
   useEffect(() => {
@@ -139,10 +145,19 @@ const HomePage = () => {
     }
 
     try {
+      // 验证图片约束 (Task 3.3)
+      if (selectedStyle.requiresImage && !refImageUrl) {
+        showToast('✨ 此风格必须上传参考图以获得最佳效果', 'error');
+        setLoading(false);
+        return;
+      }
+
       const res = await request.post('/image/generate', { 
         prompt, 
         quality, 
-        style: selectedStyle.id 
+        style: selectedStyle.id,
+        aspect_ratio: aspectRatio,
+        ref_image_url: refImageUrl
       });
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
@@ -170,6 +185,7 @@ const HomePage = () => {
             if (particleInterval) clearInterval(particleInterval);
             setProgress(100);
             setResult(statusRes.image_url);
+            setFinalPrompt(statusRes.final_prompt || '');
             setLoading(false);
             setParticles([]);
             return;
@@ -296,19 +312,80 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* 4. 高级工具门控 */}
+          {/* 4. 高级工具 (Task 3.4) */}
           <div style={{ opacity: quality === 'standard' ? 0.4 : 1, pointerEvents: quality === 'standard' ? 'none' : 'auto', transition: 'all 0.5s' }}>
             <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>
               高级工具 <span style={{ fontSize: '10px', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '5px' }}>PRO</span>
             </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div style={{ flex: 1, height: '80px', border: '1px dashed var(--border)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                <Wand2 size={18} />
-                <span style={{ marginTop: '4px' }}>图生图</span>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* 图生图上传器 */}
+              <div 
+                className="glass-card"
+                style={{ 
+                  padding: '12px', border: selectedStyle.requiresImage && !refImageUrl ? '1px dashed var(--primary)' : '1px solid var(--border)',
+                  borderRadius: '16px', background: 'white', display: 'flex', alignItems: 'center', gap: '12px'
+                }}
+              >
+                <div 
+                  onClick={() => document.getElementById('ref-upload').click()}
+                  style={{ 
+                    width: '48px', height: '48px', borderRadius: '12px', background: '#f2f2f7', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    overflow: 'hidden', border: '1px solid var(--border)'
+                  }}
+                >
+                  {refImageUrl ? (
+                    <img src={refImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <Images size={20} color="var(--text-secondary)" />
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700' }}>参考图片</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    {selectedStyle.requiresImage ? (
+                      <span style={{ color: refImageUrl ? 'var(--text-secondary)' : 'var(--primary)' }}>
+                        {refImageUrl ? '已上传参考图' : '⚠️ 此风格必须上传图片'}
+                      </span>
+                    ) : '可选，支持参考生图'}
+                  </div>
+                </div>
+                {refImageUrl && (
+                  <button onClick={() => setRefImageUrl('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#ff4d4f' }}>
+                    <X size={14} />
+                  </button>
+                )}
+                <input 
+                  id="ref-upload" type="file" accept="image/*" hidden 
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setRefImageUrl(ev.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  }} 
+                />
               </div>
-              <div style={{ flex: 1, height: '80px', border: '1px dashed var(--border)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                <Monitor size={18} />
-                <span style={{ marginTop: '4px' }}>参数微调</span>
+
+              {/* 比例选择器 */}
+              <div style={{ display: 'flex', background: '#f2f2f7', padding: '4px', borderRadius: '14px' }}>
+                {['1:1', '9:16', '16:9'].map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setAspectRatio(r)}
+                    style={{
+                      flex: 1, padding: '6px', border: 'none', borderRadius: '10px', fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                      transition: 'all 0.3s',
+                      background: aspectRatio === r ? 'white' : 'transparent',
+                      color: aspectRatio === r ? 'var(--primary)' : '#666',
+                      boxShadow: aspectRatio === r ? '0 4px 10px rgba(0,0,0,0.05)' : 'none'
+                    }}
+                  >
+                    {r}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -316,7 +393,7 @@ const HomePage = () => {
           <button 
             className={`btn-primary ${loading ? 'loading-pulse' : ''}`} 
             onClick={handleGenerate} 
-            disabled={loading || !prompt.trim()}
+            disabled={loading || !prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)}
             style={{ 
               width: '100%', marginTop: 'auto', height: '44px', 
               borderRadius: '10px', fontSize: '14px',
@@ -397,23 +474,6 @@ const HomePage = () => {
                   >
                     ✦
                   </div>
-                  {showNotes && (
-                    <div className="glass-badge" style={{
-                      position: 'absolute', bottom: '85px', right: '24px', width: '300px', padding: '24px',
-                      borderRadius: '24px', textAlign: 'left', zIndex: 10
-                    }}>
-                      <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--master)', marginBottom: '10px' }}>✦ 大师创作笔记</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                        针对您的创意，大师引擎已自动：<br/>
-                        • 引入丁达尔效应模拟增强光感<br/>
-                        • 应用斐波那契螺旋优化构图<br/>
-                        • 进行了 4K 级别的纹理细节重塑
-                      </div>
-                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.05)', fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => alert(`【原提示词】: ${prompt}\n\n【大师增强词】: 已自动注入光影参数与语义扩展...`)}>
-                        查看灵感演变细节 ›
-                      </div>
-                    </div>
-                  )}
                 </>
               )}
 
@@ -458,14 +518,46 @@ const HomePage = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
                   {styles.map((s) => {
-                    const isLocked = quality === 'standard' && s.id !== 'default' && s.id !== 'real';
+                    // 严格等级压制逻辑 (Fix: Tier Unlocking Bug)
+                    let isLocked = false;
+                    if (quality === 'standard') {
+                      // 标准版只能用基础风格
+                      isLocked = !['default', 'real', 'product', 'tech_poster'].includes(s.id);
+                    } else if (quality === 'hd') {
+                      // 高清版不能用大师版风格
+                      isLocked = s.pts === 'Master';
+                    }
+                    // 大师版解锁所有
+                    
                     return (
                       <div 
                         key={s.id} 
                         onClick={() => {
                           if (!isLocked) {
-                            setSelectedStyle(s);
-                            setShowLab(false);
+                            // 智能填词与覆盖逻辑 (Task 3.2)
+                            const currentPlaceholder = selectedStyle.placeholder;
+                            const isInputEmpty = !prompt.trim() || prompt === currentPlaceholder;
+                            
+                            const applyStyle = () => {
+                              setSelectedStyle(s);
+                              setPrompt(s.placeholder || '');
+                              setShowLab(false);
+                              if (s.requiresImage) {
+                                showToast('✨ 此风格需要上传图片作为参考', 'success');
+                              }
+                            };
+
+                            if (isInputEmpty) {
+                              applyStyle();
+                            } else {
+                              if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前的内容。')) {
+                                applyStyle();
+                              } else {
+                                // 仅切换风格，不覆盖文字
+                                setSelectedStyle(s);
+                                setShowLab(false);
+                              }
+                            }
                           }
                         }}
                         style={{ 

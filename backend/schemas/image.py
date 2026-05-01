@@ -5,6 +5,8 @@ class ImageCreate(BaseModel):
     prompt: str
     quality: str = "standard"  # standard, hd, master
     style: str = "default"     # 新增：风格 ID
+    aspect_ratio: Optional[str] = "1:1"  # 新增：比例 (1:1, 9:16, 16:9)
+    ref_image_url: Optional[str] = None  # 新增：参考图 URL (图生图)
 
 class ImageLogInfo(BaseModel):
     id: int
