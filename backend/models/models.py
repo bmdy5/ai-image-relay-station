@@ -30,8 +30,10 @@ class ImageLog(Base):
     prompt = Column(Text)
     quality = Column(String)  # standard / hd / master
     style = Column(String, default="default")  # 风格标注
+    final_prompt = Column(Text)  # 最终包装后的提示词
     cost_points = Column(Integer)
     image_url = Column(String)
+    ref_image_url = Column(String) # 新增：记录参考图
     status = Column(String)  # success / failed
     error_msg = Column(Text)
     created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
