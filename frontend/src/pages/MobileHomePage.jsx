@@ -22,19 +22,39 @@ const ResultCard = ({ job, onOpenNotes }) => {
       position: 'relative',
       animation: 'fadeIn 0.5s ease-out'
     }}>
-      {/* 提示词区 */}
+      {/* 提示词与版本标注区 */}
       <div style={{ 
         padding: '12px 16px', 
-        fontSize: '13px', 
-        color: 'var(--text-secondary)', 
         background: '#FAFAFB',
         borderBottom: '1px solid rgba(0,0,0,0.02)'
       }}>
-        {job.prompt}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', flex: 1 }}>{job.prompt}</div>
+          <div style={{ 
+            fontSize: '9px', 
+            color: isMaster ? 'var(--master)' : '#8E8E93',
+            background: isMaster ? 'rgba(124, 77, 255, 0.1)' : 'rgba(0,0,0,0.05)',
+            padding: '2px 8px',
+            borderRadius: '6px',
+            fontWeight: '800',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}>
+            {isMaster && '✦ '}{job.quality === 'master' ? '大师版' : job.quality === 'hd' ? '高清版' : '标准版'} - {
+              job.style === 'real' ? '极致写实' : 
+              job.style === 'anime' ? '二次元' : 
+              job.style === 'oil' ? '油画' : 
+              job.style === 'cyber' ? '赛博' : 
+              job.style === '3d' ? '3D渲染' : 
+              job.style === 'ink' ? '水墨' : 
+              job.style === 'poster' ? '海报' : '默认'
+            }
+          </div>
+        </div>
       </div>
 
       {/* 图像显示/生成区 */}
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: '#F2F2F7', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: '#F2F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {job.status === 'success' ? (
           <div style={{ width: '100%', position: 'relative' }}>
             <img src={job.result} alt="AI Result" style={{ width: '100%', display: 'block' }} />
@@ -126,7 +146,7 @@ const MobileHomePage = () => {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    const newJob = { id: Date.now().toString(), prompt, quality, status: 'pending', progress: 0 };
+    const newJob = { id: Date.now().toString(), prompt, quality, style: selectedStyle.id, status: 'pending', progress: 0 };
     setJobs(prev => [...prev, newJob]);
     setPrompt('');
     try {
@@ -149,7 +169,12 @@ const MobileHomePage = () => {
           const statusRes = await request.get(`/image/status/${taskId}`);
           setJobs(prev => prev.map(j => {
             if (j.id === newJob.id) {
-              if (statusRes.status === 'success') { clearInterval(pollTimer); return { ...j, status: 'success', progress: 100, result: statusRes.image_url }; }
+              if (statusRes.status === 'success') { 
+                clearInterval(pollTimer); 
+                console.log(`%c🎨 生图任务完成 [${taskId}]`, 'color: #e66b33; font-weight: bold; font-size: 14px;');
+                console.table(statusRes.timings);
+                return { ...j, status: 'success', progress: 100, result: statusRes.image_url }; 
+              }
               else if (statusRes.status === 'failed') { clearInterval(pollTimer); return { ...j, status: 'failed', error: statusRes.error }; }
               return { ...j, status: statusRes.status, progress: Math.min(j.progress + 5, 95) };
             }

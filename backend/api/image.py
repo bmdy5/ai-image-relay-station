@@ -30,7 +30,7 @@ PRICING = {"standard": 5, "hd": 15, "master": 30}
 
 # 成本矩阵 (RMB) - 基于 API 实际支出估算
 COST_RMB = {
-    "standard": 0.29,
+    "standard": 0.45,
     "hd": 0.58,
     "master": 0.58
 }
@@ -182,13 +182,13 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
     api_cost_rmb = COST_RMB.get(quality, 0) if success else 0
     profit_rmb = user_pay_rmb - api_cost_rmb if success else 0
 
-    print(f"\\n--- [Task Audit] ID:{log_id} | {status_tag}{refund_tag} ---")
+    print(f"\n--- [Task Audit] ID:{log_id} | {status_tag}{refund_tag} ---")
     if success:
         print(f"Revenue: {user_pay_rmb:.2f} RMB | Cost: {api_cost_rmb:.2f} RMB | Profit: +{profit_rmb:.2f} RMB")
     else:
         print(f"Status: FAILED | Refund: {user_pay_rmb:.2f} RMB")
     print(f"Total Time: {total_time_ms/1000:.2f}s (API: {api_ms/1000:.2f}s, Store: {store_ms/1000:.2f}s)")
-    print(f"{'='*50}\\n")
+    print(f"{'='*50}\n")
 
 @router.post("/generate")
 async def generate_image(payload: image_schema.ImageCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -203,7 +203,7 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
     cost = PRICING.get(payload.quality, 5)
     result = db.query(models.User).filter(models.User.id == current_user.id, models.User.points >= cost).update({"points": models.User.points - cost, "frozen_points": models.User.frozen_points + cost}, synchronize_session=False)
     if result == 0: raise HTTPException(status_code=403, detail="余额不足")
-    pending_log = image_crud.create_image_log(db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, cost_points=cost, status="pending")
+    pending_log = image_crud.create_image_log(db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, style=payload.style, cost_points=cost, status="pending")
     db.commit()
     background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time())
     return {"id": pending_log.id, "status": "pending", "remaining_points": current_user.points}
@@ -212,7 +212,7 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
 async def get_task_status(id: int, db: Session = Depends(get_db)):
     log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
     if not log: raise HTTPException(status_code=404, detail="任务不存在")
-    return {"id": log.id, "status": log.status, "image_url": log.image_url, "error": log.error_msg, "cost_points": log.cost_points, "timings": {"queue": log.queue_duration, "api": log.api_duration, "generation": log.generation_duration, "storage": log.storage_duration, "total": log.total_duration} if log.status in ["success", "failed"] else None}
+    return {"id": log.id, "status": log.status, "quality": log.quality, "style": log.style, "image_url": log.image_url, "error": log.error_msg, "cost_points": log.cost_points, "timings": {"queue": log.queue_duration, "api": log.api_duration, "generation": log.generation_duration, "storage": log.storage_duration, "total": log.total_duration} if log.status in ["success", "failed"] else None}
 
 @router.get("/batch-status")
 async def get_batch_status(ids: str = Query(...), db: Session = Depends(get_db)):
@@ -223,7 +223,7 @@ async def get_batch_status(ids: str = Query(...), db: Session = Depends(get_db))
 @router.get("/history")
 async def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     logs = image_crud.get_user_image_logs(db, current_user.id, skip=skip, limit=limit)
-    return [{"id": l.id, "prompt": l.prompt, "status": l.status, "image_url": l.image_url, "created_at": l.created_at, "timings": {"total": l.total_duration} if l.status in ["success", "failed"] else None} for l in logs]
+    return [{"id": l.id, "prompt": l.prompt, "status": l.status, "quality": l.quality, "style": l.style, "image_url": l.image_url, "created_at": l.created_at, "timings": {"total": l.total_duration} if l.status in ["success", "failed"] else None} for l in logs]
 
 @router.get("/download")
 async def download_image(id: int, db: Session = Depends(get_db)):

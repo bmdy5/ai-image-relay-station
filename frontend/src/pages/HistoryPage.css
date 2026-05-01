@@ -105,6 +105,48 @@
   background: #e66b33;
   color: #fff;
 }
+.delete-btn-quick {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border: none;
+  color: #ff3b30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.gallery-item:hover .delete-btn-quick {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.delete-btn-quick:hover {
+  background: #ff3b30;
+  color: #fff;
+  transform: scale(1.1) !important;
+}
+
+@media (max-width: 600px) {
+  .delete-btn-quick {
+    opacity: 1;
+    transform: scale(1);
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.8);
+  }
+}
 
 .search-box {
   position: relative;
@@ -258,4 +300,18 @@
 
 .lqip-img.loaded {
   filter: blur(0);
+}
+.spin {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.6; transform: scale(0.98); }
 }
