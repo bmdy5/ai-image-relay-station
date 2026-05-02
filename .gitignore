@@ -13,7 +13,7 @@ dist/
 # Logs
 *.log
 image
-public
+# public (removed to allow static assets)
 docs/superpowers/specs
 docs/superpowers/plans
 .gitignore
