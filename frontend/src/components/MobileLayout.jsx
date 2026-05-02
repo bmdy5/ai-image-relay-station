@@ -6,15 +6,20 @@ import request from '../api/request';
 const MobileLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [points, setPoints] = useState(0);
+  const [userInfo, setUserInfo] = useState(null);
 
-  // 获取积分信息
+  // 获取用户信息
   const fetchUserInfo = async () => {
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    if (isGuest) {
+      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+      return;
+    }
     try {
       const user = await request.get('/auth/me');
-      setPoints(user.points || 0);
+      setUserInfo(user);
     } catch (err) {
-      console.error('Failed to fetch points');
+      console.error('Failed to fetch userInfo');
     }
   };
 
@@ -67,7 +72,7 @@ const MobileLayout = ({ children }) => {
           padding: '6px 14px', borderRadius: '20px',
           boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
         }}>
-          {points} 积分
+          {userInfo?.points || 0} 积分
         </div>
       </header>
 

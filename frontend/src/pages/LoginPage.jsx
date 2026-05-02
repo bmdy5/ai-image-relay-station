@@ -85,6 +85,22 @@ const LoginPage = () => {
         <p style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
           没有账号？ <Link to="/register" style={{ color: '#e66b33', fontWeight: '600', textDecoration: 'none' }}>立即注册</Link>
         </p>
+        
+        <div style={{ marginTop: '24px', opacity: 0.8 }}>
+          <button 
+            onClick={() => {
+              localStorage.setItem('isGuest', 'true');
+              window.location.href = '/';
+            }}
+            style={{ 
+              background: 'none', border: 'none', color: '#666', 
+              fontSize: '13px', fontWeight: '500', cursor: 'pointer',
+              textDecoration: 'underline', padding: 0
+            }}
+          >
+            先随便逛逛 (游客模式)
+          </button>
+        </div>
       </div>
     </div>
   );

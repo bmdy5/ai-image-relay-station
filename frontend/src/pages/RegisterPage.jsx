@@ -2,12 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import request from '../api/request';
 import NeuralPlexus from '../components/NeuralPlexus';
+import Captcha from '../components/Captcha';
+import { useCallback } from 'react';
 
 const RegisterPage = () => {
+  const [regMode, setRegMode] = useState('phone'); // phone or email
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaValid, setCaptchaValid] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -46,13 +51,22 @@ const RegisterPage = () => {
     setError('');
     try {
       const fingerprint = btoa(navigator.userAgent).substring(0, 32);
-      await request.post('/auth/register', { 
-        username,
-        email, 
-        password, 
-        code,
-        fingerprint 
-      });
+      
+      if (regMode === 'email') {
+        await request.post('/auth/register', { 
+          username, email, password, code, fingerprint 
+        });
+      } else {
+        if (!captchaValid) {
+          setError('请输入正确的验证码');
+          setLoading(false);
+          return;
+        }
+        await request.post('/auth/register-phone', { 
+          username, phone, password, fingerprint 
+        });
+      }
+      
       alert('注册成功！');
       navigate('/login');
     } catch (err) {
@@ -60,6 +74,10 @@ const RegisterPage = () => {
     }
     setLoading(false);
   };
+
+  const onCaptchaMatch = useCallback((matched) => {
+    setCaptchaValid(matched);
+  }, []);
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
@@ -77,53 +95,84 @@ const RegisterPage = () => {
           <br />当前仅开放 100 个内测名额，注册即送 10 积分。
         </div>
 
+        {/* 注册方式切换 */}
+        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginBottom: '25px', borderBottom: '1px solid #eee', paddingBottom: '12px' }}>
+          {['phone', 'email'].map(mode => (
+            <div 
+              key={mode}
+              onClick={() => setRegMode(mode)}
+              style={{ 
+                fontSize: '15px', fontWeight: '800', cursor: 'pointer',
+                color: regMode === mode ? '#e66b33' : '#999',
+                position: 'relative', transition: 'all 0.3s'
+              }}
+            >
+              {mode === 'phone' ? '手机号注册' : '邮箱注册'}
+              {regMode === mode && (
+                <div style={{ position: 'absolute', bottom: '-13px', left: 0, width: '100%', height: '3px', background: '#e66b33', borderRadius: '2px' }} />
+              )}
+            </div>
+          ))}
+        </div>
+
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <input
             type="text"
-            placeholder="您的用户名"
+            placeholder="您的用户名 (选填)"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            required
             style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
           />
 
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input
-              type="email"
-              placeholder="您的邮箱地址"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
-            />
-            <button
-              type="button"
-              disabled={countdown > 0 || loading}
-              onClick={handleSendCode}
-              style={{
-                width: '100px',
-                padding: '10px',
-                background: countdown > 0 ? '#ccc' : '#fcfcfc',
-                border: '1px solid #e66b33',
-                color: '#e66b33',
-                borderRadius: '8px',
-                fontSize: '12px',
-                cursor: countdown > 0 ? 'not-allowed' : 'pointer',
-                fontWeight: '600'
-              }}
-            >
-              {countdown > 0 ? `${countdown}s` : '获取验证码'}
-            </button>
-          </div>
-
-          <input
-            type="text"
-            placeholder="邮箱验证码"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            required
-            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
-          />
+          {regMode === 'email' ? (
+            <>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="email"
+                  placeholder="您的邮箱地址"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+                />
+                <button
+                  type="button"
+                  disabled={countdown > 0 || loading}
+                  onClick={handleSendCode}
+                  style={{
+                    width: '100px', padding: '10px',
+                    background: countdown > 0 ? '#ccc' : '#fcfcfc',
+                    border: '1px solid #e66b33', color: '#e66b33',
+                    borderRadius: '8px', fontSize: '12px',
+                    cursor: countdown > 0 ? 'not-allowed' : 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  {countdown > 0 ? `${countdown}s` : '获取验证码'}
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="邮箱验证码"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+                style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+              />
+            </>
+          ) : (
+            <>
+              <input
+                type="tel"
+                placeholder="您的手机号"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+              />
+              <Captcha onMatch={onCaptchaMatch} />
+            </>
+          )}
 
           <input
             type="password"

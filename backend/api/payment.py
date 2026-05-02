@@ -31,25 +31,23 @@ def create_payment(
     
     out_trade_no = generate_out_trade_no()
     # 换算积分逻辑：匹配套餐优惠
-    if money_int == 10:
-        points_amount = 100
-    elif money_int == 45:
+    # 使用更宽松的浮点数判断，确保 1.0 这种金额也能准确匹配到 20 积分
+    if 0.99 <= data.money_amount <= 1.01:
+        # 严格限制 1 元特惠积分包每人只能购买一次
+        if current_user.has_used_experience:
+            # 如果已经买过 1 元特惠，按普通比例 1:10 处理（即 10 积分）
+            points_amount = 10
+        else:
+            points_amount = 20
+    elif 9.99 <= data.money_amount <= 10.01:
+        points_amount = 150
+    elif 29.99 <= data.money_amount <= 30.01:
         points_amount = 500
-    elif money_int == 90:
-        points_amount = 1000
-    elif money_int == 500:
-        points_amount = 8000
+    elif 49.99 <= data.money_amount <= 50.01:
+        points_amount = 800
     else:
         # 普通自定义金额按 1:10
-        # 优惠套餐逻辑：10->150, 30->500, 50->800, 其余 1:10
-        if money_int == 10:
-            points_amount = 150
-        elif money_int == 30:
-            points_amount = 500
-        elif money_int == 50:
-            points_amount = 800
-        else:
-            points_amount = money_int * 10
+        points_amount = money_int * 10
     
     # 1. 持久化订单到数据库
     db_log = models.RechargeLog(
@@ -131,6 +129,9 @@ def payment_notify(request: Request, db: Session = Depends(get_db)):
             user = db.query(models.User).filter(models.User.id == db_log.user_id).with_for_update().first()
             if user:
                 user.points += db_log.amount
+                # 如果充值的是 1 元体验包，标记已使用 (增加容错判定)
+                if 0.9 <= db_log.money_amount <= 1.1:
+                    user.has_used_experience = True
             
             db.commit()
             return "success"

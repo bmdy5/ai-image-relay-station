@@ -5,6 +5,7 @@ from datetime import datetime
 class UserBase(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
+    phone: Optional[str] = None
     fingerprint: Optional[str] = None
 
 class UserCreate(UserBase):
@@ -20,12 +21,20 @@ class UserCreateEmail(BaseModel):
     code: str
     fingerprint: Optional[str] = None
 
+class UserCreatePhone(BaseModel):
+    username: Optional[str] = None
+    phone: str
+    password: str
+    captcha_code: str
+    fingerprint: Optional[str] = None
+
 class UserInfo(UserBase):
     id: int
     uid: Optional[str] = None
     points: int
     frozen_points: int = 0
     is_admin: bool
+    has_used_experience: bool = False
     created_at: datetime
 
     class Config:

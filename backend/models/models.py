@@ -9,6 +9,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=True)
     email = Column(String(255), unique=True, index=True, nullable=True)
+    phone = Column(String(20), unique=True, index=True, nullable=True)
     password_hash = Column(String(255))
     fingerprint = Column(String)
     points = Column(Integer, default=10)  # 默认赠送 10 积分
@@ -16,6 +17,7 @@ class User(Base):
     uid = Column(String(20), unique=True, index=True)
     last_ip = Column(String)
     is_admin = Column(Boolean, default=False)
+    has_used_experience = Column(Boolean, default=False) # 新增：是否已使用过 1 元体验
     created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
 
     # 关联

@@ -30,7 +30,10 @@ request.interceptors.response.use(
     }
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      const isGuest = localStorage.getItem('isGuest') === 'true';
+      if (!isGuest) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

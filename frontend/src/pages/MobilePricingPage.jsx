@@ -160,20 +160,39 @@ const MobilePricingCard = ({ tier, onRecharge }) => {
 const MobilePricingPage = ({ isMobile }) => {
   const navigate = useNavigate();
   const [showRecharge, setShowRecharge] = useState(false);
-  const [selectedAmount, setSelectedAmount] = useState(0);
+  const [rechargeAmount, setRechargeAmount] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+
+  // 体验包状态
+  const [showExperiencePopup, setShowExperiencePopup] = useState(false);
+  const [showCornerCard, setShowCornerCard] = useState(false);
+  const [timeLeft, setTimeLeft] = useState('');
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const fetchData = async () => {
     try {
       const user = await request.get('/auth/me');
       setUserInfo(user);
+      
+      const hasDismissed = localStorage.getItem('hideExperiencePopup');
+      // 如果没用过体验包，且没有勾选不再显示
+      if (user && !user.has_used_experience && !hasDismissed) {
+        setShowExperiencePopup(true);
+      }
     } catch (err) {}
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const closePopup = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('hideExperiencePopup', 'true');
+    }
+    setShowExperiencePopup(false);
+  };
 
   const tiers = [
     { 
@@ -204,7 +223,7 @@ const MobilePricingPage = ({ isMobile }) => {
   ];
 
   const handleRecharge = (amount) => {
-    setSelectedAmount(amount);
+    setRechargeAmount(amount);
     setShowRecharge(true);
   };
 
@@ -233,6 +252,10 @@ const MobilePricingPage = ({ isMobile }) => {
         {tiers.map(tier => (
           <MobilePricingCard key={tier.id} tier={tier} onRecharge={handleRecharge} />
         ))}
+      </div>
+
+      <div style={{ padding: '0 20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px', opacity: 0.7 }}>
+        * 支持 <span style={{ color: 'var(--primary)', fontWeight: '700' }}>自定义任意金额</span> 充值（1元起充）
       </div>
 
       {/* 权益对比看板 */}
@@ -280,9 +303,96 @@ const MobilePricingPage = ({ isMobile }) => {
         <ShieldCheck size={14} /> 支付安全保障 · 积分秒级到账
       </footer>
 
-      {showRecharge && (
+      {/* 1元体验包自动弹窗 */}
+      {showExperiencePopup && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(15px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ width: '100%', maxWidth: '340px', padding: '40px 30px', borderRadius: '32px', textAlign: 'center', position: 'relative', background: '#fff', boxShadow: '0 30px 60px rgba(0,0,0,0.3)' }}>
+            <button onClick={closePopup} style={{ position: 'absolute', right: '20px', top: '20px', background: 'none', border: 'none', color: '#999', cursor: 'pointer' }}><X size={24} /></button>
+            <div style={{ width: '70px', height: '70px', background: 'rgba(230,107,51,0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+              <PulseIcon size={32} />
+            </div>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '10px' }}>新用户特惠礼包</h2>
+            <p style={{ color: '#666', fontSize: '14px', marginBottom: '20px', lineHeight: '1.6' }}>
+              只需 <strong style={{ color: 'var(--primary)', fontSize: '18px' }}>¥1</strong> 即可获得 <strong style={{ color: 'var(--primary)', fontSize: '18px' }}>20</strong> 积分<br/>
+              <span style={{ fontSize: '11px', opacity: 0.6 }}>（限时 24 小时，仅限一次）</span>
+            </p>
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '20px', cursor: 'pointer' }} onClick={() => setDontShowAgain(!dontShowAgain)}>
+               <input type="checkbox" checked={dontShowAgain} readOnly style={{ cursor: 'pointer' }} />
+               <span style={{ fontSize: '13px', color: '#999' }}>不再提示此优惠</span>
+            </div>
+            <button 
+              className="buy-btn-premium" 
+              style={{ background: 'var(--primary)', color: '#fff', width: '100%', padding: '16px' }}
+              onClick={() => {
+                setShowExperiencePopup(false);
+                handleRecharge(1);
+              }}
+            >
+              立即 1 元抢购
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 右下角悬浮卡片 - 永久入口设计 */}
+      {userInfo && (
+        <div 
+          onClick={() => handleRecharge(1)}
+          className="experience-floating-container-mobile"
+          style={{
+            position: 'fixed', right: '16px', bottom: '150px', zIndex: 999,
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end'
+          }}
+        >
+          <div className="pill-expand-wrapper-mobile" style={{
+            background: userInfo.has_used_experience 
+              ? 'linear-gradient(135deg, #666, #999)' 
+              : 'linear-gradient(135deg, var(--primary), #7c4dff)',
+            borderRadius: '100px',
+            display: 'flex',
+            alignItems: 'center',
+            height: '40px',
+            padding: '3px',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.2)',
+            transition: 'all 0.4s cubic-bezier(0.19, 1, 0.22, 1)',
+            overflow: 'hidden',
+            width: '40px' // 默认圆圈状态
+          }}>
+            <div style={{ 
+              background: '#fff', minWidth: '34px', height: '34px', borderRadius: '50%', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0
+            }}>
+               <div style={{ width: '8px', height: '8px', 
+                 background: userInfo.has_used_experience ? '#666' : 'var(--primary)', 
+                 borderRadius: '50%', animation: 'inner-pulse 1.5s infinite' }} 
+               />
+            </div>
+            
+            <div className="pill-text-content-mobile" style={{ 
+              color: '#fff', 
+              whiteSpace: 'nowrap',
+              padding: '0 12px 0 6px',
+              opacity: 0,
+              transition: 'opacity 0.2s'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: '900', marginRight: '6px' }}>
+                {userInfo.has_used_experience ? '积分充值' : '1元特惠'}
+              </span>
+              <span style={{ fontSize: '10px', fontWeight: '800', background: 'rgba(255,255,255,0.2)', padding: '1px 6px', borderRadius: '4px' }}>
+                {userInfo.has_used_experience ? '去充值' : '立即抢购'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRecharge && userInfo && (
         <RechargeModal 
           uid={userInfo?.uid} onClose={() => setShowRecharge(false)} 
+          initialAmount={rechargeAmount}
+          hasUsedExperience={userInfo?.has_used_experience}
           onSuccess={() => { setShowRecharge(false); fetchData(); }}
         />
       )}
@@ -314,6 +424,19 @@ const MobilePricingPage = ({ isMobile }) => {
         .loading-spin { animation: spin 1s linear infinite; }
         @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUpDrawer { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes inner-pulse {
+          0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(230, 107, 51, 0.4); }
+          100% { transform: scale(2); opacity: 0; box-shadow: 0 0 0 15px rgba(230, 107, 51, 0); }
+        }
+        .experience-floating-container-mobile:active .pill-expand-wrapper-mobile,
+        .experience-floating-container-mobile:hover .pill-expand-wrapper-mobile {
+          width: 160px;
+        }
+        .experience-floating-container-mobile:active .pill-text-content-mobile,
+        .experience-floating-container-mobile:hover .pill-text-content-mobile {
+          opacity: 1;
+          transition: opacity 0.3s 0.1s;
+        }
       `}} />
     </div>
   );

@@ -232,19 +232,39 @@ const PricingCard = ({ tier, onRecharge }) => {
 
 const PCPricingPage = () => {
   const [showRecharge, setShowRecharge] = useState(false);
+  const [rechargeAmount, setRechargeAmount] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  
+  // 体验包状态
+  const [showExperiencePopup, setShowExperiencePopup] = useState(false);
+  const [showCornerCard, setShowCornerCard] = useState(false);
+  const [timeLeft, setTimeLeft] = useState('');
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const fetchData = async () => {
     try {
       const user = await request.get('/auth/me');
       setUserInfo(user);
+      
+      const hasDismissed = localStorage.getItem('hideExperiencePopup');
+      // 如果没用过体验包，且没有勾选不再显示
+      if (user && !user.has_used_experience && !hasDismissed) {
+        setShowExperiencePopup(true);
+      }
     } catch (err) {}
   };
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const closePopup = () => {
+    if (dontShowAgain) {
+      localStorage.setItem('hideExperiencePopup', 'true');
+    }
+    setShowExperiencePopup(false);
+  };
 
   const tiers = [
     { 
@@ -275,7 +295,7 @@ const PCPricingPage = () => {
   ];
 
   const handleRecharge = (amount) => {
-    setShowRecharge(amount);
+    setRechargeAmount(amount);
     setShowRecharge(true);
   };
 
@@ -290,7 +310,6 @@ const PCPricingPage = () => {
       alignItems: 'center',
       width: '100%'
     }}>
-
 
       <div className="pricing-grid" style={{ 
         display: 'flex', 
@@ -307,6 +326,10 @@ const PCPricingPage = () => {
         ))}
       </div>
 
+      <div style={{ marginTop: '30px', color: 'var(--text-secondary)', fontSize: '14px', opacity: 0.6, fontWeight: '500' }}>
+        * 以上为推荐套餐，您也可以点击“立即充值”后 <span style={{ color: 'var(--pricing-primary)', fontWeight: '700' }}>自定义任意金额</span>（1元起充）
+      </div>
+
       <footer style={{
         opacity: 0.3,
         display: 'flex',
@@ -318,9 +341,97 @@ const PCPricingPage = () => {
         <ShieldCheck size={18} /> 企业级支付安全加密 · 积分秒级到账 · 7x24h 运行
       </footer>
 
-      {showRecharge && (
+      {/* 1元体验包自动弹窗 */}
+      {showExperiencePopup && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: '400px', padding: '40px', borderRadius: '32px', textAlign: 'center', position: 'relative', background: 'linear-gradient(135deg, #fff 0%, #fff7e6 100%)', boxShadow: '0 30px 60px rgba(0,0,0,0.3)' }}>
+            <button onClick={closePopup} style={{ position: 'absolute', right: '24px', top: '24px', background: 'none', border: 'none', color: '#999', cursor: 'pointer' }}><X size={24} /></button>
+            <div style={{ width: '80px', height: '80px', background: 'rgba(230,107,51,0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+              <PulseIcon />
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '900', marginBottom: '12px' }}>新用户专享特惠</h2>
+            <p style={{ color: '#666', fontSize: '15px', marginBottom: '24px', lineHeight: '1.6' }}>
+              只需 <strong style={{ color: '#e66b33', fontSize: '20px' }}>¥1</strong> 即可获得 <strong style={{ color: '#e66b33', fontSize: '20px' }}>20</strong> 创作积分<br/>
+              <span style={{ fontSize: '12px', opacity: 0.6 }}>（限时 24 小时，仅限一次）</span>
+            </p>
+            
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px', cursor: 'pointer' }} onClick={() => setDontShowAgain(!dontShowAgain)}>
+               <input type="checkbox" checked={dontShowAgain} readOnly style={{ cursor: 'pointer' }} />
+               <span style={{ fontSize: '13px', color: '#999' }}>不再提示此优惠</span>
+            </div>
+            <button 
+              className="buy-btn" 
+              style={{ background: '#e66b33', color: '#fff', padding: '18px', fontSize: '18px', width: '100%' }}
+              onClick={() => {
+                setShowExperiencePopup(false);
+                handleRecharge(1);
+              }}
+            >
+              立即 1 元抢购
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 右下角悬浮卡片 - 永久入口设计 */}
+      {userInfo && (
+        <div 
+          onClick={() => handleRecharge(1)}
+          className="experience-floating-container"
+          style={{
+            position: 'fixed', right: '20px', bottom: '150px', zIndex: 999,
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+            cursor: 'pointer'
+          }}
+        >
+          <div className="pill-expand-wrapper" style={{
+            background: userInfo.has_used_experience 
+              ? 'linear-gradient(135deg, #666, #999)' // 已购买后颜色变淡或改为品牌色
+              : 'linear-gradient(135deg, #e66b33, #ff9259)',
+            borderRadius: '100px',
+            display: 'flex',
+            alignItems: 'center',
+            height: '44px',
+            padding: '4px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            transition: 'all 0.4s cubic-bezier(0.19, 1, 0.22, 1)',
+            overflow: 'hidden',
+            width: '44px' // 默认圆圈状态
+          }}>
+            <div style={{ 
+              background: '#fff', minWidth: '36px', height: '36px', borderRadius: '50%', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0
+            }}>
+               <div style={{ width: '8px', height: '8px', 
+                 background: userInfo.has_used_experience ? '#666' : '#e66b33', 
+                 borderRadius: '50%', animation: 'inner-pulse 1.5s infinite' }} 
+               />
+            </div>
+            
+            <div className="pill-text-content" style={{ 
+              color: '#fff', 
+              whiteSpace: 'nowrap',
+              padding: '0 16px 0 8px',
+              opacity: 0,
+              transition: 'opacity 0.2s'
+            }}>
+              <span style={{ fontSize: '13px', fontWeight: '900', marginRight: '8px' }}>
+                {userInfo.has_used_experience ? '积分充值' : '1元特惠礼包'}
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: '800', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px' }}>
+                {userInfo.has_used_experience ? '去充值' : '立即抢购'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showRecharge && userInfo && (
         <RechargeModal
           uid={userInfo?.uid} onClose={() => setShowRecharge(false)}
+          initialAmount={rechargeAmount}
+          hasUsedExperience={userInfo?.has_used_experience}
           onSuccess={() => { setShowRecharge(false); fetchData(); }}
         />
       )}
@@ -345,9 +456,23 @@ const PCPricingPage = () => {
           />
         </div>
       )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes inner-pulse {
+          0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(230, 107, 51, 0.4); }
+          100% { transform: scale(2); opacity: 0; box-shadow: 0 0 0 15px rgba(230, 107, 51, 0); }
+        }
+        .experience-floating-container:hover .pill-expand-wrapper {
+          width: 220px;
+          box-shadow: 0 15px 40px rgba(230,107,51,0.5);
+        }
+        .experience-floating-container:hover .pill-text-content {
+          opacity: 1;
+          transition: opacity 0.3s 0.1s;
+        }
+      `}} />
     </div>
   );
 };
-
 
 export default PCPricingPage;
