@@ -60,11 +60,12 @@ const MobileLayout = ({ children }) => {
         zIndex: 'var(--z-tabbar)',
         borderBottom: '1px solid rgba(0,0,0,0.03)'
       }}>
-        <div style={{ fontWeight: '800', fontSize: '20px', color: 'var(--primary)', letterSpacing: '-0.5px' }}>Visionary</div>
+        <div style={{ fontWeight: '800', fontSize: '20px', color: '#C59C8F', letterSpacing: '-0.5px' }}>Visionary</div>
         <div style={{ 
           fontSize: '12px', fontWeight: '800', color: '#fff', 
-          background: 'var(--primary)', padding: '4px 12px', borderRadius: '12px',
-          boxShadow: '0 4px 12px var(--primary-glow)'
+          background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', 
+          padding: '6px 14px', borderRadius: '20px',
+          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
         }}>
           {points} 积分
         </div>
@@ -85,14 +86,14 @@ const MobileLayout = ({ children }) => {
       <nav style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, 
         height: '84px', // 增加高度以容纳安全区
-        background: 'rgba(255, 255, 255, 0.95)',
+        background: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(20px)',
         display: 'flex',
         justifyContent: 'space-around', alignItems: 'flex-start',
         paddingTop: '12px',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 'var(--z-tabbar)',
-        borderTop: '1px solid rgba(0,0,0,0.05)'
+        borderTop: '1px solid rgba(255,255,255,0.9)'
       }}>
         {[
           { id: 'home', icon: <Sparkles size={22} />, label: '创作' },
@@ -105,7 +106,7 @@ const MobileLayout = ({ children }) => {
             onClick={() => handleTabClick(tab.id)}
             style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
-              color: activeTab === tab.id ? 'var(--primary)' : '#8E8E93',
+              color: activeTab === tab.id ? '#C59C8F' : '#8E8E93',
               width: '25%',
               cursor: 'pointer',
               transition: 'var(--transition)'
