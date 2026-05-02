@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import { 
   Images, Coins, ShieldCheck, User, LogOut, Search, X, RefreshCw, 
-  Download, ClipboardCopy, RotateCcw, Sparkles, ArrowLeft, Trash2
+  Download, ClipboardCopy, RotateCcw, Sparkles, ArrowLeft, Trash2, Maximize2
 } from 'lucide-react';
+
 import MobileDrawer from '../components/MobileDrawer';
 import './HistoryPage.css';
 
@@ -20,7 +21,9 @@ const HistoryPage = ({ isMobile }) => {
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [keyword, setKeyword] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
   const LIMIT = 20;
+
 
   useEffect(() => {
     fetchUserInfo();
@@ -79,10 +82,16 @@ const HistoryPage = ({ isMobile }) => {
     }
   };
 
-  const handleReuse = (prompt) => {
-    sessionStorage.setItem('pending_prompt', prompt);
+  const handleReuse = (img) => {
+    sessionStorage.setItem('pending_reuse', JSON.stringify({
+      prompt: img.prompt,
+      style: img.style,
+      quality: img.quality,
+      ref_image_url: img.ref_image_url
+    }));
     navigate('/');
   };
+
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
@@ -115,7 +124,13 @@ const HistoryPage = ({ isMobile }) => {
     <MobileDrawer isOpen={!!selectedImage && isMobile} onClose={() => setSelectedImage(null)} title="作品详情">
       {selectedImage && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <img src={selectedImage.image_url} alt="Preview" style={{ width: '100%', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }} />
+          <div onClick={() => setPreviewImage(selectedImage.image_url)} style={{ position: 'relative' }}>
+            <img src={selectedImage.image_url} alt="Preview" style={{ width: '100%', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }} />
+            <div style={{ position: 'absolute', bottom: '12px', right: '12px', background: 'rgba(255,255,255,0.8)', padding: '8px', borderRadius: '50%', color: 'var(--primary)' }}>
+               <Maximize2 size={16} />
+            </div>
+          </div>
+
           
           {/* 参考图展示 (Mobile) */}
           {selectedImage.ref_image_url && (
@@ -142,7 +157,8 @@ const HistoryPage = ({ isMobile }) => {
             <div style={{ fontSize: '14px', color: '#1D1D1F', lineHeight: '1.6' }}>{selectedImage.prompt}</div>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => handleReuse(selectedImage.prompt)} style={{ flex: 2, padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><RotateCcw size={18} /> 复用提示词</button>
+            <button onClick={() => handleReuse(selectedImage)} style={{ flex: 2, padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><RotateCcw size={18} /> 复用此环境</button>
+
             <button onClick={() => handleDownload(selectedImage)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#F2F2F7', color: '#1D1D1F', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={18} /></button>
           </div>
           <button onClick={(e) => handleDelete(e, selectedImage.id)} style={{ padding: '12px', background: 'transparent', border: 'none', color: '#FF3B30', fontSize: '13px', fontWeight: '600' }}>删除此作品</button>
@@ -227,7 +243,7 @@ const HistoryPage = ({ isMobile }) => {
                              </div>
                            )}
                         </div>
-                        <button className="reuse-btn-mini" onClick={(e) => { e.stopPropagation(); handleReuse(img.prompt); }}>复用</button>
+                        <button className="reuse-btn-mini" onClick={(e) => { e.stopPropagation(); handleReuse(img); }}>复用</button>
                      </div>
                    )}
                 </div>
@@ -251,52 +267,136 @@ const HistoryPage = ({ isMobile }) => {
 
       <MobileDetailDrawer />
 
+      {/* 图片全屏预览 Portal (通用逻辑) */}
+      {previewImage && createPortal(
+        <div 
+          style={{ 
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', 
+            zIndex: 20000, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease-out',
+            backdropFilter: 'blur(20px)'
+          }}
+          onClick={() => setPreviewImage(null)}
+        >
+          {/* 只有移动端显示保存提示 */}
+          {isMobile && (
+            <div style={{ position: 'absolute', top: '60px', color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: 'bold', background: 'rgba(255,255,255,0.1)', padding: '6px 16px', borderRadius: '20px', backdropFilter: 'blur(10px)' }}>
+               💡 长按图片即可保存到手机
+            </div>
+          )}
+
+          <img 
+            src={previewImage} 
+            style={{ maxWidth: '95vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 40px 100px rgba(0,0,0,0.5)' }} 
+            onClick={(e) => e.stopPropagation()} 
+            alt="Preview" 
+          />
+
+          <button 
+            onClick={() => setPreviewImage(null)}
+            style={{ position: 'absolute', bottom: '60px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+          >
+            <X size={28} />
+          </button>
+        </div>,
+        document.body
+      )}
+
+      {/* PC 端专业详情弹窗 (Lightroom 风格) */}
       {!isMobile && selectedImage && createPortal(
         <div 
-          className="modal-overlay" 
           style={{ 
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', 
-            backdropFilter: 'blur(15px)', zIndex: 10000,
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', 
+            backdropFilter: 'blur(20px)', zIndex: 10000,
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}
           onClick={() => setSelectedImage(null)}
         >
           <div 
-            className="modal-content" 
             style={{ 
-              position: 'relative', display: 'flex', flexDirection: 'column', 
-              alignItems: 'center', animation: 'modalZoom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+              width: '95vw', maxWidth: '1200px', height: '85vh',
+              background: '#1c1c1e', borderRadius: '24px', overflow: 'hidden',
+              display: 'flex', boxShadow: '0 50px 150px rgba(0,0,0,0.9)',
+              animation: 'modalZoom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              border: '1px solid rgba(255,255,255,0.08)'
             }}
             onClick={e => e.stopPropagation()}
           >
-            <img 
-              src={selectedImage.image_url} 
-              alt="Preview" 
-              style={{ maxHeight: '75vh', maxWidth: '90vw', borderRadius: '16px', boxShadow: '0 30px 70px rgba(0,0,0,0.5)' }} 
-            />
-            
-            {/* 详情页参考图对比 (Desktop Modal) */}
-            {selectedImage.ref_image_url && (
-               <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.1)', padding: '12px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <img src={selectedImage.ref_image_url} style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }} alt="Ref" />
-                  <div style={{ textAlign: 'left' }}>
-                     <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px' }}>SOURCE REFERENCE</div>
-                     <div style={{ color: '#fff', fontSize: '13px', fontWeight: 'bold' }}>灵感参考图</div>
-                  </div>
+            {/* 左侧：画廊展示区 */}
+            <div style={{ flex: 1, position: 'relative', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+               <img 
+                 src={selectedImage.image_url} 
+                 style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} 
+                 alt="Main creation" 
+               />
+               <div style={{ position: 'absolute', top: '24px', left: '24px', color: 'rgba(255,255,255,0.4)', fontSize: '12px', letterSpacing: '2px', fontWeight: '800' }}>
+                 PREVIEW · VISIONARY ART
                </div>
-            )}
-
-            <div className="modal-actions" style={{ marginTop: '24px', display: 'flex', gap: '16px' }}>
-              <button className="btn-primary" onClick={() => handleDownload(selectedImage)}>下载图片</button>
-              <button className="btn-primary" style={{ background: '#e66b33' }} onClick={() => handleReuse(selectedImage.prompt)}>复用提示词</button>
             </div>
-            <button 
-              onClick={() => setSelectedImage(null)}
-              style={{ position: 'absolute', top: '-50px', right: '-50px', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}
-            >
-              <X size={32} />
-            </button>
+
+            {/* 右侧：信息面板区 */}
+            <div style={{ width: '360px', display: 'flex', flexDirection: 'column', background: '#1c1c1e', borderLeft: '1px solid rgba(255,255,255,0.05)' }}>
+              {/* 顶部标题区 */}
+              <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ color: 'var(--primary)', fontWeight: '900', fontSize: '11px', letterSpacing: '1px', background: 'rgba(230,107,51,0.1)', padding: '4px 12px', borderRadius: '20px' }}>
+                    {getFeatureLabel(selectedImage).toUpperCase()}
+                  </div>
+                  <button onClick={() => setSelectedImage(null)} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer' }}><X size={20} /></button>
+                </div>
+                <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: '800', marginBottom: '8px' }}>作品详情</h3>
+              </div>
+
+              {/* 中间滚动区 */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 32px 32px' }}>
+                {/* 提示词卡片 */}
+                <div style={{ marginTop: '24px' }}>
+                  <div style={{ color: '#666', fontSize: '11px', fontWeight: '800', marginBottom: '12px', letterSpacing: '1px' }}>PROMPT 提示词</div>
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', color: '#fff', fontSize: '14px', lineHeight: '1.8', wordBreak: 'break-all' }}>
+                    {selectedImage.prompt}
+                  </div>
+                </div>
+
+                {/* 参考图卡片 */}
+                {selectedImage.ref_image_url && (
+                  <div style={{ marginTop: '32px' }}>
+                    <div style={{ color: '#666', fontSize: '11px', fontWeight: '800', marginBottom: '12px', letterSpacing: '1px' }}>SOURCE REFERENCE 灵感参考</div>
+                    <div 
+                      onClick={() => setPreviewImage(selectedImage.ref_image_url)}
+                      style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', cursor: 'zoom-in', transition: 'transform 0.3s' }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <img src={selectedImage.ref_image_url} style={{ width: '100%', height: '180px', objectFit: 'cover' }} alt="Reference" />
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)', display: 'flex', alignItems: 'flex-end', padding: '12px' }}>
+                        <div style={{ color: '#fff', fontSize: '11px', fontWeight: '700' }}>点击全屏查看</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 底部操作区 */}
+              <div style={{ padding: '32px', background: '#1c1c1e', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button 
+                  onClick={() => handleDownload(selectedImage)} 
+                  className="btn-primary" 
+                  style={{ width: '100%', height: '50px', background: '#fff', color: '#000', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none' }}
+                >
+                  下载原图作品
+                </button>
+                <button 
+                  onClick={() => handleReuse(selectedImage)} 
+                  className="btn-primary" 
+                  style={{ width: '100%', height: '50px', background: 'var(--primary)', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none' }}
+                >
+                  复用此创作环境
+                </button>
+              </div>
+            </div>
           </div>
+
+
           <style>{`
             @keyframes modalZoom {
               from { transform: scale(0.9); opacity: 0; }

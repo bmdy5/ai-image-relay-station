@@ -127,19 +127,37 @@ const HomePage = () => {
 
   const checkPendingPrompt = () => {
     const pending = sessionStorage.getItem('pending_prompt');
-    if (pending) {
+    const reuseData = sessionStorage.getItem('pending_reuse');
+    
+    if (reuseData) {
+      const data = JSON.parse(reuseData);
+      setPrompt(data.prompt || '');
+      if (data.style) {
+        const styleObj = styles.find(s => s.id === data.style);
+        if (styleObj) setSelectedStyle(styleObj);
+      }
+      if (data.quality) setQuality(data.quality);
+      if (data.ref_image_url) setRefImageUrl(data.ref_image_url);
+      
+      sessionStorage.removeItem('pending_reuse');
+      focusInput();
+    } else if (pending) {
       setPrompt(pending);
       sessionStorage.removeItem('pending_prompt');
-      // 延迟一会确保 DOM 已更新后聚焦
-      setTimeout(() => {
-        const textarea = document.querySelector('textarea');
-        if (textarea) {
-          textarea.focus();
-          textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-        }
-      }, 100);
+      focusInput();
     }
   };
+
+  const focusInput = () => {
+    setTimeout(() => {
+      const textarea = document.querySelector('textarea');
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }, 100);
+  };
+
 
   const fetchUserInfo = async () => {
     try {
@@ -640,12 +658,27 @@ const HomePage = () => {
           <img 
             src={previewImage} 
             style={{ 
-              maxHeight: '90vh', maxWidth: '95vw', borderRadius: '16px', 
+              maxHeight: '80vh', maxWidth: '90vw', borderRadius: '16px', 
               boxShadow: '0 30px 100px rgba(0,0,0,0.5)', objectFit: 'contain',
               animation: 'modalZoom 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }} 
             alt="Preview" 
           />
+          
+          <div 
+            style={{ position: 'absolute', bottom: '40px', display: 'flex', gap: '16px', zIndex: 10001 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <a 
+              href={previewImage} 
+              download 
+              className="btn-primary" 
+              style={{ padding: '12px 30px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 10px 30px rgba(230,107,51,0.3)' }}
+            >
+              <Download size={20} /> 下载原图
+            </a>
+          </div>
+
           <style>{`
             @keyframes modalZoom {
               from { transform: scale(0.9); opacity: 0; }

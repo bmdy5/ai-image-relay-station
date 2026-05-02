@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
 import { 
-  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp
+  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp, Maximize2
 } from 'lucide-react';
+
 import MobileDrawer from '../components/MobileDrawer';
 import NeuralPlexus from '../components/NeuralPlexus';
 
@@ -21,7 +22,7 @@ const STYLE_NAME_MAP = {
 const QUALITY_NAME_MAP = { 'standard': '标准版', 'hd': '专业版', 'master': '旗舰版' };
 
 // 结果卡片组件
-const ResultCard = ({ job, onOpenNotes }) => {
+const ResultCard = ({ job, onOpenNotes, onPreview }) => {
   const isMaster = job.quality === 'master';
   const qName = QUALITY_NAME_MAP[job.quality] || '标准版';
   const sName = STYLE_NAME_MAP[job.style] || '默认';
@@ -73,16 +74,16 @@ const ResultCard = ({ job, onOpenNotes }) => {
       {/* 图像显示/生成区 */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: '#F2F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {job.status === 'success' ? (
-          <div style={{ width: '100%', position: 'relative' }}>
+          <div style={{ width: '100%', position: 'relative' }} onClick={() => onPreview(job.result)}>
             <img src={job.result} alt="AI Result" style={{ width: '100%', display: 'block' }} />
             {isMaster && (
               <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(138, 43, 226, 0.9)', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: '800', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                  <Sparkles size={10} /> 大师版 ✦
               </div>
             )}
-            <a href={job.result} download style={{ position: 'absolute', bottom: '12px', left: '12px', width: '40px', height: '40px', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
-              <Download size={20} />
-            </a>
+            <div style={{ position: 'absolute', bottom: '12px', left: '12px', width: '40px', height: '40px', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+              <Maximize2 size={20} />
+            </div>
           </div>
         ) : job.status === 'failed' ? (
           <div style={{ padding: '40px', textAlign: 'center', color: '#ff4d4f' }}>
@@ -102,6 +103,7 @@ const ResultCard = ({ job, onOpenNotes }) => {
   );
 };
 
+
 const MobileHomePage = () => {
   const stackRef = useRef(null);
   const [prompt, setPrompt] = useState('');
@@ -113,6 +115,8 @@ const MobileHomePage = () => {
   const [refImageUrl, setRefImageUrl] = useState('');
   const [pricingMap, setPricingMap] = useState({ 'standard': 5, 'hd': 15, 'master': 30 });
   const [selectedJob, setSelectedJob] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+
   
   // 处理粘贴图片 (Task: Mobile Paste to Ref)
   const handlePaste = (e) => {
@@ -144,15 +148,37 @@ const MobileHomePage = () => {
 
   const checkPendingPrompt = () => {
     const pending = sessionStorage.getItem('pending_prompt');
-    if (pending) {
+    const reuseData = sessionStorage.getItem('pending_reuse');
+
+    if (reuseData) {
+      const data = JSON.parse(reuseData);
+      setPrompt(data.prompt || '');
+      if (data.style) {
+        const styleObj = styles.find(s => s.id === data.style);
+        if (styleObj) setSelectedStyle(styleObj);
+      }
+      if (data.quality) setQuality(data.quality);
+      if (data.ref_image_url) setRefImageUrl(data.ref_image_url);
+      
+      sessionStorage.removeItem('pending_reuse');
+      focusInput();
+    } else if (pending) {
       setPrompt(pending);
       sessionStorage.removeItem('pending_prompt');
-      setTimeout(() => {
-        const input = document.querySelector('input[type="text"]');
-        if (input) input.focus();
-      }, 300);
+      focusInput();
     }
   };
+
+  const focusInput = () => {
+    setTimeout(() => {
+      const input = document.querySelector('input[type="text"]');
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }, 300);
+  };
+
 
   useEffect(() => {
     if (stackRef.current) {
@@ -257,8 +283,16 @@ const MobileHomePage = () => {
             <p>开启您的创作之旅</p>
           </div>
         ) : (
-          jobs.map(job => <ResultCard key={job.id} job={job} onOpenNotes={(j) => { setSelectedJob(j); setActiveDrawer('notes'); }} />)
+          jobs.map(job => (
+            <ResultCard 
+              key={job.id} 
+              job={job} 
+              onOpenNotes={(j) => { setSelectedJob(j); setActiveDrawer('notes'); }} 
+              onPreview={(img) => setPreviewImage(img)}
+            />
+          ))
         )}
+
       </main>
       <div style={{ padding: '16px 16px 24px', background: 'linear-gradient(to top, var(--bg-main) 60%, transparent)', position: 'relative' }}>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
@@ -500,6 +534,37 @@ const MobileHomePage = () => {
           </div>
         </div>
       </MobileDrawer>
+
+      {/* 移动端全屏预览 Modal */}
+      {previewImage && (
+        <div 
+          style={{ 
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', 
+            zIndex: 10002, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease-out'
+          }}
+          onClick={() => setPreviewImage(null)}
+        >
+          {/* 顶部提示 */}
+          <div style={{ position: 'absolute', top: '60px', color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: 'bold', background: 'rgba(255,255,255,0.1)', padding: '6px 16px', borderRadius: '20px', backdropFilter: 'blur(10px)' }}>
+             💡 长按图片即可保存到手机
+          </div>
+
+          <img 
+            src={previewImage} 
+            style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }} 
+            onClick={(e) => e.stopPropagation()} 
+            alt="Preview"
+          />
+
+          <button 
+            onClick={() => setPreviewImage(null)}
+            style={{ position: 'absolute', bottom: '60px', background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <X size={24} />
+          </button>
+        </div>
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin { to { transform: rotate(360deg); } }
