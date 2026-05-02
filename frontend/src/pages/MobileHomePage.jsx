@@ -16,7 +16,7 @@ const STYLE_NAME_MAP = {
   'travel': '旅游海报', 'interior': '室内设计', 'live_stream': '直播截图',
   'eri_silhouette': '侧脸叙事', 'silk_road': '丝绸山河', 'vintage_5s': '复古纪实',
   'ccd_snap': 'CCD 随手抓拍', 'restore_old': '老照片修复',
-  'relation_map': '关系图谱', 'encyclopedia': '科普百科', 'default': '默认'
+  'relation_map': '关系图谱', 'encyclopedia': '科普百科', 'ui_upgrade': 'UI 视觉进化', 'default': '默认'
 };
 
 const QUALITY_NAME_MAP = { 'standard': '标准版', 'hd': '专业版', 'master': '旗舰版' };
@@ -213,11 +213,12 @@ const MobileHomePage = () => {
     { id: 'eri_silhouette', name: '轮廓宇宙', desc: '史诗级叙事海报', icon: '🌑', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
     { id: 'silk_road', name: '国风月夜', desc: '宋代山水意境', icon: '🎋', pts: 'Master', placeholder: '主题：【在此输入主题名称】' },
     { id: 'relation_map', name: '人物关系图谱', desc: '作品逻辑梳理', icon: '🕸️', pts: 'Master', placeholder: '作品：【在此输入名称】' },
-    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】' }
+    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】' },
+    { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: '🪟', pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true }
   ];
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() && selectedStyle.id !== 'ui_upgrade') return;
 
     if (selectedStyle.requiresImage && !refImageUrl) {
       alert('✨ 此风格必须上传参考图以获得最佳效果，请点击左侧 + 号上传。');
