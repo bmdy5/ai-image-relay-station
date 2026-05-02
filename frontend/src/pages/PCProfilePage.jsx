@@ -14,11 +14,23 @@ const PCProfilePage = () => {
   const [showRecharge, setShowRecharge] = useState(false);
   const [activeTab, setActiveTab] = useState('account'); // 'account', 'security', 'support'
   const [feedback, setFeedback] = useState({ content: '', contact: '' });
-  const [pwdForm, setPwdForm] = useState({ old: '', new: '' });
+  const [pwdForm, setPwdForm] = useState({ password: '', code: '' });
+  const [bindForm, setBindForm] = useState({ email: '', code: '' });
+  const [phoneBind, setPhoneBind] = useState('');
+  const [countdown, setCountdown] = useState(0);
+  const [activeSecuritySection, setActiveSecuritySection] = useState(null); // 'email', 'password', 'phone'
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => setCountdown(c => c - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const fetchData = async () => {
     try {
@@ -41,18 +53,84 @@ const PCProfilePage = () => {
     }
   };
 
+  const handleSendBindCode = async () => {
+    if (!bindForm.email || !bindForm.email.includes('@')) {
+      alert('请输入有效的邮箱地址');
+      return;
+    }
+    setLoading(true);
+    try {
+      await request.post('/auth/send-code', { email: bindForm.email });
+      setCountdown(60);
+      alert('验证码已发送至您的邮箱');
+    } catch (err) {
+      alert(err.response?.data?.detail || '发送失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBindEmail = async () => {
+    if (!bindForm.code) return;
+    setLoading(true);
+    try {
+      await request.post('/auth/bind-email', { email: bindForm.email, code: bindForm.code });
+      alert('邮箱绑定成功！');
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || '绑定失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBindPhone = async () => {
+    if (phoneBind.length !== 11) {
+      alert('请输入正确的 11 位手机号');
+      return;
+    }
+    setLoading(true);
+    try {
+      await request.post('/auth/bind-phone', { phone: phoneBind });
+      alert('手机号绑定成功！');
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || '绑定失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePasswordSubmit = async () => {
-    if (!pwdForm.old || !pwdForm.new) return;
+    if (!pwdForm.password || !pwdForm.code) return;
     setLoading(true);
     try {
       await request.post('/auth/change-password', { 
-        old_password: pwdForm.old, 
-        new_password: pwdForm.new 
+        email: userInfo.email,
+        password: pwdForm.password, 
+        code: pwdForm.code 
       });
       alert('密码修改成功，请重新登录');
       logout();
     } catch (err) {
       alert(err.response?.data?.detail || '修改失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendPasswordCode = async () => {
+    if (!userInfo?.email) {
+      alert('请先绑定邮箱');
+      return;
+    }
+    setLoading(true);
+    try {
+      await request.post('/auth/send-code', { email: userInfo.email });
+      setCountdown(60);
+      alert('验证码已发送至您的绑定邮箱');
+    } catch (err) {
+      alert(err.response?.data?.detail || '发送失败');
     } finally {
       setLoading(false);
     }
@@ -209,34 +287,178 @@ const PCProfilePage = () => {
         )}
 
         {activeTab === 'security' && (
-          <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '24px' }}>修改登录密码</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '400px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)' }}>当前密码</label>
-                <input 
-                  type="password" placeholder="请输入原密码" value={pwdForm.old} 
-                  onChange={e => setPwdForm({...pwdForm, old: e.target.value})}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb' }} 
-                />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)' }}>新密码</label>
-                <input 
-                  type="password" placeholder="请输入新密码" value={pwdForm.new} 
-                  onChange={e => setPwdForm({...pwdForm, new: e.target.value})}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb' }} 
-                />
-              </div>
-              <button 
-                onClick={handlePasswordSubmit} disabled={loading}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '8px' }}>安全设置</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>管理您的账户安全与验证方式</p>
+
+            <div style={{ background: 'white', borderRadius: '24px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+              {/* 邮箱绑定条目 */}
+              <div 
+                onClick={() => setActiveSecuritySection(activeSecuritySection === 'email' ? null : 'email')}
                 style={{ 
-                  marginTop: '12px', padding: '14px', borderRadius: '12px', border: 'none', 
-                  background: 'var(--text-main)', color: '#fff', fontWeight: '700', cursor: 'pointer' 
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                  padding: '24px', cursor: 'pointer', transition: 'all 0.3s',
+                  background: activeSecuritySection === 'email' ? '#fafafa' : 'white'
                 }}
               >
-                {loading ? '正在保存...' : '确认修改并重新登录'}
-              </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(52, 199, 89, 0.1)', color: '#34C759', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MessageSquare size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '16px' }}>邮箱绑定</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{userInfo?.email ? `已绑定：${userInfo.email}` : '未绑定 (用于找回密码)'}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '14px' }}>{userInfo?.email ? '已绑定' : '去绑定'}</span>
+                  <ChevronRight size={18} style={{ transform: activeSecuritySection === 'email' ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />
+                </div>
+              </div>
+
+              {activeSecuritySection === 'email' && !userInfo?.email && (
+                <div style={{ padding: '0 24px 24px 80px', animation: 'fadeIn 0.3s' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '350px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input 
+                        type="email" placeholder="输入邮箱地址" value={bindForm.email} 
+                        onChange={e => setBindForm({...bindForm, email: e.target.value})}
+                        style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb', outline: 'none' }} 
+                      />
+                      <button 
+                        onClick={handleSendBindCode} disabled={countdown > 0 || loading}
+                        style={{ padding: '0 12px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                      >
+                        {countdown > 0 ? `${countdown}s` : '获取验证码'}
+                      </button>
+                    </div>
+                    <input 
+                      type="text" placeholder="验证码" value={bindForm.code} 
+                      onChange={e => setBindForm({...bindForm, code: e.target.value})}
+                      style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb', outline: 'none' }} 
+                    />
+                    <button 
+                      onClick={handleBindEmail} disabled={loading || !bindForm.code}
+                      className="btn-primary" style={{ padding: '12px' }}
+                    >
+                      {loading ? '处理中...' : '确认绑定'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ height: '1px', background: '#f0f0f0', margin: '0 24px' }} />
+
+              {/* 手机绑定条目 */}
+              <div 
+                onClick={() => setActiveSecuritySection(activeSecuritySection === 'phone' ? null : 'phone')}
+                style={{ 
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                  padding: '24px', cursor: 'pointer', transition: 'all 0.3s',
+                  background: activeSecuritySection === 'phone' ? '#fafafa' : 'white'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255, 149, 0, 0.1)', color: '#FF9500', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Wallet size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '16px' }}>手机号绑定</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{userInfo?.phone ? `已绑定：${userInfo.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}` : '未绑定 (用于多端登录)'}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '14px' }}>{userInfo?.phone ? '已绑定' : '去绑定'}</span>
+                  <ChevronRight size={18} style={{ transform: activeSecuritySection === 'phone' ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />
+                </div>
+              </div>
+
+              {activeSecuritySection === 'phone' && !userInfo?.phone && (
+                <div style={{ padding: '0 24px 24px 80px', animation: 'fadeIn 0.3s' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '350px' }}>
+                    <input 
+                      type="text" placeholder="输入 11 位手机号" value={phoneBind} 
+                      onChange={e => setPhoneBind(e.target.value)}
+                      style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb', outline: 'none' }} 
+                    />
+                    <button 
+                      onClick={handleBindPhone} disabled={loading || phoneBind.length !== 11}
+                      className="btn-primary" style={{ padding: '12px', background: '#FF9500' }}
+                    >
+                      {loading ? '处理中...' : '确认绑定'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ height: '1px', background: '#f0f0f0', margin: '0 24px' }} />
+
+              {/* 修改密码条目 */}
+              <div 
+                onClick={() => setActiveSecuritySection(activeSecuritySection === 'password' ? null : 'password')}
+                style={{ 
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+                  padding: '24px', cursor: 'pointer', transition: 'all 0.3s',
+                  background: activeSecuritySection === 'password' ? '#fafafa' : 'white'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(0, 122, 255, 0.1)', color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Lock size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '16px' }}>登录密码</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>已设置 (定期更换更安全)</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '14px' }}>修改密码</span>
+                  <ChevronRight size={18} style={{ transform: activeSecuritySection === 'password' ? 'rotate(90deg)' : 'none', transition: '0.3s' }} />
+                </div>
+              </div>
+
+              {activeSecuritySection === 'password' && (
+                <div style={{ padding: '0 24px 24px 80px', animation: 'fadeIn 0.3s' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '350px' }}>
+                    {!userInfo?.email ? (
+                      <div style={{ padding: '12px', background: '#fff1f0', color: '#f5222d', borderRadius: '8px', fontSize: '13px' }}>
+                        ⚠️ 请先绑定邮箱，修改密码需要通过邮箱验证。
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <input 
+                            type="text" value={userInfo.email} disabled
+                            style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#eee', color: '#666', cursor: 'not-allowed' }} 
+                          />
+                          <button 
+                            onClick={handleSendPasswordCode} disabled={countdown > 0 || loading}
+                            style={{ padding: '0 12px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                          >
+                            {countdown > 0 ? `${countdown}s` : '获取验证码'}
+                          </button>
+                        </div>
+                        <input 
+                          type="text" placeholder="验证码" value={pwdForm.code} 
+                          onChange={e => setPwdForm({...pwdForm, code: e.target.value})}
+                          style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb', outline: 'none' }} 
+                        />
+                        <input 
+                          type="password" placeholder="设置新密码" value={pwdForm.password} 
+                          onChange={e => setPwdForm({...pwdForm, password: e.target.value})}
+                          style={{ padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb', outline: 'none' }} 
+                        />
+                        <button 
+                          onClick={handlePasswordSubmit} disabled={loading || !pwdForm.code}
+                          className="btn-primary" style={{ padding: '12px', background: 'var(--text-main)' }}
+                        >
+                          {loading ? '保存中...' : '确认修改并重新登录'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

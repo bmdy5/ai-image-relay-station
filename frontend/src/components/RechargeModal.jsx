@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import request from '../api/request';
 import { CreditCard, MessageSquare, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react';
 
-const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
+const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperience }) => {
   const [money, setMoney] = useState(initialAmount || 10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -11,7 +11,17 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
   const [payStatus, setPayStatus] = useState('pending'); // pending, success
   const pollTimer = useRef(null);
 
-  const tiers = [10, 30, 50, 500];
+  // 如果已经使用过体验包，过滤掉 1 元选项
+  // 增加对 0/1/true/false 的全兼容判断
+  const isUsed = hasUsedExperience === true || hasUsedExperience === 1 || String(hasUsedExperience).toLowerCase() === 'true';
+  const tiers = isUsed ? [10, 30, 50] : [1, 10, 30, 50];
+
+  // 如果初始金额是 1 且已经使用过体验，重置为 10
+  useEffect(() => {
+    if (money === 1 && isUsed) {
+      setMoney(10);
+    }
+  }, [isUsed, money]);
 
   // 清除轮询
   useEffect(() => {
@@ -76,10 +86,12 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
 
   const getPoints = (val) => {
     const v = Number(val);
+    if (v === 1) {
+      return isUsed ? 10 : 20; // 已经买过就只给 10 积分
+    }
     if (v === 10) return 150;
     if (v === 30) return 500;
     if (v === 50) return 800;
-    if (v === 500) return 5000; // 500元默认 5000 积分（或按需调整）
     return Math.floor(v * 10); // 自定义金额严格执行 1元=10积分
   };
 
@@ -103,21 +115,30 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount }) => {
                   }}
                 >
                   ¥{t}
+                  {t === 1 && (
+                    <span style={{ 
+                      position: 'absolute', top: '-8px', right: '-8px', 
+                      background: 'linear-gradient(135deg, #52c41a, #73d13d)', 
+                      color: '#fff', fontSize: '9px', padding: '2px 6px', 
+                      borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      fontWeight: '800'
+                    }}>
+                      限时仅一次
+                    </span>
+                  )}
                   {[30, 50].includes(t) && (
                     <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#f5222d', color: '#fff', fontSize: '10px', padding: '2px 5px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                       超值
-                    </span>
-                  )}
-                  {t === 500 && (
-                    <span style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#722ed1', color: '#fff', fontSize: '10px', padding: '2px 5px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                      狂欢
                     </span>
                   )}
                 </button>
               ))}
             </div>
 
-            <div style={{ marginBottom: '8px', fontSize: '13px', color: '#999' }}>或输入自定义金额 (1元起，仅限整数)</div>
+            <div style={{ marginBottom: '8px', fontSize: '13px', color: '#999', display: 'flex', justifyContent: 'space-between' }}>
+              <span>或输入自定义金额</span>
+              <span style={{ color: '#e66b33', fontWeight: '600' }}>可以任意金额，最低一元</span>
+            </div>
             <div style={{ position: 'relative', marginBottom: '20px' }}>
               <input 
                 type="number"

@@ -84,10 +84,57 @@ def register(user: user_schema.UserCreateEmail, request: Request, db: Session = 
     client_ip = request.client.host if request.client else "unknown"
     return user_crud.create_user_by_email(db=db, user=user, password_hash=hashed_password, ip=client_ip)
 
+@router.post("/register-phone", response_model=user_schema.UserInfo)
+def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Session = Depends(get_db)):
+    # 1. 硬性限额校验 (前 100 名)
+    user_count = db.query(models.User).count()
+    if user_count >= 100:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="内测名额已满 (限额 100 人)"
+        )
+    
+    # 2. 校验手机号格式 (11 位数字)
+    if not user.phone.isdigit() or len(user.phone) != 11:
+        raise HTTPException(status_code=400, detail="请输入正确的 11 位手机号")
+    
+    # 2.1 校验手机号是否已注册
+    db_user = db.query(models.User).filter(models.User.phone == user.phone).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="该手机号已注册，请直接登录")
+        
+    # 3. 如果提供了用户名，校验唯一性
+    if user.username:
+        db_user_name = user_crud.get_user_by_username(db, username=user.username)
+        if db_user_name:
+            raise HTTPException(status_code=400, detail="用户名已被占用，请换一个")
+    else:
+        # 默认用户名：手机号脱敏
+        user.username = f"user_{user.phone[-4:]}"
+        
+    # 4. 加密密码并创建用户
+    hashed_password = security.get_password_hash(user.password)
+    client_ip = request.client.host if request.client else "unknown"
+    
+    db_user = models.User(
+        username=user.username,
+        phone=user.phone,
+        password_hash=hashed_password,
+        fingerprint=user.fingerprint,
+        last_ip=client_ip,
+        uid=str(random.randint(100000, 999999))
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 @router.post("/login", response_model=user_schema.Token)
 def login(user: user_schema.UserCreate, db: Session = Depends(get_db)):
-    # 支持用户名或邮箱双重登录
-    db_user = user_crud.get_user_by_email(db, email=user.username) or user_crud.get_user_by_username(db, username=user.username)
+    # 支持用户名、邮箱或手机号三重登录
+    db_user = user_crud.get_user_by_email(db, email=user.username) or \
+              user_crud.get_user_by_username(db, username=user.username) or \
+              db.query(models.User).filter(models.User.phone == user.username).first()
     
     if not db_user or not security.verify_password(user.password, db_user.password_hash):
         raise HTTPException(
@@ -107,20 +154,36 @@ def get_me(current_user: models.User = Depends(get_current_user)):
 
 @router.post("/change-password")
 def change_password(
-    data: user_schema.PasswordChange,
+    data: user_schema.UserCreateEmail, # 复用 Schema 获取 email, code, password
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    # 1. 验证旧密码
-    if not security.verify_password(data.old_password, current_user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="旧密码错误"
-        )
+    # 1. 基础校验：必须先绑定邮箱才能修改密码
+    if not current_user.email:
+        raise HTTPException(status_code=400, detail="请先绑定邮箱")
     
-    # 2. 更新新密码
-    hashed_password = security.get_password_hash(data.new_password)
-    user_crud.update_user_password(db, current_user.id, hashed_password)
+    if data.email != current_user.email:
+        raise HTTPException(status_code=400, detail="只能使用绑定的邮箱进行验证")
+
+    # 2. 校验验证码
+    vc = db.query(models.VerificationCode).filter(
+        models.VerificationCode.email == data.email,
+        models.VerificationCode.code == data.code,
+        models.VerificationCode.is_used == False
+    ).order_by(models.VerificationCode.created_at.desc()).first()
+    
+    if not vc or vc.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="验证码无效或已过期")
+    
+    # 3. 校验新密码长度
+    if len(data.password) < 6:
+        raise HTTPException(status_code=400, detail="新密码长度不能少于 6 位")
+
+    # 4. 标记验证码已使用并更新密码
+    vc.is_used = True
+    hashed_password = security.get_password_hash(data.password)
+    current_user.password_hash = hashed_password
+    db.commit()
     
     return {"message": "密码修改成功"}
 
@@ -182,3 +245,54 @@ def forgot_password_reset(data: user_schema.ForgotPasswordReset, db: Session = D
     user_crud.update_user_password(db, db_user.id, hashed_password)
     
     return {"message": "密码重置成功，请使用新密码登录"}
+
+@router.post("/bind-email")
+def bind_email(
+    data: user_schema.UserCreateEmail, # 复用这个 Schema 来获取 email 和 code
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # 1. 校验邮箱是否已被占用
+    db_user = user_crud.get_user_by_email(db, email=data.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="该邮箱已被其他账号绑定")
+    
+    # 2. 校验验证码
+    vc = db.query(models.VerificationCode).filter(
+        models.VerificationCode.email == data.email,
+        models.VerificationCode.code == data.code,
+        models.VerificationCode.is_used == False
+    ).order_by(models.VerificationCode.created_at.desc()).first()
+    
+    if not vc or vc.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="验证码无效或已过期")
+    
+    # 3. 标记验证码已使用
+    vc.is_used = True
+    
+    # 4. 绑定邮箱
+    current_user.email = data.email
+    db.commit()
+    
+    return {"message": "邮箱绑定成功，您现在可以使用邮箱找回密码了"}
+
+@router.post("/bind-phone")
+def bind_phone(
+    data: user_schema.UserCreatePhone, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # 1. 校验格式 (11位数字)
+    if not data.phone.isdigit() or len(data.phone) != 11:
+        raise HTTPException(status_code=400, detail="请输入正确的 11 位手机号")
+    
+    # 2. 校验手机号是否已被其他账号绑定
+    db_user = db.query(models.User).filter(models.User.phone == data.phone).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="该手机号已被其他账号占用")
+    
+    # 3. 绑定
+    current_user.phone = data.phone
+    db.commit()
+    
+    return {"message": "手机号绑定成功"}

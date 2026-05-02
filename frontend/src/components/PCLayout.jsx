@@ -23,6 +23,11 @@ const PCLayout = ({ children }) => {
   }, [location.pathname]); // 切换页面时刷新用户信息（主要是积分）
 
   const fetchUserInfo = async () => {
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    if (isGuest) {
+      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+      return;
+    }
     try {
       const data = await request.get('/auth/me');
       setUserInfo(data);
@@ -124,25 +129,37 @@ const PCLayout = ({ children }) => {
               <span>{userInfo?.points || 0}</span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div 
                 onClick={() => navigate('/profile')}
                 style={{ 
+                  display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'
+                }}
+              >
+                <div style={{ 
                   width: '40px', height: '40px', background: isActive('/profile') ? 'var(--primary-glow)' : '#e0e0e3', 
                   borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  cursor: 'pointer', transition: 'var(--transition)',
+                  transition: 'var(--transition)',
                   color: isActive('/profile') ? 'var(--primary)' : 'inherit'
-                }}
-                onMouseOver={e => e.currentTarget.style.transform = 'scale(1.1)'}
-                onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <User size={20} strokeWidth={2} />
+                }}>
+                  <User size={20} strokeWidth={2} />
+                </div>
+                {userInfo?.username && (
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                    {userInfo.username}
+                  </span>
+                )}
               </div>
               <button 
-                onClick={logout} 
+                onClick={() => {
+                  if (localStorage.getItem('isGuest') === 'true') {
+                    localStorage.removeItem('isGuest');
+                  }
+                  logout();
+                }} 
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}
               >
-                退出
+                {localStorage.getItem('isGuest') === 'true' ? '去登录' : '退出'}
               </button>
             </div>
           </div>

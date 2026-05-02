@@ -53,6 +53,8 @@ const HomePage = () => {
   const [particles, setParticles] = useState([]);
   const [showNotes, setShowNotes] = useState(false);
   const [finalPrompt, setFinalPrompt] = useState('');
+  const [isGuest, setIsGuest] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
   
   // 处理剪贴板粘贴图片 (Task: Paste to Ref Image)
   const handlePaste = (e) => {
@@ -115,7 +117,14 @@ const HomePage = () => {
   ];
 
   useEffect(() => {
-    fetchUserInfo();
+    const guestFlag = localStorage.getItem('isGuest') === 'true';
+    setIsGuest(guestFlag);
+    
+    if (!guestFlag) {
+      fetchUserInfo();
+    } else {
+      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+    }
     fetchConfig();
     checkPendingPrompt();
   }, []);
@@ -169,6 +178,10 @@ const HomePage = () => {
   };
 
   const handleGenerate = async () => {
+    if (isGuest) {
+      setShowGuestModal(true);
+      return;
+    }
     if (!prompt && selectedStyle.id !== 'ui_upgrade') return;
     setLoading(true);
     setProgress(0);
@@ -723,6 +736,49 @@ const HomePage = () => {
                 </div>
               </div>
             </div>
+          )}
+          {/* 游客模式拦截弹窗 */}
+          {showGuestModal && createPortal(
+            <div style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(15px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000,
+              animation: 'fadeIn 0.3s'
+            }}>
+              <div className="card" style={{ 
+                width: '90%', maxWidth: '400px', padding: '40px', textAlign: 'center',
+                background: 'rgba(255, 255, 255, 0.9)', borderRadius: '30px', border: '1px solid #fff'
+              }}>
+                <div style={{ fontSize: '50px', marginBottom: '20px' }}>🎨</div>
+                <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1d1d1f', marginBottom: '12px' }}>
+                  开启您的灵感之旅
+                </h2>
+                <p style={{ color: '#86868b', fontSize: '15px', lineHeight: '1.6', marginBottom: '30px' }}>
+                  注册账号立享 <strong style={{ color: 'var(--primary)' }}>10 创作积分</strong>，<br/>解锁高清下载、风格实验室等全部功能。
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <button 
+                    onClick={() => {
+                      localStorage.removeItem('isGuest');
+                      navigate('/register');
+                    }}
+                    className="btn-primary" 
+                    style={{ width: '100%', padding: '14px', fontSize: '16px' }}
+                  >
+                    立即注册 (送 10 积分)
+                  </button>
+                  <button 
+                    onClick={() => setShowGuestModal(false)}
+                    style={{ 
+                      background: 'none', border: 'none', color: '#999', 
+                      fontSize: '14px', cursor: 'pointer', padding: '8px' 
+                    }}
+                  >
+                    先随便逛逛
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
           )}
         </div>
       </main>

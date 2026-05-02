@@ -34,11 +34,22 @@ const MobileProfilePage = ({ isMobile }) => {
   const [showRecharge, setShowRecharge] = useState(false);
   const [activeDrawer, setActiveDrawer] = useState(null); // 'password', 'support'
   const [feedback, setFeedback] = useState({ content: '', contact: '' });
-  const [pwdForm, setPwdForm] = useState({ old: '', new: '' });
+  const [pwdForm, setPwdForm] = useState({ password: '', code: '' });
+  const [bindForm, setBindForm] = useState({ email: '', code: '' });
+  const [phoneBind, setPhoneBind] = useState('');
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => setCountdown(c => c - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const fetchData = async () => {
     try {
@@ -62,13 +73,63 @@ const MobileProfilePage = ({ isMobile }) => {
     }
   };
 
+  const handleSendBindCode = async () => {
+    if (!bindForm.email || !bindForm.email.includes('@')) {
+      alert('请输入有效的邮箱地址');
+      return;
+    }
+    setLoading(true);
+    try {
+      await request.post('/auth/send-code', { email: bindForm.email });
+      setCountdown(60);
+      alert('验证码已发送');
+    } catch (err) {
+      alert(err.response?.data?.detail || '发送失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBindEmail = async () => {
+    if (!bindForm.code) return;
+    setLoading(true);
+    try {
+      await request.post('/auth/bind-email', { email: bindForm.email, code: bindForm.code });
+      alert('邮箱绑定成功！');
+      setActiveDrawer(null);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || '绑定失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendPasswordCode = async () => {
+    if (!userInfo?.email) {
+      alert('请先绑定邮箱');
+      return;
+    }
+    setLoading(true);
+    try {
+      await request.post('/auth/send-code', { email: userInfo.email });
+      setCountdown(60);
+      alert('验证码已发送');
+    } catch (err) {
+      alert(err.response?.data?.detail || '发送失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePasswordSubmit = async () => {
-    if (!pwdForm.old || !pwdForm.new) return;
+    if (!pwdForm.password || !pwdForm.code) return;
     setLoading(true);
     try {
       await request.post('/auth/change-password', { 
-        old_password: pwdForm.old, 
-        new_password: pwdForm.new 
+        email: userInfo.email,
+        password: pwdForm.password, 
+        code: pwdForm.code 
       });
       alert('密码修改成功，请重新登录');
       logout();
@@ -83,6 +144,21 @@ const MobileProfilePage = ({ isMobile }) => {
     if (userInfo?.uid) {
       navigator.clipboard.writeText(userInfo.uid);
       alert('UID 已复制');
+    }
+  };
+
+  const handleBindPhone = async () => {
+    if (phoneBind.length !== 11) return;
+    setLoading(true);
+    try {
+      await request.post('/auth/bind-phone', { phone: phoneBind });
+      alert('手机号绑定成功！');
+      setActiveDrawer(null);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || '绑定失败');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -167,7 +243,34 @@ const MobileProfilePage = ({ isMobile }) => {
         <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
           <SettingItem icon={<Wallet size={20} />} label="账单明细" sublabel="查看积分消费记录" onClick={() => navigate('/points-history')} />
           <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
-          <SettingItem icon={<Lock size={20} />} label="修改密码" sublabel="保障账户安全" onClick={() => setActiveDrawer('password')} />
+          <SettingItem 
+            icon={<Lock size={20} />} 
+            label="修改密码" 
+            sublabel="定期更换更安全" 
+            onClick={() => {
+              if (!userInfo?.email) {
+                alert('请先绑定邮箱，修改密码需要邮箱验证。');
+                setActiveDrawer('bind');
+              } else {
+                setActiveDrawer('password');
+              }
+            }} 
+          />
+          <SettingItem 
+            icon={<MessageSquare size={20} />} 
+            label="邮箱绑定" 
+            sublabel={userInfo?.email ? `已绑定: ${userInfo.email}` : "找回密码必备"} 
+            onClick={() => !userInfo?.email && setActiveDrawer('bind')} 
+            color={userInfo?.email ? '#34C759' : '#1D1D1F'}
+          />
+          <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
+          <SettingItem 
+            icon={<Wallet size={20} />} 
+            label="手机绑定" 
+            sublabel={userInfo?.phone ? `已绑定: ${userInfo.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}` : "支持手机号登录"} 
+            onClick={() => !userInfo?.phone && setActiveDrawer('bind-phone')} 
+            color={userInfo?.phone ? '#FF9500' : '#1D1D1F'}
+          />
         </div>
       </div>
 
@@ -215,21 +318,34 @@ const MobileProfilePage = ({ isMobile }) => {
       {/* 抽屉：修改密码 */}
       <MobileDrawer isOpen={activeDrawer === 'password'} onClose={() => setActiveDrawer(null)} title="修改密码">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: '#8E8E93', marginBottom: '8px' }}>验证码将发送至您的绑定邮箱：{userInfo?.email}</p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              type="text" value={userInfo?.email} disabled
+              style={{ flex: 1, padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px', color: '#8E8E93' }} 
+            />
+            <button 
+              onClick={handleSendPasswordCode} disabled={countdown > 0 || loading}
+              style={{ padding: '0 15px', borderRadius: '16px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', fontWeight: '700', fontSize: '13px' }}
+            >
+              {countdown > 0 ? `${countdown}s` : '获取验证码'}
+            </button>
+          </div>
           <input 
-            type="password" placeholder="原密码" value={pwdForm.old} 
-            onChange={e => setPwdForm({...pwdForm, old: e.target.value})}
+            type="text" placeholder="验证码" value={pwdForm.code} 
+            onChange={e => setPwdForm({...pwdForm, code: e.target.value})}
             style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
           />
           <input 
-            type="password" placeholder="新密码" value={pwdForm.new} 
-            onChange={e => setPwdForm({...pwdForm, new: e.target.value})}
+            type="password" placeholder="设置新登录密码" value={pwdForm.password} 
+            onChange={e => setPwdForm({...pwdForm, password: e.target.value})}
             style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
           />
           <button 
-            onClick={handlePasswordSubmit} disabled={loading}
+            onClick={handlePasswordSubmit} disabled={loading || !pwdForm.code}
             style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#1D1D1F', color: '#fff', fontWeight: '700', marginTop: '10px' }}
           >
-            {loading ? '提交中...' : '确认修改'}
+            {loading ? '正在保存...' : '确认修改并重新登录'}
           </button>
         </div>
       </MobileDrawer>
@@ -252,6 +368,55 @@ const MobileProfilePage = ({ isMobile }) => {
             style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: '700', marginTop: '10px' }}
           >
             {loading ? '提交中...' : '提交反馈'}
+          </button>
+        </div>
+      </MobileDrawer>
+
+      {/* 抽屉：绑定邮箱 */}
+      <MobileDrawer isOpen={activeDrawer === 'bind'} onClose={() => setActiveDrawer(null)} title="绑定邮箱">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: '#8E8E93', marginBottom: '8px' }}>绑定后可用于找回密码，邮箱一经绑定无法更改。</p>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              type="email" placeholder="输入邮箱地址" value={bindForm.email} 
+              onChange={e => setBindForm({...bindForm, email: e.target.value})}
+              style={{ flex: 1, padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
+            />
+            <button 
+              onClick={handleSendBindCode} disabled={countdown > 0 || loading}
+              style={{ padding: '0 15px', borderRadius: '16px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', fontWeight: '700', fontSize: '13px' }}
+            >
+              {countdown > 0 ? `${countdown}s` : '获取验证码'}
+            </button>
+          </div>
+          <input 
+            type="text" placeholder="验证码" value={bindForm.code} 
+            onChange={e => setBindForm({...bindForm, code: e.target.value})}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
+          />
+          <button 
+            onClick={handleBindEmail} disabled={loading || !bindForm.code}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: '700', marginTop: '10px' }}
+          >
+            {loading ? '提交中...' : '确认绑定'}
+          </button>
+        </div>
+      </MobileDrawer>
+
+      {/* 抽屉：绑定手机 */}
+      <MobileDrawer isOpen={activeDrawer === 'bind-phone'} onClose={() => setActiveDrawer(null)} title="绑定手机号">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: '#8E8E93', marginBottom: '8px' }}>绑定后，您可以使用手机号直接登录当前账户。</p>
+          <input 
+            type="tel" placeholder="输入 11 位手机号" value={phoneBind} 
+            onChange={e => setPhoneBind(e.target.value)}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#F2F2F7', fontSize: '15px' }} 
+          />
+          <button 
+            onClick={handleBindPhone} disabled={loading || phoneBind.length !== 11}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: 'none', background: '#FF9500', color: '#fff', fontWeight: '700', marginTop: '10px' }}
+          >
+            {loading ? '处理中...' : '确认绑定'}
           </button>
         </div>
       </MobileDrawer>
