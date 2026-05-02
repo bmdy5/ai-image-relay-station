@@ -10,10 +10,13 @@
   --primary: #e66b33;
   --primary-hover: #cf5a28;
   --primary-glow: rgba(230, 107, 51, 0.2);
+  --copper: #C59C8F;
+  --copper-hover: #A87B6D;
+  --copper-glow: rgba(197, 156, 143, 0.2);
   --pricing-primary: #e66b33;
   --pricing-bg: #0a0a0c;
   --master: #7c4dff;
-  --bg-main: #f5f5f7;
+  --bg-main: #FAF9F9;
   --bg-card: #ffffff;
   --text-main: #1d1d1f;
   --text-secondary: #6e6e73;

@@ -275,13 +275,42 @@ const MobileHomePage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'transparent', position: 'relative' }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: '100%', 
+      background: 'radial-gradient(circle at 10% 20%, rgba(255, 218, 185, 0.2) 0%, rgba(250, 249, 249, 1) 70%)', 
+      position: 'relative' 
+    }}>
       <NeuralPlexus transparent={true} />
       <main ref={stackRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {jobs.length === 0 ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ccc', marginTop: '15vh' }}>
-            <Sparkles size={64} style={{ marginBottom: '16px', opacity: 0.5 }} />
-            <p>开启您的创作之旅</p>
+            <div style={{ 
+              position: 'relative', 
+              width: '100px', 
+              height: '100px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              marginBottom: '20px' 
+            }}>
+              <Sparkles 
+                size={64} 
+                style={{ 
+                  color: '#C59C8F',
+                  filter: 'drop-shadow(0 0 15px rgba(197, 156, 143, 0.4)) drop-shadow(0 0 2px rgba(255, 255, 255, 0.8))',
+                  opacity: 0.8
+                }} 
+              />
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'radial-gradient(circle, rgba(255,218,185,0.2) 0%, transparent 70%)',
+                zIndex: -1
+              }} />
+            </div>
+            <p style={{ fontSize: '18px', fontWeight: '700', color: '#C59C8F', letterSpacing: '1px' }}>开启您的创作之旅</p>
           </div>
         ) : (
           jobs.map(job => (
@@ -295,19 +324,36 @@ const MobileHomePage = () => {
         )}
 
       </main>
-      <div style={{ padding: '16px 16px 24px', background: 'linear-gradient(to top, var(--bg-main) 60%, transparent)', position: 'relative' }}>
+      <div style={{ padding: '16px 16px 24px', background: 'linear-gradient(to top, rgba(255,255,255,0.9) 60%, transparent)', position: 'relative' }}>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
-          <div onClick={() => setActiveDrawer('tier')} style={{ flexShrink: 0, padding: '10px 14px', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', color: 'white', borderRadius: '14px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div onClick={() => setActiveDrawer('tier')} style={{ 
+            flexShrink: 0, padding: '10px 14px', 
+            background: quality === 'master' ? 'var(--master)' : 'var(--copper)', 
+            color: 'white', borderRadius: '14px', fontSize: '12px', fontWeight: '800', 
+            display: 'flex', alignItems: 'center', gap: '6px',
+            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
+          }}>
             {quality === 'master' ? <Sparkles size={14} /> : <Zap size={14} />}
             {quality === 'master' ? '旗舰版 ✦' : quality === 'hd' ? '专业版' : '标准版'}
           </div>
-          <div onClick={() => setActiveDrawer('style')} style={{ flexShrink: 0, padding: '10px 14px', background: '#fff', borderRadius: '14px', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(0,0,0,0.03)' }}>
+          <div onClick={() => setActiveDrawer('style')} style={{ 
+            flexShrink: 0, padding: '10px 14px', 
+            background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)',
+            borderRadius: '14px', fontSize: '12px', fontWeight: '700', 
+            display: 'flex', alignItems: 'center', gap: '6px', 
+            border: '1px solid rgba(255,255,255,0.8)',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.03)'
+          }}>
             <Palette size={14} /> {selectedStyle.name}
           </div>
           
           {/* 比例切换器 */}
           <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ background: '#F2F2F7', padding: '4px', borderRadius: '20px', display: 'flex', gap: '4px' }}>
+            <div style={{ 
+              background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(10px)',
+              padding: '4px', borderRadius: '20px', display: 'flex', gap: '4px',
+              border: '1px solid rgba(255,255,255,0.5)'
+            }}>
               {['1:1', '9:16', '16:9'].map(ratio => (
                 <div 
                   key={ratio}
@@ -315,7 +361,7 @@ const MobileHomePage = () => {
                   style={{ 
                     padding: '6px 12px', borderRadius: '16px', fontSize: '11px', fontWeight: '800', cursor: 'pointer',
                     background: aspectRatio === ratio ? 'white' : 'transparent',
-                    color: aspectRatio === ratio ? 'var(--primary)' : '#8E8E93',
+                    color: aspectRatio === ratio ? 'var(--copper)' : '#8E8E93',
                     boxShadow: aspectRatio === ratio ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
                     transition: 'all 0.2s'
                   }}
@@ -337,7 +383,12 @@ const MobileHomePage = () => {
           </div>
         )}
 
-        <div style={{ background: '#fff', height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: '0 8px 0 12px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', border: '1px solid #f0f0f0' }}>
+        <div style={{ 
+          background: 'rgba(255, 255, 255, 0.8)', 
+          backdropFilter: 'blur(20px)',
+          height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: '0 8px 0 12px', 
+          boxShadow: '0 15px 35px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.9)' 
+        }}>
           {/* 左侧加号上传 */}
           <button 
             onClick={() => document.getElementById('mobile-upload').click()}
@@ -356,17 +407,18 @@ const MobileHomePage = () => {
             style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px', background: 'transparent' }} 
           />
           
-          <button 
-            onClick={handleGenerate} 
-            disabled={!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)} 
-            style={{ 
-              width: '40px', height: '40px', 
-              background: quality === 'master' ? 'var(--master)' : 'var(--primary)', 
-              borderRadius: '50%', border: 'none', color: 'white', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              opacity: (!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)) ? 0.5 : 1
-            }}
-          >
+            <button 
+              onClick={handleGenerate} 
+              disabled={!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)} 
+              style={{ 
+                width: '40px', height: '40px', 
+                background: quality === 'master' ? 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' : 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', 
+                borderRadius: '50%', border: 'none', color: 'white', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 10px rgba(0,0,0,0.1)',
+                opacity: (!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)) ? 0.5 : 1
+              }}
+            >
             <ArrowUp size={22} />
           </button>
           
