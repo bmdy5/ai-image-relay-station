@@ -34,11 +34,12 @@ class ImageLog(Base):
     style = Column(String, default="default")  # 风格标注
     final_prompt = Column(Text)  # 最终包装后的提示词
     cost_points = Column(Integer)
+    points_snapshot = Column(Integer, default=0) # 记录当时扣除的积分快照
     image_url = Column(String)
     ref_image_url = Column(String) # 新增：记录参考图
     status = Column(String)  # success / failed
     error_msg = Column(Text)
-    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
+    created_at = Column(DateTime, index=True, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
     
     # Performance tracking (Task: Timing Analysis)
     queue_duration = Column(Integer, default=0)       # 队列排队时间 (ms)
