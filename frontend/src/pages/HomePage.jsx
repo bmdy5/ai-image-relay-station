@@ -323,11 +323,35 @@ const HomePage = () => {
               style={{
                 width: '100%', height: '120px', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px',
                 fontSize: '13px', lineHeight: '1.6', resize: 'none', background: '#fafafa', transition: 'all 0.3s',
-                outline: 'none'
+                outline: 'none', marginBottom: '12px'
               }}
               onFocus={(e) => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px var(--primary-glow)'; }}
               onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = '#fafafa'; e.target.style.boxShadow = 'none'; }}
             />
+            
+            {/* 灵感推荐标签 (New) */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+               <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: '700', whiteSpace: 'nowrap', marginRight: '4px' }}>推荐灵感</span>
+               {[ '梦幻的城堡', '星空下的湖泊', '赛博朋克城市'].map(tag => (
+                 <button 
+                   key={tag}
+                   onClick={() => setPrompt(tag)}
+                   style={{
+                     padding: '4px 10px', borderRadius: '8px', background: '#f5f5f7', border: 'none',
+                     fontSize: '11px', color: '#666', cursor: 'pointer', whiteSpace: 'nowrap',
+                     transition: 'all 0.2s'
+                   }}
+                   onMouseOver={e => { e.target.style.background = 'var(--primary-glow)'; e.target.style.color = 'var(--primary)'; }}
+                   onMouseOut={e => { e.target.style.background = '#f5f5f7'; e.target.style.color = '#666'; }}
+                 >
+                   {tag}
+                 </button>
+               ))}
+               <button style={{ background: 'transparent', border: 'none', color: '#999', cursor: 'pointer', marginLeft: '4px' }}>
+                 <RotateCcw size={12} />
+               </button>
+            </div>
+
           </div>
 
           {/* 3. 风格实验室入口 */}
@@ -529,10 +553,45 @@ const HomePage = () => {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', opacity: 0.2 }}>
-              <Palette size={80} strokeWidth={1} />
+            <div style={{ textAlign: 'center', maxWidth: '400px', animation: 'fadeIn 0.8s ease-out' }}>
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '32px' }}>
+                <div style={{ width: '120px', height: '120px', borderRadius: '40px', background: 'linear-gradient(135deg, #fff 0%, #f5f5f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', border: '1px solid #fff' }}>
+                  <Palette size={56} strokeWidth={1.2} color="rgba(230,107,51,0.4)" />
+                </div>
+                <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '40px', height: '40px', borderRadius: '50%', background: '#fff', boxShadow: '0 10px 20px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Wand2 size={20} color="var(--primary)" />
+                </div>
+              </div>
+              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1d1d1f', marginBottom: '12px' }}>你的创意画布</h2>
+              <p style={{ fontSize: '15px', color: '#86868b', lineHeight: '1.6' }}>在左侧输入你的灵感，开启AI创作之旅</p>
+              
+              <div style={{ marginTop: '32px', opacity: 0.3 }}>
+                 <img src="/api/placeholder/40/40" style={{ width: '40px', transform: 'rotate(-45deg)' }} />
+              </div>
             </div>
           )}
+
+          {/* 底部特性背书 (New) */}
+          {!loading && !result && (
+            <div style={{ position: 'absolute', bottom: '40px', display: 'flex', gap: '32px', zIndex: 2 }}>
+              {[
+                { icon: <Sparkles size={18} />, title: 'AI 智能生成', desc: '强大模型，精细呈现' },
+                { icon: <Layers size={18} />, title: '多风格支持', desc: '多种艺术风格可选' },
+                { icon: <Diamond size={18} />, title: '高质量输出', desc: '高清画质，细节丰富' }
+              ].map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(230,107,51,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                    {item.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#1d1d1f' }}>{item.title}</div>
+                    <div style={{ fontSize: '11px', color: '#86868b' }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
 
           {/* 风格实验室弹窗 - 移动到此处以实现在预览区居中且不遮挡侧边栏 */}
           {showLab && (
