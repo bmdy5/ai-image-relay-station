@@ -224,8 +224,10 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
             if log and user:
                 log.status, log.image_url = "success", final_cos_url
                 log.ref_image_url = processed_ref_url # 存入参考图链接
+                log.points_snapshot = cost # 记录消费快照
                 log.api_duration, log.storage_duration = api_ms, store_ms
                 log.total_duration = int((time.time() - task_start_time) * 1000)
+                user.points -= cost # 成功后才真正扣除余额
                 user.frozen_points = max(0, user.frozen_points - cost)
 
                 # 打印增强版控制台审计日志
@@ -247,7 +249,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
             user = db.query(models.User).filter(models.User.id == user_id).first()
             if log and user:
                 log.status, log.error_msg = "failed", error_msg
-                user.points += cost # 退费
+                # 失败仅释放冻结额度，不退回 points (因为 points 没变)
                 user.frozen_points = max(0, user.frozen_points - cost)
 
 @router.get("/config")
@@ -261,7 +263,11 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
     if len(payload.prompt) > 1000: raise HTTPException(status_code=400, detail="提示词过长")
     
     cost = PRICING.get(payload.quality, 5)
-    result = db.query(models.User).filter(models.User.id == current_user.id, models.User.points >= cost).update({"points": models.User.points - cost, "frozen_points": models.User.frozen_points + cost}, synchronize_session=False)
+    # 静默预占：仅增加 frozen_points，检查 points - frozen_points 是否足够
+    result = db.query(models.User).filter(
+        models.User.id == current_user.id, 
+        models.User.points - models.User.frozen_points >= cost
+    ).update({"frozen_points": models.User.frozen_points + cost}, synchronize_session=False)
     if result == 0: raise HTTPException(status_code=403, detail="余额不足")
     
     pending_log = image_crud.create_image_log(db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, style=payload.style, cost_points=cost, status="pending")

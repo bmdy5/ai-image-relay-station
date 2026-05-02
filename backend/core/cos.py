@@ -68,3 +68,25 @@ def upload_url_to_cos(image_url: str, filename: str):
     )
 
     return f"https://{bucket}.cos.{region}.myqcloud.com/creations/{filename}"
+
+def delete_from_cos(key: str):
+    """从腾讯云 COS 删除文件"""
+    secret_id = get_config("TENCENT_CLOUD_SECRET_ID")
+    secret_key = get_config("TENCENT_CLOUD_SECRET_KEY")
+    region = get_config("TENCENT_CLOUD_COS_REGION")
+    bucket = get_config("TENCENT_CLOUD_COS_BUCKET")
+
+    if not all([secret_id, secret_key, region, bucket]):
+        return # 配置不完整则跳过
+
+    config = CosConfig(Region=region, SecretId=secret_id, SecretKey=secret_key)
+    client = CosS3Client(config)
+    
+    # 提取 key 中的路径部分（如果传入的是完整 URL）
+    if "myqcloud.com/" in key:
+        key = key.split("myqcloud.com/")[-1]
+
+    client.delete_object(
+        Bucket=bucket,
+        Key=key
+    )
