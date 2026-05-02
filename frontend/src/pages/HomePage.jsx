@@ -27,7 +27,8 @@ import {
   Layers,
   Monitor,
   Download,
-  Edit3
+  Edit3,
+  RotateCcw
 } from 'lucide-react';
 import Showcase from '../components/Showcase';
 
@@ -553,22 +554,50 @@ const HomePage = () => {
               </div>
             </div>
           ) : (
-            <div style={{ textAlign: 'center', maxWidth: '400px', animation: 'fadeIn 0.8s ease-out' }}>
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '32px' }}>
-                <div style={{ width: '120px', height: '120px', borderRadius: '40px', background: 'linear-gradient(135deg, #fff 0%, #f5f5f7 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', border: '1px solid #fff' }}>
-                  <Palette size={56} strokeWidth={1.2} color="rgba(230,107,51,0.4)" />
-                </div>
-                <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '40px', height: '40px', borderRadius: '50%', background: '#fff', boxShadow: '0 10px 20px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Wand2 size={20} color="var(--primary)" />
-                </div>
-              </div>
-              <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#1d1d1f', marginBottom: '12px' }}>你的创意画布</h2>
-              <p style={{ fontSize: '15px', color: '#86868b', lineHeight: '1.6' }}>在左侧输入你的灵感，开启AI创作之旅</p>
+            <div style={{ textAlign: 'center', maxWidth: '450px', animation: 'fadeIn 0.8s ease-out', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               
-              <div style={{ marginTop: '32px', opacity: 0.3 }}>
-                 <img src="/api/placeholder/40/40" style={{ width: '40px', transform: 'rotate(-45deg)' }} />
+              {/* Illustration */}
+              <div style={{ position: 'relative', width: '240px', height: '200px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Blob */}
+                <svg style={{ position: 'absolute', width: '220px', height: '220px' }} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#fdf6f2" d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.1,-46.3C90.4,-33.5,96,-18.1,96.5,-2.5C97,13.2,92.5,29.1,83.1,41.9C73.7,54.6,59.3,64.2,44.4,72.6C29.5,81,14.7,88.2,-1.3,90.5C-17.3,92.8,-34.7,90.2,-48.9,81.4C-63.1,72.6,-74.2,57.7,-81.4,41.4C-88.6,25.1,-91.9,7.4,-88.9,-9.2C-85.9,-25.8,-76.5,-41.2,-64.2,-53.4C-51.9,-65.6,-36.6,-74.6,-21.8,-79.8C-7,-84.9,7.4,-86.2,21.8,-82.9C36.2,-79.6,50.6,-71.8,44.7,-76.4Z" transform="translate(100 100)" />
+                </svg>
+                
+                {/* Sparkles */}
+                <svg style={{ position: 'absolute', top: '40px', left: '15px', width: '18px', height: '18px', color: '#e2c6b5' }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg>
+                <svg style={{ position: 'absolute', top: '50px', right: '35px', width: '26px', height: '26px', color: '#e2c6b5' }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg>
+                <svg style={{ position: 'absolute', bottom: '30px', right: '45px', width: '14px', height: '14px', color: '#e2c6b5' }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg>
+                
+                {/* Palette */}
+                <svg style={{ position: 'relative', zIndex: 2, width: '120px', height: '120px' }} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M 48 15 C 23 15 13 35 13 55 C 13 75 33 85 53 85 C 63 85 68 80 68 75 C 68 70 63 65 58 65 C 53 65 53 55 58 55 C 68 55 83 50 83 35 C 83 20 68 15 48 15 Z" fill="#fff" stroke="#D1ABA0" strokeWidth="3" strokeLinejoin="round"/>
+                  <circle cx="33" cy="35" r="3.5" fill="#C59C8F" />
+                  <circle cx="28" cy="52" r="3.5" fill="#D1ABA0" />
+                  <circle cx="42" cy="68" r="3.5" fill="#E8D1C7" />
+                  <circle cx="52" cy="30" r="3.5" fill="#D1ABA0" />
+                  <circle cx="68" cy="42" r="3.5" fill="#C59C8F" />
+                  
+                  {/* Brush */}
+                  <g transform="translate(46, 12) rotate(35)">
+                    <path d="M0 25 L12 25 L9 70 L3 70 Z" fill="#A88B7D" />
+                    <path d="M1 25 L11 25 L12 15 C12 5 6 0 6 0 C6 0 0 5 0 15 Z" fill="#fff" stroke="#A88B7D" strokeWidth="2.5" strokeLinejoin="round"/>
+                    <rect x="0" y="25" width="12" height="6" fill="#C59C8F" />
+                  </g>
+                </svg>
+              </div>
+              
+              <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#2c2c2e', marginBottom: '16px', letterSpacing: '0.5px' }}>你的创意画布</h2>
+              
+              <div style={{ position: 'relative' }}>
+                <p style={{ fontSize: '15px', color: '#8e8e93', lineHeight: '1.6' }}>在左侧输入你的灵感，开启AI创作之旅</p>
+                {/* Hand drawn arrow */}
+                <svg width="60" height="30" viewBox="0 0 60 30" fill="none" style={{ position: 'absolute', left: '-55px', bottom: '-15px' }}>
+                  <path d="M55 20 Q30 30 5 10" stroke="#b0b0b5" strokeWidth="2" strokeLinecap="round" fill="none" />
+                  <path d="M5 10 L15 6 M5 10 L10 18" stroke="#b0b0b5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
               </div>
             </div>
+
           )}
 
           {/* 底部特性背书 (New) */}
