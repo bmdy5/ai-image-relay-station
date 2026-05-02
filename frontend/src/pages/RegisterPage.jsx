@@ -94,20 +94,20 @@ const RegisterPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+              style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
             />
             <button
               type="button"
               disabled={countdown > 0 || loading}
               onClick={handleSendCode}
               style={{
-                width: '120px',
+                width: '100px',
                 padding: '10px',
                 background: countdown > 0 ? '#ccc' : '#fcfcfc',
                 border: '1px solid #e66b33',
                 color: '#e66b33',
                 borderRadius: '8px',
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: countdown > 0 ? 'not-allowed' : 'pointer',
                 fontWeight: '600'
               }}

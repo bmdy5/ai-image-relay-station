@@ -89,9 +89,11 @@ const Captcha = ({ onMatch }) => {
         maxLength={4}
         autoComplete="off"
         style={{
-          flex: 1, padding: '12px', borderRadius: '8px',
+          flex: 1, 
+          minWidth: 0, // 防止 flex 布局下撑开容器
+          padding: '12px', borderRadius: '8px',
           border: '1px solid #ddd', outline: 'none',
-          fontSize: '14px', letterSpacing: '2px',
+          fontSize: '14px', letterSpacing: '1px', // 稍微缩小间距
           boxSizing: 'border-box',
           transition: 'border-color 0.2s'
         }}
@@ -100,7 +102,7 @@ const Captcha = ({ onMatch }) => {
       />
       <canvas
         ref={canvasRef}
-        width={110}
+        width={100}
         height={40}
         onClick={refresh}
         title="点击刷新验证码"
