@@ -118,6 +118,9 @@ const HomePage = () => {
     { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: '🪟', pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true }
   ];
 
+  // AI 润色白名单 (Task: Strict Whitelist)
+  const ALLOWED_ENHANCE_STYLES = ['default', 'real', 'product', 'tech_poster'];
+
   useEffect(() => {
     const guestFlag = localStorage.getItem('isGuest') === 'true';
     setIsGuest(guestFlag);
@@ -383,20 +386,24 @@ const HomePage = () => {
             
             {/* AI 润色工具条 (Task 2.2) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', marginBottom: '16px' }}>
-              <button
-                onClick={handleEnhance}
-                disabled={enhancing || loading || !prompt.trim()}
-                style={{
-                  padding: '6px 12px', borderRadius: '18px', border: '1px solid #e66b33',
-                  background: enhancing ? '#fff8f5' : 'transparent',
-                  color: '#e66b33', cursor: (enhancing || !prompt.trim()) ? 'not-allowed' : 'pointer',
-                  fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  opacity: !prompt.trim() ? 0.5 : 1, transition: 'all 0.3s'
-                }}
-              >
-                <Sparkles size={14} className={enhancing ? 'spin' : ''} />
-                {enhancing ? '正在构思细节...' : '✨ 智能润色提示词'}
-              </button>
+              {ALLOWED_ENHANCE_STYLES.includes(selectedStyle.id) ? (
+                <button
+                  onClick={handleEnhance}
+                  disabled={enhancing || loading || !prompt.trim()}
+                  style={{
+                    padding: '6px 12px', borderRadius: '18px', border: '1px solid #e66b33',
+                    background: enhancing ? '#fff8f5' : 'transparent',
+                    color: '#e66b33', cursor: (enhancing || !prompt.trim()) ? 'not-allowed' : 'pointer',
+                    fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    opacity: !prompt.trim() ? 0.5 : 1, transition: 'all 0.3s'
+                  }}
+                >
+                  <Sparkles size={14} className={enhancing ? 'spin' : ''} />
+                  {enhancing ? '正在构思细节...' : '✨ 智能润色提示词'}
+                </button>
+              ) : (
+                <div style={{ fontSize: '11px', color: '#999' }}>✨ 此风格模版已预设最佳参数，直接输入即可</div>
+              )}
 
               {historyPrompt && !enhancing && (
                 <button 
