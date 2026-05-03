@@ -15,9 +15,35 @@ from backend.crud import image as image_crud
 from backend.core.config import get_config
 from backend.core.cos import upload_url_to_cos, upload_base64_to_cos
 from backend.core.deps import get_current_user
+from backend.core.prompt_enhance import enhance_prompt
 from starlette.concurrency import run_in_threadpool
+from pydantic import BaseModel
+from typing import Optional
 
 router = APIRouter(prefix="/image", tags=["image"])
+
+# 内存限流器 (Task 1.2)
+class SimpleRateLimiter:
+    def __init__(self, limit: int = 5, window: int = 60):
+        self.limit = limit
+        self.window = window
+        self.history = {} # {user_id: [timestamps]}
+
+    def is_allowed(self, user_id: int) -> bool:
+        now = time.time()
+        if user_id not in self.history:
+            self.history[user_id] = [now]
+            return True
+        
+        # 清理过期的记录
+        self.history[user_id] = [t for t in self.history[user_id] if now - t < self.window]
+        
+        if len(self.history[user_id]) < self.limit:
+            self.history[user_id].append(now)
+            return True
+        return False
+
+enhance_limiter = SimpleRateLimiter(limit=5, window=60)
 
 # 档次配置矩阵 (Task 1.1)
 TIER_CONFIG = {
@@ -255,6 +281,36 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
 @router.get("/config")
 async def get_config_info():
     return {"pricing": PRICING, "tiers": TIER_CONFIG}
+
+@router.get("/download")
+async def download_image(id: int, db: Session = Depends(get_db)):
+    log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
+    if not log or not log.image_url: raise HTTPException(status_code=404, detail="图片不存在")
+    return RedirectResponse(url=log.image_url)
+
+class EnhanceRequest(BaseModel):
+    prompt: str
+    style_id: Optional[str] = "default"
+
+@router.post("/enhance-prompt")
+async def enhance_prompt_endpoint(
+    payload: EnhanceRequest,
+    current_user: models.User = Depends(get_current_user)
+):
+    """使用大模型优化用户提示词（助手模式 + 限流）"""
+    if not payload.prompt.strip():
+        raise HTTPException(status_code=400, detail="提示词不能为空")
+    
+    # 1. 频率限制检查
+    if not enhance_limiter.is_allowed(current_user.id):
+        raise HTTPException(status_code=429, detail="操作过于频繁，请稍后再试（限每分钟5次）")
+
+    # 2. 调用优化逻辑
+    try:
+        enhanced = await enhance_prompt(payload.prompt.strip(), payload.style_id)
+        return {"original": payload.prompt, "enhanced": enhanced}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI 优化失败: {str(e)[:100]}")
 
 @router.post("/generate")
 async def generate_image(payload: image_schema.ImageCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

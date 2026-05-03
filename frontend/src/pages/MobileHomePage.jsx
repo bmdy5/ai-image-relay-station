@@ -116,6 +116,8 @@ const MobileHomePage = () => {
   const [pricingMap, setPricingMap] = useState({ 'standard': 5, 'hd': 15, 'master': 30 });
   const [selectedJob, setSelectedJob] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [enhancing, setEnhancing] = useState(false);
+  const [historyPrompt, setHistoryPrompt] = useState('');
 
   
   // 处理粘贴图片 (Task: Mobile Paste to Ref)
@@ -177,6 +179,32 @@ const MobileHomePage = () => {
         input.setSelectionRange(input.value.length, input.value.length);
       }
     }, 300);
+  };
+
+  const handleEnhance = async () => {
+    if (!prompt.trim() || enhancing) return;
+    setHistoryPrompt(prompt);
+    setEnhancing(true);
+    try {
+      const res = await request.post('/image/enhance-prompt', { 
+        prompt: prompt.trim(),
+        style_id: selectedStyle.id
+      });
+      if (res.enhanced) {
+        setPrompt(res.enhanced);
+      }
+    } catch (err) {
+      alert(err.response?.data?.detail || 'AI 优化失败');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleUndo = () => {
+    if (historyPrompt) {
+      setPrompt(historyPrompt);
+      setHistoryPrompt('');
+    }
   };
 
 
@@ -383,44 +411,85 @@ const MobileHomePage = () => {
           </div>
         )}
 
-        <div style={{ 
-          background: 'rgba(255, 255, 255, 0.8)', 
-          backdropFilter: 'blur(20px)',
-          height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: '0 8px 0 12px', 
-          boxShadow: '0 15px 35px rgba(0,0,0,0.08)', border: '1px solid rgba(255,255,255,0.9)' 
-        }}>
-          {/* 左侧加号上传 */}
-          <button 
-            onClick={() => document.getElementById('mobile-upload').click()}
-            style={{ border: 'none', background: '#F2F2F7', color: '#666', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px' }}
+        {/* 撤销浮层 (Task 2.2) */}
+        {historyPrompt && !enhancing && (
+          <div 
+            onClick={handleUndo}
+            style={{ 
+              position: 'absolute', top: '-24px', right: '16px', 
+              background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 10px', 
+              borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', zIndex: 10
+            }}
           >
-            <Plus size={20} />
-          </button>
-          
-          <input 
-            type="text" 
-            placeholder={selectedStyle.requiresImage ? '⚠️ 请上传图片并输入灵感...' : '描述你的灵感画面...'} 
-            value={prompt} 
-            onChange={(e) => setPrompt(e.target.value)} 
-            onPaste={handlePaste}
-            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()} 
-            style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px', background: 'transparent' }} 
-          />
-          
+            撤销润色
+          </div>
+        )}
+
+        <div 
+          className={enhancing ? 'ai-enhancing-border' : ''}
+          style={{ 
+            background: enhancing ? 'transparent' : 'rgba(255, 255, 255, 0.8)', 
+            backdropFilter: 'blur(20px)',
+            height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: enhancing ? '0' : '0 8px 0 12px', 
+            boxShadow: '0 15px 35px rgba(0,0,0,0.08)', border: enhancing ? 'none' : '1px solid rgba(255,255,255,0.9)',
+            transition: 'all 0.5s'
+          }}
+        >
+          <div 
+            className={enhancing ? 'ai-enhancing-inner' : ''}
+            style={{ 
+              width: '100%', height: '100%', borderRadius: '28px', display: 'flex', alignItems: 'center', 
+              padding: enhancing ? '0 8px 0 12px' : '0', background: enhancing ? 'white' : 'transparent'
+            }}
+          >
+            {/* 左侧加号上传 */}
             <button 
-              onClick={handleGenerate} 
-              disabled={!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)} 
-              style={{ 
-                width: '40px', height: '40px', 
-                background: quality === 'master' ? 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' : 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', 
-                borderRadius: '50%', border: 'none', color: 'white', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 10px rgba(0,0,0,0.1)',
-                opacity: (!prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)) ? 0.5 : 1
-              }}
+              onClick={() => document.getElementById('mobile-upload').click()}
+              style={{ border: 'none', background: '#F2F2F7', color: '#666', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '8px' }}
             >
-            <ArrowUp size={22} />
-          </button>
+              <Plus size={20} />
+            </button>
+            
+            <input 
+              type="text" 
+              placeholder={enhancing ? 'AI 正在构思中...' : (selectedStyle.requiresImage ? '⚠️ 请上传图片并输入灵感...' : '描述你的灵感画面...')} 
+              value={prompt} 
+              onChange={(e) => setPrompt(e.target.value)} 
+              onPaste={handlePaste}
+              onKeyDown={(e) => e.key === 'Enter' && handleGenerate()} 
+              disabled={enhancing}
+              style={{ flex: 1, border: 'none', outline: 'none', fontSize: '15px', background: 'transparent' }} 
+            />
+            
+            {/* 智能润色按钮 (Task 2.2) */}
+            {prompt.trim() && (
+              <button 
+                onClick={handleEnhance}
+                disabled={enhancing}
+                style={{ 
+                  border: 'none', background: 'transparent', color: '#e66b33', 
+                  width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                <Sparkles size={20} className={enhancing ? 'spin' : ''} />
+              </button>
+            )}
+
+            <button 
+                onClick={handleGenerate} 
+                disabled={enhancing || !prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)} 
+                style={{ 
+                  width: '40px', height: '40px', 
+                  background: quality === 'master' ? 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' : 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', 
+                  borderRadius: '50%', border: 'none', color: 'white', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.4), 0 4px 10px rgba(0,0,0,0.1)',
+                  opacity: (enhancing || !prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)) ? 0.5 : 1
+                }}
+              >
+              <ArrowUp size={22} />
+            </button>
+          </div>
           
           <input id="mobile-upload" type="file" accept="image/*" hidden onChange={(e) => {
             const file = e.target.files[0];
