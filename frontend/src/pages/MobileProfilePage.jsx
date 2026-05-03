@@ -551,6 +551,8 @@ const MobileProfilePage = ({ isMobile }) => {
           isIOS={isIOS}
           isAndroid={isAndroid}
           isInWechat={isInWechat}
+          promptInstall={promptInstall}
+          isInstallable={isInstallable}
           onClose={() => setShowIosGuide(false)} 
         />
       )}
