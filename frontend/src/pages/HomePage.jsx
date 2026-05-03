@@ -366,7 +366,15 @@ const HomePage = () => {
               ].map(t => (
                 <button
                   key={t.id}
-                  onClick={() => setQuality(t.id)}
+                  onClick={() => {
+                    setQuality(t.id);
+                    // 降级检查：如果手动切换到更低等级，且当前风格不支持该等级，则重置回默认
+                    if (t.id === 'standard' && selectedStyle.pts !== 'All') {
+                      setSelectedStyle(styles[0]);
+                    } else if (t.id === 'hd' && selectedStyle.pts === 'Master') {
+                      setSelectedStyle(styles[0]);
+                    }
+                  }}
                   style={{
                     flex: 1, padding: '8px', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer',
                     transition: 'var(--transition)',
