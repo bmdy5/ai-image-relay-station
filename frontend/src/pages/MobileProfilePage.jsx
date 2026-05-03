@@ -4,8 +4,10 @@ import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
 import { 
   ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock, 
-  RefreshCw, Copy, ExternalLink, MessageSquare
+  RefreshCw, Copy, ExternalLink, MessageSquare, Download
 } from 'lucide-react';
+import { usePWA } from '../hooks/usePWA';
+import PWAIosGuideModal from '../components/PWAIosGuideModal';
 
 const MobileDrawer = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
@@ -38,6 +40,8 @@ const MobileProfilePage = ({ isMobile }) => {
   const [bindForm, setBindForm] = useState({ email: '', code: '' });
   const [phoneBind, setPhoneBind] = useState('');
   const [countdown, setCountdown] = useState(0);
+  const { isInstallable, isStandalone, isIOS, isInstalled, promptInstall } = usePWA();
+  const [showIosGuide, setShowIosGuide] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -278,6 +282,21 @@ const MobileProfilePage = ({ isMobile }) => {
       <div style={{ padding: '24px 20px 0 20px' }}>
         <div style={{ fontSize: '12px', fontWeight: '600', color: '#8E8E93', marginBottom: '8px', paddingLeft: '10px' }}>高级功能</div>
         <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+          {(!isInstalled && !isStandalone && localStorage.getItem('isGuest') !== 'true' && (isInstallable || isIOS)) && (
+            <>
+              <SettingItem 
+                icon={<Download size={20} />} 
+                label="添加至主屏幕" 
+                sublabel="体验原生 App 并获赠 10 积分" 
+                onClick={() => {
+                  if (isIOS) setShowIosGuide(true);
+                  else promptInstall();
+                }} 
+                color="#C56A50"
+              />
+              <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
+            </>
+          )}
           <SettingItem 
             icon={<RefreshCw size={20} className={loading ? 'loading-spin' : ''} />} 
             label="清理任务锁" 
@@ -426,6 +445,10 @@ const MobileProfilePage = ({ isMobile }) => {
           uid={userInfo?.uid} onClose={() => setShowRecharge(false)} 
           onSuccess={() => { setShowRecharge(false); fetchData(); }}
         />
+      )}
+
+      {showIosGuide && (
+        <PWAIosGuideModal onClose={() => setShowIosGuide(false)} />
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `

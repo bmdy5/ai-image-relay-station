@@ -296,3 +296,30 @@ def bind_phone(
     db.commit()
     
     return {"message": "手机号绑定成功"}
+
+@router.post("/claim-install-reward")
+def claim_install_reward(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # 防止未登录或无效用户请求
+    if not current_user:
+        raise HTTPException(status_code=401, detail="请先登录")
+        
+    if current_user.has_install_reward:
+        raise HTTPException(status_code=400, detail="您已经领取过安装奖励了")
+        
+    current_user.has_install_reward = True
+    current_user.points += 10
+    
+    # 记录流水
+    db_log = models.RechargeLog(
+        user_id=current_user.id,
+        amount=10,
+        money_amount=0,
+        status="success",
+        admin_note="系统自动发放 PWA 安装奖励",
+        operator_id=0,
+        trade_no=f"PWA_{current_user.id}_{int(datetime.now().timestamp())}"
+    )
+    db.add(db_log)
+    db.commit()
+    
+    return {"message": "安装奖励领取成功！", "points": current_user.points}

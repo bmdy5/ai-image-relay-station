@@ -73,6 +73,8 @@ class RechargeLogInfo(BaseModel):
     money_amount: Optional[float]
     status: str
     payment_method: Optional[str]
+    trade_no: Optional[str] = None
+    admin_note: Optional[str] = None
     created_at: datetime
 
     class Config:

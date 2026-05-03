@@ -34,7 +34,7 @@ const PointsHistoryPage = ({ isMobile }) => {
         ...item,
         type: 'recharge',
         display_amount: `+${item.amount}`,
-        display_label: `充值到账 (¥${item.money_amount || 0})`,
+        display_label: item.trade_no?.startsWith('PWA_') ? '桌面版安装奖励' : `充值到账 (¥${item.money_amount || 0})`,
         color: '#52c41a'
       }));
 
