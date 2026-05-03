@@ -163,11 +163,13 @@ const HomePage = () => {
     }
     
     // 一键装填
+    setCurrentJobId(null); // 进入新任务模式
     setRefImageUrl(job.url);
     setPrompt(job.prompt);
     setQuality(job.quality);
     const style = styles.find(s => s.id === job.style);
     if (style) setSelectedStyle(style);
+    if (job.aspect_ratio) setAspectRatio(job.aspect_ratio);
     
     setIsRefining(true);
     setRefineParentId(job.id);
@@ -216,7 +218,8 @@ const HomePage = () => {
     const saved = localStorage.getItem('visionary_active_jobs');
     if (saved) {
       const { timestamp, jobs } = JSON.parse(saved);
-      if (Date.now() - timestamp < 300000) {
+      // 延长至 2 小时 (7200000ms)
+      if (Date.now() - timestamp < 7200000) {
         setActiveJobs(jobs);
         if (jobs.length > 0) setCurrentJobId(jobs[0].id);
         
@@ -486,7 +489,28 @@ const HomePage = () => {
       {/* 主工作台 (双栏) */}
       <main className="desktop-main-layout">
         {/* 左侧：参数调节区 - 300px 侧边栏 */}
-        <div className="sidebar-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '0' }}>
+        <div className="sidebar-container" style={{ 
+          display: 'flex', flexDirection: 'column', gap: '16px', padding: '0',
+          position: 'relative'
+        }}>
+          {/* 查看模式锁定蒙层 */}
+          {currentJobId && (
+            <div style={{
+              position: 'absolute', inset: '-10px', background: 'rgba(255,255,255,0.4)',
+              backdropFilter: 'blur(4px)', zIndex: 10, borderRadius: '24px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'not-allowed', animation: 'fadeIn 0.3s'
+            }}>
+              <div style={{
+                padding: '10px 20px', background: 'white', borderRadius: '30px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.1)', display: 'flex', 
+                alignItems: 'center', gap: '8px', border: '1px solid var(--primary-glow)'
+              }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)', animation: 'pulse 1.5s infinite' }}></div>
+                <span style={{ fontSize: '12px', fontWeight: '800', color: '#1d1d1f' }}>查看模式 · 点击右侧 + 号开启新创作</span>
+              </div>
+            </div>
+          )}
           
           {/* 1. 创作模式切换 */}
           <div>
@@ -556,10 +580,10 @@ const HomePage = () => {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onPaste={handlePaste}
-                disabled={loading || enhancing}
+                disabled={loading || enhancing || !!currentJobId}
                 style={{
                   width: '100%', height: '120px', border: enhancing ? 'none' : '1px solid var(--border)', borderRadius: '12px', padding: '12px',
-                  fontSize: '13px', lineHeight: '1.6', resize: 'none', background: '#fafafa', transition: 'all 0.3s',
+                  fontSize: '13px', lineHeight: '1.6', resize: 'none', background: !!currentJobId ? '#f5f5f7' : '#fafafa', transition: 'all 0.3s',
                   outline: 'none', marginBottom: '0'
                 }}
                 onFocus={(e) => { if(!enhancing) { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px var(--primary-glow)'; } }}
@@ -731,16 +755,18 @@ const HomePage = () => {
           <button 
             className={`btn-primary ${loading ? 'loading-pulse' : ''}`} 
             onClick={handleGenerate} 
-            disabled={loading || !prompt.trim() || (selectedStyle.requiresImage && !refImageUrl)}
+            disabled={loading || !prompt.trim() || (selectedStyle.requiresImage && !refImageUrl) || !!currentJobId}
             style={{ 
               width: '100%', marginTop: 'auto', height: '44px', 
               borderRadius: '10px', fontSize: '14px',
-              background: loading ? '#f3a481' : 'var(--primary)',
+              background: (loading || !!currentJobId) ? '#f3a481' : 'var(--primary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
             }}
           >
             {loading ? (
               '🚀 正在创作中...'
+            ) : currentJobId ? (
+              '锁定模式'
             ) : (
               <>
                 <Sparkles size={20} strokeWidth={2} /> 开启精彩创作
@@ -890,11 +916,21 @@ const HomePage = () => {
               }}>
                 {/* 新增任务按钮 */}
                 <div 
-                  onClick={() => { setCurrentJobId(null); setPrompt(''); }}
+                  onClick={() => { 
+                    setCurrentJobId(null); 
+                    setPrompt(''); 
+                    setRefImageUrl('');
+                    setQuality('standard'); // 归零至标准版
+                    setSelectedStyle(styles[0]); // 归零至默认风格
+                    setAspectRatio('1:1');
+                    setIsRefining(false);
+                  }}
                   style={{ 
                     width: '50px', height: '50px', borderRadius: '12px', border: '2px dashed #ddd',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999',
-                    cursor: 'pointer', flexShrink: 0, transition: '0.3s'
+                    cursor: 'pointer', flexShrink: 0, transition: '0.3s',
+                    background: currentJobId === null ? 'var(--primary-glow)' : 'transparent',
+                    borderColor: currentJobId === null ? 'var(--primary)' : '#ddd'
                   }}
                   onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'}
                   onMouseOut={e => e.currentTarget.style.borderColor = '#ddd'}
@@ -905,7 +941,17 @@ const HomePage = () => {
                 {activeJobs.map(job => (
                   <div 
                     key={job.id}
-                    onClick={() => setCurrentJobId(job.id)}
+                    onClick={() => {
+                      setCurrentJobId(job.id);
+                      // 同步所有快照参数
+                      setQuality(job.quality);
+                      setPrompt(job.prompt);
+                      const styleObj = styles.find(s => s.id === job.style);
+                      if (styleObj) setSelectedStyle(styleObj);
+                      if (job.aspect_ratio) setAspectRatio(job.aspect_ratio);
+                      if (job.ref_image_url) setRefImageUrl(job.ref_image_url);
+                      setIsRefining(false); // 退出当前的精修编辑态
+                    }}
                     style={{ 
                       width: '50px', height: '50px', borderRadius: '12px', overflow: 'hidden', 
                       position: 'relative', cursor: 'pointer', border: currentJobId === job.id ? '2px solid var(--primary)' : '2px solid transparent',
