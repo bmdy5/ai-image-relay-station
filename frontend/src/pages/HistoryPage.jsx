@@ -105,6 +105,7 @@ const HistoryPage = ({ isMobile }) => {
       quality: img.quality,
       ref_image_url: img.image_url, // 注意：微调是基于生成后的图片
       parent_id: img.id,
+      root_id: img.root_id || img.id, // 传递根 ID
       iteration: (img.iteration || 0) + 1,
       is_refining: true
     }));

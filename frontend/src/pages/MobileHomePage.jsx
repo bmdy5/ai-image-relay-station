@@ -122,13 +122,14 @@ const MobileHomePage = () => {
   const [quality, setQuality] = useState('standard');
   const [isRefining, setIsRefining] = useState(false);
   const [refineParentId, setRefineParentId] = useState(null);
+  const [refineRootId, setRefineRootId] = useState(null);
   const [iterationInfo, setIterationInfo] = useState({ current: 0, max: 0 });
   const [jobs, setJobs] = useState([]); 
   const [activeDrawer, setActiveDrawer] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' });
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [refImageUrl, setRefImageUrl] = useState('');
-  const [pricingMap, setPricingMap] = useState({ 'standard': 5, 'hd': 15, 'master': 30 });
+  const [pricingMap, setPricingMap] = useState({ 'standard': 5, 'hd': 10, 'master': 15 });
   const [selectedJob, setSelectedJob] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [enhancing, setEnhancing] = useState(false);
@@ -181,6 +182,7 @@ const MobileHomePage = () => {
       if (data.is_refining) {
         setIsRefining(true);
         setRefineParentId(data.parent_id);
+        setRefineRootId(data.root_id);
         const maxRefines = data.quality === 'master' ? 3 : (data.quality === 'hd' ? 2 : 0);
         setIterationInfo({ current: data.iteration || 1, max: maxRefines });
       }
@@ -246,6 +248,7 @@ const MobileHomePage = () => {
     
     setIsRefining(true);
     setRefineParentId(job.id);
+    setRefineRootId(job.root_id || job.id);
     setIterationInfo({ current: (job.iteration || 0) + 1, max: maxRefines });
     
     // 平滑滚动
@@ -258,6 +261,7 @@ const MobileHomePage = () => {
     setIsRefining(false);
     setRefImageUrl('');
     setRefineParentId(null);
+    setRefineRootId(null);
   };
 
 
@@ -324,12 +328,15 @@ const MobileHomePage = () => {
         aspect_ratio: aspectRatio,
         ref_image_url: refImageUrl,
         parent_id: refineParentId,
+        root_id: refineRootId,
         iteration: iterationInfo.current
       });
       
+      // 成功后才重置
       if (isRefining) {
         setIsRefining(false);
         setRefineParentId(null);
+        setRefineRootId(null);
       }
       const taskId = res.id;
       
@@ -504,7 +511,7 @@ const MobileHomePage = () => {
             animation: 'fadeInUp 0.4s ease-out'
           }}>
             <Wand2 size={12} />
-            正在进行迭代精修 ({iterationInfo.current}/{iterationInfo.max})
+            精修中 ({iterationInfo.current}/{iterationInfo.max}) · 💡 建议保留关键词
             <div onClick={cancelRefine} style={{ marginLeft: 'auto', padding: '4px' }}>
               <X size={14} />
             </div>
