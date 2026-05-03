@@ -245,6 +245,9 @@ const MobileHomePage = () => {
     { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: '🪟', pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true }
   ];
 
+  // AI 润色白名单 (Task: Strict Whitelist)
+  const ALLOWED_ENHANCE_STYLES = ['default', 'real', 'product', 'tech_poster'];
+
   const handleGenerate = async () => {
     if (!prompt.trim() && selectedStyle.id !== 'ui_upgrade') return;
 
@@ -462,7 +465,7 @@ const MobileHomePage = () => {
             />
             
             {/* 智能润色按钮 (Task 2.2) */}
-            {prompt.trim() && (
+            {prompt.trim() && ALLOWED_ENHANCE_STYLES.includes(selectedStyle.id) && (
               <button 
                 onClick={handleEnhance}
                 disabled={enhancing}

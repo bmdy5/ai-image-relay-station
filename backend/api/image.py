@@ -297,10 +297,16 @@ async def enhance_prompt_endpoint(
     payload: EnhanceRequest,
     current_user: models.User = Depends(get_current_user)
 ):
-    """使用大模型优化用户提示词（助手模式 + 限流）"""
+    """使用大模型优化用户提示词（助手模式 + 限流 + 风格准入校验）"""
     if not payload.prompt.strip():
         raise HTTPException(status_code=400, detail="提示词不能为空")
     
+    # 0. 风格准入校验 (Task: Strategy B - Strict Whitelist)
+    # 仅允许基础视觉风格进行润色，结构化风格严禁进入，以防干扰模版逻辑
+    ALLOWED_STYLES = ["default", "real", "product", "tech_poster"]
+    if payload.style_id not in ALLOWED_STYLES:
+        raise HTTPException(status_code=400, detail="该风格已预设最佳参数，无需润色")
+
     # 1. 频率限制检查
     if not enhance_limiter.is_allowed(current_user.id):
         raise HTTPException(status_code=429, detail="操作过于频繁，请稍后再试（限每分钟5次）")
