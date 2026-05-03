@@ -139,6 +139,11 @@ const MobileHomePage = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [enhancing, setEnhancing] = useState(false);
   const [historyPrompt, setHistoryPrompt] = useState('');
+  const [userInfo, setUserInfo] = useState(null);
+  const [showPointsModal, setShowPointsModal] = useState(false);
+  const [requiredPoints, setRequiredPoints] = useState(0);
+  const [isGuest, setIsGuest] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
 
   
   // 处理粘贴图片 (Task: Mobile Paste to Ref)
@@ -165,9 +170,23 @@ const MobileHomePage = () => {
   };
 
   useEffect(() => {
+    const guestFlag = localStorage.getItem('isGuest') === 'true';
+    setIsGuest(guestFlag);
+    if (!guestFlag) {
+      fetchUserInfo();
+    } else {
+      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+    }
     fetchConfig();
     checkPendingPrompt();
   }, []);
+
+  const fetchUserInfo = async () => {
+    try {
+      const data = await request.get('/auth/me');
+      setUserInfo(data);
+    } catch (err) {}
+  };
 
   const checkPendingPrompt = () => {
     const pending = sessionStorage.getItem('pending_prompt');
@@ -315,6 +334,19 @@ const MobileHomePage = () => {
   const ALLOWED_ENHANCE_STYLES = ['default', 'real', 'product', 'tech_poster'];
 
   const handleGenerate = async () => {
+    if (isGuest) {
+      setShowGuestModal(true);
+      return;
+    }
+
+    // 积分预检
+    const cost = pricingMap[quality] || 5;
+    if (userInfo && userInfo.points < cost) {
+      setRequiredPoints(cost);
+      setShowPointsModal(true);
+      return;
+    }
+
     if (!prompt.trim() && selectedStyle.id !== 'ui_upgrade') return;
 
     if (selectedStyle.requiresImage && !refImageUrl) {
@@ -808,9 +840,45 @@ const MobileHomePage = () => {
         </div>
       )}
 
+      {/* 积分不足弹窗 */}
+      {showPointsModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002, padding: '20px'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '24px', width: '100%', maxWidth: '320px',
+            padding: '32px 24px', textAlign: 'center', animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            <div style={{ 
+              width: '64px', height: '64px', background: '#fff7e6', borderRadius: '50%', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#faad14' 
+            }}>
+              <Coins size={32} />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '8px' }}>积分余额不足</h3>
+            <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
+              当前生成需要 <b style={{ color: '#C59C8F' }}>{requiredPoints}</b> 积分<br/>
+              您的余额仅剩 <b style={{ color: '#faad14' }}>{userInfo?.points || 0}</b> 积分
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button onClick={() => navigate('/pricing')} style={{ 
+                background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', color: 'white',
+                border: 'none', padding: '12px', borderRadius: '14px', fontSize: '14px', fontWeight: 'bold'
+              }}>立即充值</button>
+              <button onClick={() => setShowPointsModal(false)} style={{ 
+                background: '#F2F2F7', color: '#666',
+                border: 'none', padding: '12px', borderRadius: '14px', fontSize: '14px', fontWeight: '600'
+              }}>稍后再说</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes fadeUpDown { 
           0% { opacity: 0; transform: translate(-50%, -20px); }
           15% { opacity: 1; transform: translate(-50%, 0); }
