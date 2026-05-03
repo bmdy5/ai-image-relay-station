@@ -225,7 +225,7 @@ const MobileHomePage = () => {
     // --- 基础梯队 ---
     { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✦', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
     { id: 'real', name: '极致写实', desc: '仿真现实模拟', icon: '📸', pts: 'All', placeholder: '主题：【在此输入人像或画面，支持多样化构图生成】' },
-    { id: 'product', name: '电商白底', desc: '纯净产品主图', icon: '🛒', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
+    { id: 'product', name: '商业大片', desc: '设计师级商业海报质感', icon: '🛒', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
     { id: 'tech_poster', name: '科技海报', desc: '高级感信息排版', icon: '🎨', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
     { id: 'travel_guide', name: '旅游攻略', desc: '手绘旅行手账', icon: '🧭', pts: 'All', placeholder: '目的地 @ 天数：【如：大理 @ 3】' },
 
