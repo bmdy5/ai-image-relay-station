@@ -443,22 +443,13 @@ const HomePage = () => {
                 </button>
               ))}
             </div>
-            {quality !== 'standard' && (
-              <div style={{ 
-                marginTop: '10px', fontSize: '11px', color: '#e66b33', fontWeight: 'bold', 
-                display: 'flex', alignItems: 'center', gap: '6px', animation: 'fadeIn 0.3s' 
-              }}>
-                <Wand2 size={12} />
-                包含 {quality === 'master' ? '3' : '2'} 次深度变体精修机会
-              </div>
-            )}
           </div>
 
           {/* 2. 提示词输入 */}
           <div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               灵感输入
-              {isRefining && (
+              {isRefining ? (
                 <div style={{ 
                   fontSize: '11px', background: 'linear-gradient(135deg, #e66b33, #ff9800)', color: 'white', 
                   padding: '2px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px',
@@ -468,6 +459,16 @@ const HomePage = () => {
                   精修中 ({iterationInfo.current}/{iterationInfo.max}) · 💡 建议保留关键词
                   <X size={10} style={{ cursor: 'pointer', marginLeft: '4px' }} onClick={cancelRefine} />
                 </div>
+              ) : (
+                quality !== 'standard' && (
+                  <div style={{ 
+                    fontSize: '11px', color: '#e66b33', fontWeight: 'bold', 
+                    display: 'flex', alignItems: 'center', gap: '4px', opacity: 0.8
+                  }}>
+                    <Wand2 size={12} />
+                    {quality === 'master' ? '3' : '2'}次迭代机会
+                  </div>
+                )
               )}
             </div>
             
