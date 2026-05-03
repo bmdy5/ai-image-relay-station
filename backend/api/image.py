@@ -23,6 +23,18 @@ from typing import Optional
 
 router = APIRouter(prefix="/image", tags=["image"])
 
+@router.get("/proxy")
+async def proxy_image(url: str):
+    """代理获取图片以绕过前端 CORS 限制"""
+    import httpx
+    from fastapi.responses import Response
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(url, timeout=10.0)
+            return Response(content=resp.content, media_type=resp.headers.get("content-type"))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
 # 内存限流器 (Task 1.2)
 class SimpleRateLimiter:
     def __init__(self, limit: int = 5, window: int = 60):

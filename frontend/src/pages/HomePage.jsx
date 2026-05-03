@@ -43,7 +43,8 @@ import {
   CreditCard,
   Box,
   Flag,
-  Wind
+  Wind,
+  Plus
 } from 'lucide-react';
 import Showcase from '../components/Showcase';
 
@@ -757,108 +758,150 @@ const HomePage = () => {
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           minHeight: '600px', height: '100%', position: 'relative', overflow: 'hidden', border: '1px solid var(--border)'
         }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
-              {quality === 'master' ? (
-                <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
-                  <div className="thinking-orb"></div>
-                  {particles.map(p => (
-                    <div key={p.id} className="neural-particle" style={{ '--tx': `${p.tx}px`, '--ty': `${p.ty}px`, left: '50%', top: '50%' }}>
-                      {p.text}
-                    </div>
-                  ))}
-                  <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ color: 'var(--master)', fontWeight: '800', letterSpacing: '4px', fontSize: '12px' }}>
-                      REASONING...
-                    </div>
-                    {/* 新增：大师模式进度条 */}
-                    <div style={{ width: '120px', height: '3px', background: 'rgba(138,43,226,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                      <div style={{ 
-                        width: `${activeJobs.find(j => j.id === currentJobId)?.progress || 0}%`, 
-                        height: '100%', 
-                        background: 'var(--master)', 
-                        transition: 'width 0.5s ease' 
-                      }}></div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '4px solid rgba(0,0,0,0.05)', borderTop: '4px solid var(--primary)', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
-                   <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>AI 正在为您创作...</div>
-                </div>
-              )}
-            </div>
-          ) : activeJobs.length === 0 ? (
-            <div style={{ textAlign: 'center', maxWidth: '450px', animation: 'fadeIn 0.8s ease-out', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: '240px', height: '200px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg style={{ position: 'absolute', width: '220px', height: '220px' }} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                  <path fill="#fdf6f2" d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.1,-46.3C90.4,-33.5,96,-18.1,96.5,-2.5C97,13.2,92.5,29.1,83.1,41.9C73.7,54.6,59.3,64.2,44.4,72.6C29.5,81,14.7,88.2,-1.3,90.5C-17.3,92.8,-34.7,90.2,-48.9,81.4C-63.1,72.6,-74.2,57.7,-81.4,41.4C-88.6,25.1,-91.9,7.4,-88.9,-9.2C-85.9,-25.8,-76.5,-41.2,-64.2,-53.4C-51.9,-65.6,-36.6,-74.6,-21.8,-79.8C-7,-84.9,7.4,-86.2,21.8,-82.9C36.2,-79.6,50.6,-71.8,44.7,-76.4Z" transform="translate(100 100)" />
-                </svg>
-                <svg style={{ position: 'relative', zIndex: 2, width: '120px', height: '120px' }} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M 48 15 C 23 15 13 35 13 55 C 13 75 33 85 53 85 C 63 85 68 80 68 75 C 68 70 63 65 58 65 C 53 65 53 55 58 55 C 68 55 83 50 83 35 C 83 20 68 15 48 15 Z" fill="#fff" stroke="#D1ABA0" strokeWidth="3" strokeLinejoin="round"/>
-                  <circle cx="33" cy="35" r="3.5" fill="#C59C8F" />
-                  <circle cx="28" cy="52" r="3.5" fill="#D1ABA0" />
-                  <circle cx="42" cy="68" r="3.5" fill="#E8D1C7" />
-                  <circle cx="52" cy="30" r="3.5" fill="#D1ABA0" />
-                  <circle cx="68" cy="42" r="3.5" fill="#C59C8F" />
-                </svg>
-              </div>
-              <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#2c2c2e', marginBottom: '16px' }}>您的创意画布</h2>
-              <p style={{ fontSize: '15px', color: '#8e8e93' }}>在左侧输入您的灵感，支持多任务并行生成</p>
-            </div>
-          ) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', gap: '24px', position: 'relative' }}>
-              {/* 主展示区 */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '600px' }}>
-                {activeJobs.find(j => j.id === currentJobId)?.status === 'success' ? (
-                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeIn 0.5s' }}>
-                    <img 
-                      src={activeJobs.find(j => j.id === currentJobId).result} 
-                      alt="Result" 
-                      style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '24px', boxShadow: '0 40px 100px rgba(0,0,0,0.1)' }} 
-                    />
-                    <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '450px' }}>
-                      <button 
-                        onClick={() => handleRefine(activeJobs.find(j => j.id === currentJobId))} 
-                        className="btn-primary" 
-                        style={{ flex: 1.5, background: 'linear-gradient(135deg, #e66b33, #ff9800)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                      >
-                        <Wand2 size={18} /> 迭代精修
-                      </button>
-                      <a href={activeJobs.find(j => j.id === currentJobId).result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none', background: '#f5f5f7', color: '#1d1d1f', border: 'none' }}>
-                        <Download size={18} /> 高清保存
-                      </a>
-                    </div>
-                  </div>
-                ) : activeJobs.find(j => j.id === currentJobId)?.status === 'failed' ? (
-                  <div style={{ textAlign: 'center', padding: '40px' }}>
-                    <div style={{ color: '#ff4d4f', marginBottom: '16px' }}><X size={48} /></div>
-                    <div style={{ fontSize: '18px', fontWeight: '700' }}>生成失败</div>
-                    <p style={{ color: '#999', marginTop: '8px' }}>{activeJobs.find(j => j.id === currentJobId).error}</p>
-                    <button onClick={() => setActiveJobs(prev => prev.filter(j => j.id !== currentJobId))} className="btn-secondary" style={{ marginTop: '20px' }}>清除此任务</button>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center' }}>
-                     <div style={{ 
-                        width: '80px', height: '80px', borderRadius: '50%', 
-                        border: '4px solid rgba(230,107,51,0.1)', borderTop: '4px solid var(--primary)',
-                        animation: 'spin 1s linear infinite', margin: '0 auto 24px'
-                      }}></div>
-                      <div style={{ color: 'var(--text-main)', fontSize: '20px', fontWeight: '800' }}>AI 正在捕获灵感...</div>
-                      <div style={{ width: '240px', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', margin: '24px auto', overflow: 'hidden' }}>
-                        <div style={{ width: `${activeJobs.find(j => j.id === currentJobId)?.progress || 0}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.5s ease' }}></div>
+          <div style={{ width: '100%', height: '100%', display: 'flex', gap: '24px', position: 'relative' }}>
+            {/* 主展示区 */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '600px', position: 'relative' }}>
+              
+              {(() => {
+                const currentJob = activeJobs.find(j => j.id === currentJobId);
+                
+                if (!currentJobId || activeJobs.length === 0 || !currentJob) {
+                  /* 空白创作引导区 */
+                  return (
+                    <div style={{ textAlign: 'center', maxWidth: '450px', animation: 'fadeIn 0.8s ease-out', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ position: 'relative', width: '240px', height: '200px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg style={{ position: 'absolute', width: '220px', height: '220px' }} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                          <path fill="#fdf6f2" d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.1,-46.3C90.4,-33.5,96,-18.1,96.5,-2.5C97,13.2,92.5,29.1,83.1,41.9C73.7,54.6,59.3,64.2,44.4,72.6C29.5,81,14.7,88.2,-1.3,90.5C-17.3,92.8,-34.7,90.2,-48.9,81.4C-63.1,72.6,-74.2,57.7,-81.4,41.4C-88.6,25.1,-91.9,7.4,-88.9,-9.2C-85.9,-25.8,-76.5,-41.2,-64.2,-53.4C-51.9,-65.6,-36.6,-74.6,-21.8,-79.8C-7,-84.9,7.4,-86.2,21.8,-82.9C36.2,-79.6,50.6,-71.8,44.7,-76.4Z" transform="translate(100 100)" />
+                        </svg>
+                        <svg style={{ position: 'relative', zIndex: 2, width: '120px', height: '120px' }} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M 48 15 C 23 15 13 35 13 55 C 13 75 33 85 53 85 C 63 85 68 80 68 75 C 68 70 63 65 58 65 C 53 65 53 55 58 55 C 68 55 83 50 83 35 C 83 20 68 15 48 15 Z" fill="#fff" stroke="#D1ABA0" strokeWidth="3" strokeLinejoin="round"/>
+                          <circle cx="33" cy="35" r="3.5" fill="#C59C8F" />
+                          <circle cx="28" cy="52" r="3.5" fill="#D1ABA0" />
+                          <circle cx="42" cy="68" r="3.5" fill="#E8D1C7" />
+                          <circle cx="52" cy="30" r="3.5" fill="#D1ABA0" />
+                          <circle cx="68" cy="42" r="3.5" fill="#C59C8F" />
+                        </svg>
                       </div>
-                  </div>
-                )}
-              </div>
+                      <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#2c2c2e', marginBottom: '16px' }}>您的创意画布</h2>
+                      <p style={{ fontSize: '15px', color: '#8e8e93' }}>请在左侧输入您的灵感，开启 AI 艺术之旅</p>
+                    </div>
+                  );
+                }
 
-              {/* 右侧任务栈 */}
+                if (currentJob.status === 'processing' || currentJob.status === 'pending' || currentJob.status === 'generating') {
+                  /* 生成中状态 */
+                  return (
+                    <div style={{ textAlign: 'center', position: 'relative', zIndex: 2 }}>
+                      {quality === 'master' ? (
+                        <div style={{ position: 'relative', width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                          <div className="thinking-orb"></div>
+                          {particles.map(p => (
+                            <div key={p.id} className="neural-particle" style={{ '--tx': `${p.tx}px`, '--ty': `${p.ty}px`, left: '50%', top: '50%' }}>
+                              {p.text}
+                            </div>
+                          ))}
+                          <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ color: 'var(--master)', fontWeight: '800', letterSpacing: '4px', fontSize: '12px' }}>
+                              REASONING...
+                            </div>
+                            <div style={{ width: '120px', height: '3px', background: 'rgba(138,43,226,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                              <div style={{ 
+                                width: `${currentJob.progress || 0}%`, 
+                                height: '100%', 
+                                background: 'var(--master)', 
+                                transition: 'width 0.5s ease' 
+                              }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                           <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '4px solid rgba(0,0,0,0.05)', borderTop: '4px solid var(--primary)', animation: 'spin 1s linear infinite' }} />
+                           <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.8)', padding: '40px', borderRadius: '40px', boxShadow: '0 20px 50px rgba(0,0,0,0.05)', backdropFilter: 'blur(20px)' }}>
+                              <div style={{ fontSize: '24px', fontWeight: '900', color: '#1d1d1f', marginBottom: '16px', letterSpacing: '-0.5px' }}>AI 正在为您构思画面...</div>
+                              <div style={{ width: '320px', height: '12px', background: 'rgba(0,0,0,0.05)', borderRadius: '6px', overflow: 'hidden', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)', margin: '0 auto' }}>
+                                <div style={{ 
+                                  width: `${currentJob.progress || 0}%`, 
+                                  height: '100%', 
+                                  background: 'linear-gradient(90deg, #e66b33, #ff9800, #ffc107)', 
+                                  backgroundSize: '200% 100%',
+                                  animation: 'shimmer 2s linear infinite',
+                                  transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' 
+                                }}></div>
+                              </div>
+                              <div style={{ fontSize: '18px', color: 'var(--primary)', fontWeight: '900', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '28px' }}>{currentJob.progress || 0}</span>
+                                <span style={{ opacity: 0.5, fontSize: '20px' }}>%</span>
+                              </div>
+                           </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (currentJob.status === 'success') {
+                  /* 生成成功 */
+                  return (
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeIn 0.5s' }}>
+                      <img 
+                        src={currentJob.result} 
+                        alt="Result" 
+                        style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '24px', boxShadow: '0 40px 100px rgba(0,0,0,0.1)' }} 
+                      />
+                      <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '450px' }}>
+                        <button 
+                          onClick={() => handleRefine(currentJob)} 
+                          className="btn-primary" 
+                          style={{ flex: 1.5, background: 'linear-gradient(135deg, #e66b33, #ff9800)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                        >
+                          <Wand2 size={18} /> 迭代精修
+                        </button>
+                        <a href={currentJob.result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none', background: '#f5f5f7', color: '#1d1d1f', border: 'none' }}>
+                          <Download size={18} /> 高清保存
+                        </a>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (currentJob.status === 'failed') {
+                  /* 生成失败 */
+                  return (
+                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                      <div style={{ color: '#ff4d4f', marginBottom: '16px' }}><X size={48} /></div>
+                      <div style={{ fontSize: '18px', fontWeight: '700' }}>生成失败</div>
+                      <p style={{ color: '#999', marginTop: '8px' }}>{currentJob.error || '未知错误'}</p>
+                      <button onClick={() => setActiveJobs(prev => prev.filter(j => j.id !== currentJobId))} className="btn-secondary" style={{ marginTop: '20px' }}>清除此任务</button>
+                    </div>
+                  );
+                }
+
+                return null;
+              })()}
+            </div>
+
+            {/* 右侧任务栈 (始终保留) */}
+            {activeJobs.length > 0 && (
               <div style={{ 
                 width: '70px', display: 'flex', flexDirection: 'column', gap: '16px', 
                 borderLeft: '1px solid rgba(0,0,0,0.05)', paddingLeft: '20px', 
                 maxHeight: '600px', overflowY: 'auto', paddingTop: '10px'
               }}>
+                {/* 新增任务按钮 */}
+                <div 
+                  onClick={() => { setCurrentJobId(null); setPrompt(''); }}
+                  style={{ 
+                    width: '50px', height: '50px', borderRadius: '12px', border: '2px dashed #ddd',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999',
+                    cursor: 'pointer', flexShrink: 0, transition: '0.3s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+                  onMouseOut={e => e.currentTarget.style.borderColor = '#ddd'}
+                >
+                  <Plus size={24} />
+                </div>
+
                 {activeJobs.map(job => (
                   <div 
                     key={job.id}
@@ -885,14 +928,14 @@ const HomePage = () => {
                   </div>
                 ))}
                 <button 
-                  onClick={() => setActiveJobs([])}
+                  onClick={() => { setActiveJobs([]); setCurrentJobId(null); }}
                   style={{ border: 'none', background: 'transparent', color: '#999', fontSize: '11px', cursor: 'pointer', marginTop: 'auto' }}
                 >
                   清除全部
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
 
 
