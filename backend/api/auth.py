@@ -10,6 +10,7 @@ from ..crud import user as user_crud
 from ..core import security
 from ..core.deps import get_current_user
 from ..core.email import send_verification_email
+from ..core.config import get_config
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -45,7 +46,7 @@ def send_code(data: user_schema.EmailSendCode, db: Session = Depends(get_db)):
     else:
         raise HTTPException(status_code=500, detail="邮件发送失败，请检查 SMTP 配置")
 
-@router.post("/register", response_model=user_schema.UserInfo)
+@router.post("/register", response_model=user_schema.UserRegisterResponse)
 def register(user: user_schema.UserCreateEmail, request: Request, db: Session = Depends(get_db)):
     # 1. 硬性限额校验 (前 100 名)
     user_count = db.query(models.User).count()
@@ -79,12 +80,48 @@ def register(user: user_schema.UserCreateEmail, request: Request, db: Session = 
     vc.is_used = True
     db.commit()
     
-    # 4. 加密密码并创建用户
+    # 4. 校验邀请码并确定邀请人
+    invited_by_id = None
+    inviter = None
+    if user.invite_code:
+        inviter = db.query(models.User).filter(models.User.uid == user.invite_code).first()
+        if inviter:
+            invited_by_id = inviter.id
+
+    # 5. 加密密码并创建用户
     hashed_password = security.get_password_hash(user.password)
     client_ip = request.client.host if request.client else "unknown"
-    return user_crud.create_user_by_email(db=db, user=user, password_hash=hashed_password, ip=client_ip)
+    new_user = user_crud.create_user_by_email(db=db, user=user, password_hash=hashed_password, ip=client_ip, invited_by_id=invited_by_id)
 
-@router.post("/register-phone", response_model=user_schema.UserInfo)
+    # 6. 如果有邀请人，发放受邀奖励 (5积分)
+    if inviter:
+        new_user.points += 5
+        db_log = models.RechargeLog(
+            user_id=new_user.id,
+            amount=5,
+            money_amount=0,
+            status="success",
+            admin_note=f"使用邀请码 {user.invite_code} 注册奖励",
+            operator_id=0,
+            trade_no=f"INVITE_JOIN_{new_user.id}_{int(datetime.now().timestamp())}"
+        )
+        db.add(db_log)
+        db.commit()
+
+    # 7. 自动登录：生成 Token
+    sub_val = new_user.username if new_user.username else new_user.email
+    access_token = security.create_access_token(data={"sub": sub_val})
+    
+    # 返回包含 Token 的响应 (需要前端配合处理或修改返回模型)
+    # 由于 response_model 是 UserInfo，我们需要返回 UserInfo 的字典并带上 token，
+    # 或者修改返回模型。为了最简化，我们直接返回一个包含 token 和 user 信息的对象。
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": new_user
+    }
+
+@router.post("/register-phone", response_model=user_schema.UserRegisterResponse)
 def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Session = Depends(get_db)):
     # 1. 硬性限额校验 (前 100 名)
     user_count = db.query(models.User).count()
@@ -112,7 +149,15 @@ def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Sess
         # 默认用户名：手机号脱敏
         user.username = f"user_{user.phone[-4:]}"
         
-    # 4. 加密密码并创建用户
+    # 4. 校验邀请码并确定邀请人
+    invited_by_id = None
+    inviter = None
+    if user.invite_code:
+        inviter = db.query(models.User).filter(models.User.uid == user.invite_code).first()
+        if inviter:
+            invited_by_id = inviter.id
+
+    # 5. 加密密码并创建用户
     hashed_password = security.get_password_hash(user.password)
     client_ip = request.client.host if request.client else "unknown"
     
@@ -122,12 +167,37 @@ def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Sess
         password_hash=hashed_password,
         fingerprint=user.fingerprint,
         last_ip=client_ip,
-        uid=str(random.randint(100000, 999999))
+        invited_by_id=invited_by_id,
+        uid=user_crud.generate_unique_uid(db)
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
+
+    # 6. 如果有邀请人，发放受邀奖励 (5积分)
+    if inviter:
+        db_user.points += 5
+        db_log = models.RechargeLog(
+            user_id=db_user.id,
+            amount=5,
+            money_amount=0,
+            status="success",
+            admin_note=f"使用邀请码 {user.invite_code} 注册奖励",
+            operator_id=0,
+            trade_no=f"INVITE_JOIN_PHONE_{db_user.id}_{int(datetime.now().timestamp())}"
+        )
+        db.add(db_log)
+        db.commit()
+
+    # 7. 自动登录：生成 Token
+    sub_val = db_user.username if db_user.username else db_user.phone
+    access_token = security.create_access_token(data={"sub": sub_val})
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": db_user
+    }
 
 @router.post("/login", response_model=user_schema.Token)
 def login(user: user_schema.UserCreate, db: Session = Depends(get_db)):
@@ -323,3 +393,27 @@ def claim_install_reward(db: Session = Depends(get_db), current_user: models.Use
     db.commit()
     
     return {"message": "安装奖励领取成功！", "points": current_user.points}
+
+@router.get("/invitation-stats")
+def get_invitation_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # 1. 已成功邀请的人数 (受邀者已完成首画)
+    invited_count = db.query(models.User).filter(models.User.invited_by_id == current_user.id).count()
+    
+    # 2. 今日已获得的奖励次数
+    from datetime import datetime, time, timedelta
+    now = datetime.utcnow() + timedelta(hours=8)
+    today_start = datetime.combine(now.date(), time.min) - timedelta(hours=8)
+    
+    today_reward_count = db.query(models.RechargeLog).filter(
+        models.RechargeLog.user_id == current_user.id,
+        models.RechargeLog.trade_no.like("INVITE_REWARD_%"),
+        models.RechargeLog.created_at >= today_start
+    ).count()
+    
+    return {
+        "invited_count": invited_count,
+        "today_reward_count": today_reward_count,
+        "daily_limit": 5,
+        "invite_code": current_user.uid,
+        "invite_url": f"{get_config('FRONTEND_URL', 'http://localhost:3000')}/register?invite={current_user.uid}"
+    }

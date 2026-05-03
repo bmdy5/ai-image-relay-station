@@ -68,3 +68,24 @@ def audit_recharge(db: Session, log_id: int, admin_id: int, approved: bool, admi
     db.commit()
     db.refresh(db_log)
     return db_log
+
+def can_receive_invitation_reward(db: Session, inviter_id: int):
+    """检查邀请人今日是否已达 5 次奖励上限"""
+    from datetime import datetime, time, timedelta
+    # 转换为北京时间 (UTC+8)
+    now = datetime.utcnow() + timedelta(hours=8)
+    today_start = datetime.combine(now.date(), time.min) - timedelta(hours=8) # 转回 UTC 比较
+    
+    count = db.query(models.RechargeLog).filter(
+        models.RechargeLog.user_id == inviter_id,
+        models.RechargeLog.trade_no.like("INVITE_REWARD_%"),
+        models.RechargeLog.created_at >= today_start
+    ).count()
+    return count < 5
+
+def is_invitee_rewarded(db: Session, invitee_id: int):
+    """检查该受邀者是否已经为邀请人贡献过奖励"""
+    # 通过 trade_no 或 admin_note 检查
+    return db.query(models.RechargeLog).filter(
+        models.RechargeLog.trade_no.like(f"INVITE_REWARD_{invitee_id}_%")
+    ).first() is not None

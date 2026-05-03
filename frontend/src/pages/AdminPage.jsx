@@ -29,6 +29,7 @@ const AdminPage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [pendingLogs, setPendingLogs] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [inviteLogs, setInviteLogs] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -46,6 +47,9 @@ const AdminPage = () => {
       } else if (activeTab === 'feedback') {
         const data = await request.get('/feedback/list');
         setFeedbacks(data);
+      } else if (activeTab === 'invitation') {
+        const data = await request.get('/admin/invitation/logs');
+        setInviteLogs(data);
       }
     } catch (err) {
       console.error(err);
@@ -124,6 +128,7 @@ const AdminPage = () => {
         {[
           { id: 'dashboard', label: '仪表盘', icon: LayoutDashboard },
           { id: 'audit', label: '充值审核', icon: ListChecks, count: pendingLogs.length },
+          { id: 'invitation', label: '邀请审计', icon: UserPlus },
           { id: 'recharge', label: '手动充值', icon: UserPlus },
           { id: 'feedback', label: '意见反馈', icon: BookOpen, count: feedbacks.length },
         ].map(tab => (
@@ -413,6 +418,69 @@ const AdminPage = () => {
                 {feedbacks.length === 0 && !loading && (
                   <tr>
                     <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无反馈建议</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'invitation' && (
+        <div className="card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3>邀请奖励审计</h3>
+            <div style={{ fontSize: '12px', color: '#888' }}>* 相同 IP 或指纹多次出现将标记为高风险</div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #f5f5f5', textAlign: 'left' }}>
+                  <th style={{ padding: '12px 8px' }}>用户</th>
+                  <th style={{ padding: '12px 8px' }}>奖励</th>
+                  <th style={{ padding: '12px 8px' }}>流水号 / 说明</th>
+                  <th style={{ padding: '12px 8px' }}>IP / 设备指纹</th>
+                  <th style={{ padding: '12px 8px' }}>发生时间</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inviteLogs.map((log, index) => {
+                  const ipConflict = inviteLogs.filter(l => l.ip === log.ip && l.user_id !== log.user_id).length > 0;
+                  const fpConflict = inviteLogs.filter(l => l.fingerprint === log.fingerprint && l.user_id !== log.user_id).length > 0;
+                  const isRisk = ipConflict || fpConflict;
+
+                  return (
+                    <tr key={log.id} style={{ borderBottom: '1px solid #f5f5f5', background: isRisk ? '#fff1f0' : 'transparent' }}>
+                      <td style={{ padding: '12px 8px' }}>
+                        <div style={{ fontWeight: 'bold' }}>{log.username}</div>
+                        <div style={{ fontSize: '11px', color: '#999' }}>UID: {log.user_id}</div>
+                      </td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span style={{ color: log.amount > 0 ? '#52c41a' : '#666', fontWeight: 'bold' }}>
+                          +{log.amount} 分
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <div style={{ fontSize: '11px', color: '#666' }}>{log.trade_no}</div>
+                        <div style={{ fontSize: '12px' }}>{log.admin_note}</div>
+                      </td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <div style={{ color: ipConflict ? '#ff4d4f' : '#333', fontWeight: ipConflict ? 'bold' : 'normal' }}>
+                          {log.ip} {ipConflict && '⚠️'}
+                        </div>
+                        <div style={{ fontSize: '10px', color: fpConflict ? '#ff4d4f' : '#999', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {log.fingerprint} {fpConflict && '⚠️'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 8px', color: '#888' }}>
+                        {new Date(log.created_at).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {inviteLogs.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无邀请记录</td>
                   </tr>
                 )}
               </tbody>

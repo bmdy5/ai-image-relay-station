@@ -4,7 +4,7 @@ import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
 import { 
   ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock, 
-  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight
+  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2
 } from 'lucide-react';
 
 const PCProfilePage = () => {
@@ -19,6 +19,7 @@ const PCProfilePage = () => {
   const [phoneBind, setPhoneBind] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [activeSecuritySection, setActiveSecuritySection] = useState(null); // 'email', 'password', 'phone'
+  const [inviteStats, setInviteStats] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -34,8 +35,12 @@ const PCProfilePage = () => {
 
   const fetchData = async () => {
     try {
-      const user = await request.get('/auth/me');
+      const [user, stats] = await Promise.all([
+        request.get('/auth/me'),
+        request.get('/auth/invitation-stats')
+      ]);
       setUserInfo(user);
+      setInviteStats(stats);
     } catch (err) {}
   };
 
@@ -194,6 +199,7 @@ const PCProfilePage = () => {
         </div>
 
         <SidebarItem id="account" icon={<Wallet size={20} />} label="账户概览" />
+        <SidebarItem id="invite" icon={<Users size={20} />} label="邀请奖励" />
         <SidebarItem id="security" icon={<Lock size={20} />} label="安全设置" />
         <SidebarItem id="support" icon={<MessageSquare size={20} />} label="意见反馈" />
         
@@ -283,6 +289,82 @@ const PCProfilePage = () => {
                 <ChevronRight size={18} color="#ccc" />
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'invite' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '800' }}>邀请好友赚积分</h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '32px' }}>
+              {/* 邀请卡片 */}
+              <div style={{ 
+                background: '#FFF5F0', borderRadius: '32px', padding: '40px', 
+                border: '1px solid #FFDEC9', textAlign: 'center',
+                display: 'flex', flexDirection: 'column', alignItems: 'center'
+              }}>
+                <div style={{ width: '64px', height: '64px', background: '#FF6B00', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginBottom: '24px' }}>
+                  <Share2 size={32} />
+                </div>
+                <div style={{ color: '#A87B6D', fontSize: '14px', marginBottom: '8px' }}>您的专属邀请码</div>
+                <div style={{ fontSize: '40px', fontWeight: '900', color: '#FF6B00', letterSpacing: '4px', marginBottom: '32px' }}>{userInfo?.uid}</div>
+                
+                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(userInfo?.uid);
+                      alert('邀请码已复制');
+                    }}
+                    style={{ flex: 1, padding: '14px', borderRadius: '16px', border: 'none', background: '#FF6B00', color: 'white', fontWeight: '800', cursor: 'pointer' }}
+                  >
+                    复制邀请码
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const url = `${window.location.origin}/register?invite=${userInfo?.uid}`;
+                      navigator.clipboard.writeText(url);
+                      alert('专属链接已复制');
+                    }}
+                    style={{ padding: '14px', borderRadius: '16px', border: '2px solid #FF6B00', background: 'transparent', color: '#FF6B00', fontWeight: '800', cursor: 'pointer' }}
+                  >
+                    复制链接
+                  </button>
+                </div>
+              </div>
+
+              {/* 规则与进度 */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                  <div style={{ background: '#f8f9fa', padding: '24px', borderRadius: '24px', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>累计邀请成功</div>
+                    <div style={{ fontSize: '28px', fontWeight: '900' }}>{inviteStats?.invited_count || 0} <span style={{ fontSize: '14px', fontWeight: '500' }}>人</span></div>
+                  </div>
+                  <div style={{ background: '#f8f9fa', padding: '24px', borderRadius: '24px', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>今日获得奖励</div>
+                    <div style={{ fontSize: '28px', fontWeight: '900' }}>{inviteStats?.today_reward_count || 0} / {inviteStats?.daily_limit || 5} <span style={{ fontSize: '14px', fontWeight: '500' }}>次</span></div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'white', padding: '28px', borderRadius: '24px', border: '1px solid var(--border)' }}>
+                  <div style={{ fontWeight: '800', marginBottom: '20px' }}>奖励规则</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {[
+                      { t: '好友注册', d: '好友使用您的邀请码注册，立即获得 5 积分启航礼包。' },
+                      { t: '首画成功', d: '好友完成首次 AI 图像生成后，您将获得 10 积分推广奖励。' },
+                      { t: '每日上限', d: '每人每日最多可通过邀请获得 5 次奖励（共 50 积分）。' }
+                    ].map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--primary-glow)', color: 'var(--primary)', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: '800' }}>{idx + 1}</div>
+                        <div>
+                          <div style={{ fontSize: '14px', fontWeight: '700', marginBottom: '4px' }}>{item.t}</div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{item.d}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

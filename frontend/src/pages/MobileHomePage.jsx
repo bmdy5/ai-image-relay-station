@@ -929,6 +929,26 @@ const MobileHomePage = () => {
           >
             <X size={24} />
           </button>
+
+          {/* 邀请引导按钮 (New) */}
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              const url = `${window.location.origin}/register?invite=${userInfo?.uid}`;
+              navigator.clipboard.writeText(url);
+              alert('✨ 专属邀请链接已复制！分享给好友，成功推荐后您可获 10 积分奖励。');
+            }}
+            style={{ 
+              position: 'absolute', bottom: '130px', 
+              background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)',
+              color: 'white', padding: '12px 24px', borderRadius: '24px',
+              fontSize: '14px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px',
+              boxShadow: '0 10px 20px rgba(255, 61, 0, 0.3)',
+              animation: 'scaleIn 0.3s ease-out'
+            }}
+          >
+            <Share2 size={16} /> 分享并邀请好友 (获 10 积分)
+          </div>
         </div>
       )}
 

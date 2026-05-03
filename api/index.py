@@ -13,23 +13,30 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
+import traceback
+
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    print(f"--- DATABASE ERROR (SQLAlchemyError) ---")
+    traceback.print_exc()
     return JSONResponse(
         status_code=503,
-        content={"detail": "SYSTEM_MAINTENANCE", "message": "数据库服务暂时不可用"},
+        content={"detail": "SYSTEM_MAINTENANCE", "message": "系统服务暂时不可用"},
     )
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    # 如果普通异常中包含数据库关键字，也判定为维护模式
     exc_str = str(exc).lower()
     if any(k in exc_str for k in ["mysql", "operationalerror", "connection refused", "sqlalchemy"]):
+        print(f"--- DATABASE ERROR (Global Catch) ---")
+        traceback.print_exc()
         return JSONResponse(
             status_code=503,
-            content={"detail": "SYSTEM_MAINTENANCE", "message": "底层服务连接异常"},
+            content={"detail": "SYSTEM_MAINTENANCE", "message": "系统核心服务连接异常"},
         )
-    # 其他错误保留 500
+    
+    print(f"--- UNEXPECTED ERROR ---")
+    traceback.print_exc()
     return JSONResponse(
         status_code=500,
         content={"detail": "SERVER_ERROR", "message": "服务器内部错误"},

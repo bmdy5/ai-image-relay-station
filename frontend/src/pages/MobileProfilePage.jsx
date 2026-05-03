@@ -42,9 +42,11 @@ const MobileProfilePage = ({ isMobile }) => {
   const [countdown, setCountdown] = useState(0);
   const { isInstallable, isStandalone, isIOS, isInstalled, promptInstall } = usePWA();
   const [showIosGuide, setShowIosGuide] = useState(false);
+  const [inviteStats, setInviteStats] = useState(null);
 
   useEffect(() => {
     fetchData();
+    fetchInviteStats();
   }, []);
 
   useEffect(() => {
@@ -59,6 +61,13 @@ const MobileProfilePage = ({ isMobile }) => {
     try {
       const user = await request.get('/auth/me');
       setUserInfo(user);
+    } catch (err) {}
+  };
+
+  const fetchInviteStats = async () => {
+    try {
+      const data = await request.get('/auth/invitation-stats');
+      setInviteStats(data);
     } catch (err) {}
   };
 
@@ -237,6 +246,32 @@ const MobileProfilePage = ({ isMobile }) => {
             >
               充值
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 邀请好友卡片 (New) */}
+      <div style={{ padding: '0 20px 24px' }}>
+        <div 
+          onClick={() => setActiveDrawer('invite')}
+          style={{ 
+            background: 'linear-gradient(135deg, #FFF5F0 0%, #FFF0E8 100%)', 
+            borderRadius: '24px', padding: '16px 20px',
+            border: '1px solid #FFDEC9', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'rgba(255, 107, 0, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF6B00' }}>
+              <ExternalLink size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF6B00' }}>邀请好友，共创艺术</div>
+              <div style={{ fontSize: '11px', color: '#A87B6D', marginTop: '2px' }}>每成功邀请 1 人，即获 20 积分</div>
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+             <div style={{ fontSize: '10px', color: '#A87B6D', marginBottom: '2px' }}>已领</div>
+             <div style={{ fontSize: '16px', fontWeight: '900', color: '#FF6B00' }}>{inviteStats?.invited_count || 0} <span style={{ fontSize: '10px' }}>人</span></div>
           </div>
         </div>
       </div>
@@ -437,6 +472,65 @@ const MobileProfilePage = ({ isMobile }) => {
           >
             {loading ? '处理中...' : '确认绑定'}
           </button>
+        </div>
+      </MobileDrawer>
+      {/* 抽屉：邀请好友详情 */}
+      <MobileDrawer isOpen={activeDrawer === 'invite'} onClose={() => setActiveDrawer(null)} title="邀请好友赚积分">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ background: '#FFF5F0', borderRadius: '24px', padding: '24px', textAlign: 'center', border: '1px solid #FFDEC9' }}>
+            <div style={{ fontSize: '12px', color: '#A87B6D', marginBottom: '8px' }}>您的专属邀请码</div>
+            <div style={{ fontSize: '32px', fontWeight: '900', color: '#FF6B00', letterSpacing: '4px' }}>{userInfo?.uid}</div>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(userInfo?.uid);
+                alert('邀请码已复制');
+              }}
+              style={{ marginTop: '16px', padding: '8px 20px', borderRadius: '20px', background: '#FF6B00', color: 'white', border: 'none', fontWeight: '800', fontSize: '13px' }}
+            >
+              复制邀请码
+            </button>
+          </div>
+
+          <div style={{ padding: '0 8px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '800', marginBottom: '12px' }}>邀请规则</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '10px', background: '#FF6B00', color: 'white', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</div>
+                <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+                  <b>好友注册：</b>好友使用您的邀请码注册，立即获得 <span style={{ color: '#FF6B00', fontWeight: '800' }}>5 积分</span> 启航礼包。
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '10px', background: '#FF6B00', color: 'white', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</div>
+                <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+                  <b>首画成功：</b>好友完成首次 AI 图像生成后，您将获得 <span style={{ color: '#FF6B00', fontWeight: '800' }}>10 积分</span> 推广奖励。
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ width: '20px', height: '20px', borderRadius: '10px', background: '#FF6B00', color: 'white', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</div>
+                <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.5' }}>
+                  <b>每日上限：</b>每人每日最多可通过邀请获得 5 次奖励（共 50 积分）。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '10px' }}>
+             <button 
+                onClick={() => {
+                  const url = `${window.location.origin}/register?invite=${userInfo?.uid}`;
+                  navigator.clipboard.writeText(url);
+                  alert('邀请链接已复制，去发给好友吧！');
+                }}
+                style={{ width: '100%', padding: '16px', borderRadius: '20px', background: '#1D1D1F', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+              >
+                <Copy size={18} /> 一键复制邀请链接
+              </button>
+          </div>
+          
+          <div style={{ textAlign: 'center', fontSize: '11px', color: '#999' }}>
+             今日奖励配额剩余: {5 - (inviteStats?.today_reward_count || 0)} / 5
+          </div>
         </div>
       </MobileDrawer>
 

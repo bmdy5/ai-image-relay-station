@@ -12,6 +12,7 @@ from backend.models.database import get_db, session_scope
 from backend.models import models
 from backend.schemas import image as image_schema
 from backend.crud import image as image_crud
+from backend.crud import recharge as recharge_crud
 from backend.core.config import get_config
 from backend.core.cos import upload_url_to_cos, upload_base64_to_cos
 from backend.core.deps import get_current_user
@@ -259,6 +260,34 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                 log.total_duration = int((time.time() - task_start_time) * 1000)
                 user.points -= cost # 成功后才真正扣除余额
                 user.frozen_points = max(0, user.frozen_points - cost)
+
+                # 6. 邀请奖励触发 (首画成功后发放给邀请人)
+                if user.invited_by_id:
+                    # 检查是否为该用户的首次成功画图
+                    success_count = db.query(models.ImageLog).filter(
+                        models.ImageLog.user_id == user_id,
+                        models.ImageLog.status == "success"
+                    ).count()
+                    
+                    if success_count == 1:
+                        # 检查邀请人今日奖励限额 (5次) 以及该受邀者是否已发放过
+                        if recharge_crud.can_receive_invitation_reward(db, user.invited_by_id) and \
+                           not recharge_crud.is_invitee_rewarded(db, user.id):
+                            
+                            inviter = db.query(models.User).filter(models.User.id == user.invited_by_id).first()
+                            if inviter:
+                                inviter.points += 10
+                                db_reward_log = models.RechargeLog(
+                                    user_id=inviter.id,
+                                    amount=10,
+                                    money_amount=0,
+                                    status="success",
+                                    admin_note=f"邀请好友 {user.uid} 完成首画奖励",
+                                    operator_id=0,
+                                    trade_no=f"INVITE_REWARD_{user.id}_{int(time.time())}"
+                                )
+                                db.add(db_reward_log)
+                                print(f"--- [Invitation Reward] Inviter {inviter.id} rewarded 10 pts for invitee {user.id} ---")
 
                 # 打印增强版控制台审计日志
                 print(f"\n--- [Task Audit] ID: {log_id} | SUCCESS ---")
