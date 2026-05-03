@@ -443,6 +443,15 @@ const HomePage = () => {
                 </button>
               ))}
             </div>
+            {quality !== 'standard' && (
+              <div style={{ 
+                marginTop: '10px', fontSize: '11px', color: '#e66b33', fontWeight: 'bold', 
+                display: 'flex', alignItems: 'center', gap: '6px', animation: 'fadeIn 0.3s' 
+              }}>
+                <Wand2 size={12} />
+                包含 {quality === 'master' ? '3' : '2'} 次深度变体精修机会
+              </div>
+            )}
           </div>
 
           {/* 2. 提示词输入 */}
@@ -795,6 +804,7 @@ const HomePage = () => {
             <div style={{ position: 'absolute', bottom: '40px', display: 'flex', gap: '32px', zIndex: 2 }}>
               {[
                 { icon: <Sparkles size={18} />, title: 'AI 智能生成', desc: '强大模型，精细呈现' },
+                { icon: <Wand2 size={18} />, title: '迭代精修', desc: '针对作品深度进化' },
                 { icon: <Layers size={18} />, title: '多风格支持', desc: '多种艺术风格可选' },
                 { icon: <Diamond size={18} />, title: '高质量输出', desc: '高清画质，细节丰富' }
               ].map((item, idx) => (

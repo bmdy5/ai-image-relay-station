@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
 import { 
-  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp, Maximize2,
+  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp, Maximize2, Wand2,
   Camera, ShoppingBag, Layers, Compass, Plane, Armchair, Layout, Radio, Film, Clock, Orbit, Wind, Share2, Library, CreditCard, Box, Smartphone, Flag
 } from 'lucide-react';
 
@@ -23,6 +23,11 @@ const STYLE_NAME_MAP = {
 const QUALITY_NAME_MAP = { 'standard': '标准版', 'hd': '专业版', 'master': '旗舰版' };
 
 // 结果卡片组件
+const ResultCard = ({ job, onOpenNotes, onPreview, onRefine }) => {
+  const isMaster = job.quality === 'master';
+  const qName = QUALITY_NAME_MAP[job.quality] || job.quality;
+  const sName = STYLE_NAME_MAP[job.style] || job.style;
+
   return (
     <div style={{
       width: '100%',
@@ -413,6 +418,9 @@ const MobileHomePage = () => {
               }} />
             </div>
             <p style={{ fontSize: '18px', fontWeight: '700', color: '#C59C8F', letterSpacing: '1px' }}>开启您的创作之旅</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#e66b33', marginTop: '12px', fontWeight: 'bold' }}>
+              <Wand2 size={14} /> 支持针对作品深度迭代精修
+            </div>
           </div>
         ) : (
           jobs.map(job => (
@@ -621,7 +629,15 @@ const MobileHomePage = () => {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '36px', height: '36px', background: '#F2F2F7', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.color }}>{t.icon}</div>
-                <div><b style={{ fontSize: '15px' }}>{t.name}</b><div style={{ fontSize: '11px', color: '#999' }}>{t.desc}</div></div>
+                <div>
+                  <b style={{ fontSize: '15px' }}>{t.name}</b>
+                  <div style={{ fontSize: '11px', color: '#999' }}>{t.desc}</div>
+                  {(t.id === 'hd' || t.id === 'master') && (
+                    <div style={{ fontSize: '9px', color: '#e66b33', marginTop: '2px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Wand2 size={10} /> 包含 {t.id === 'master' ? '3' : '2'} 次迭代精修
+                    </div>
+                  )}
+                </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ color: t.color, fontWeight: '800', fontSize: '16px' }}>{t.pts}</div>
