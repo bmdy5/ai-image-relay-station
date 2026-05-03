@@ -312,7 +312,16 @@ def forgot_password_reset(data: user_schema.ForgotPasswordReset, db: Session = D
     hashed_password = security.get_password_hash(data.new_password)
     user_crud.update_user_password(db, db_user.id, hashed_password)
     
-    return {"message": "密码重置成功，请使用新密码登录"}
+    # 5. 自动登录：生成 Token
+    sub_val = db_user.username if db_user.username else db_user.email
+    access_token = security.create_access_token(data={"sub": sub_val})
+    
+    return {
+        "message": "密码重置成功，已为您自动登录",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": db_user
+    }
 
 @router.post("/bind-email")
 def bind_email(
