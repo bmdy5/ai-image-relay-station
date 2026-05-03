@@ -71,6 +71,8 @@ const HomePage = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [showPointsModal, setShowPointsModal] = useState(false);
+  const [requiredPoints, setRequiredPoints] = useState(0);
   const [isRefining, setIsRefining] = useState(false);
   const [refineParentId, setRefineParentId] = useState(null);
   const [refineRootId, setRefineRootId] = useState(null); // 新增：记录演化根节点
@@ -284,6 +286,15 @@ const HomePage = () => {
       setShowGuestModal(true);
       return;
     }
+    
+    // 积分预检
+    const cost = pricingMap[quality] || 5;
+    if (userInfo && userInfo.points < cost) {
+      setRequiredPoints(cost);
+      setShowPointsModal(true);
+      return;
+    }
+
     if (!prompt && selectedStyle.id !== 'ui_upgrade') return;
     setLoading(true);
     setProgress(0);
@@ -1127,6 +1138,26 @@ const HomePage = () => {
         }}>
           {toast.type === 'error' ? <X size={18} /> : <CheckCircle size={18} color="#52c41a" />}
           <span style={{ fontSize: '14px', fontWeight: '600' }}>{toast.message}</span>
+        </div>
+      )}
+
+      {/* 积分不足弹窗 */}
+      {showPointsModal && (
+        <div className="modal-overlay" style={{ zIndex: 10001 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '40px' }}>
+            <div style={{ width: '80px', height: '80px', background: '#fff7e6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: '#faad14' }}>
+              <Coins size={40} />
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '12px' }}>积分余额不足</h3>
+            <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '32px' }}>
+              当前生成需要 <b style={{ color: 'var(--primary)' }}>{requiredPoints}</b> 积分<br/>
+              您的余额仅剩 <b style={{ color: '#faad14' }}>{userInfo?.points || 0}</b> 积分
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ flex: 1 }}>稍后再说</button>
+              <button onClick={() => navigate('/pricing')} className="btn-primary" style={{ flex: 1.2 }}>立即充值</button>
+            </div>
+          </div>
         </div>
       )}
 
