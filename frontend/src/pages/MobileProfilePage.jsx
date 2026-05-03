@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { usePWA } from '../hooks/usePWA';
 import PWAIosGuideModal from '../components/PWAIosGuideModal';
+import { copyToClipboard } from '../utils/clipboard';
+import Toast from '../components/Toast';
 
 const MobileDrawer = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
@@ -43,6 +45,7 @@ const MobileProfilePage = ({ isMobile }) => {
   const { isInstallable, isStandalone, isIOS, isInstalled, promptInstall } = usePWA();
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [inviteStats, setInviteStats] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: '' });
 
   useEffect(() => {
     fetchData();
@@ -155,8 +158,7 @@ const MobileProfilePage = ({ isMobile }) => {
 
   const handleCopyUID = () => {
     if (userInfo?.uid) {
-      navigator.clipboard.writeText(userInfo.uid);
-      alert('UID 已复制');
+      copyToClipboard(userInfo.uid, (msg) => setToast({ show: true, message: `UID ${msg}` }));
     }
   };
 
@@ -176,12 +178,19 @@ const MobileProfilePage = ({ isMobile }) => {
   };
 
   const handleResetTasks = async () => {
-    if (!window.confirm('清理挂起任务？')) return;
+    if (!window.confirm('清理挂起任务并同步刷新前台缓存？')) return;
     setLoading(true);
     try {
       await request.post('/image/reset');
-      alert('清理成功');
-      fetchData();
+      
+      // 清理前台任务缓存
+      localStorage.removeItem('visionary_active_jobs_mobile');
+      localStorage.removeItem('visionary_active_jobs');
+      sessionStorage.removeItem('pending_prompt');
+      sessionStorage.removeItem('pending_reuse');
+      
+      alert('清理成功，即将刷新前台状态');
+      window.location.href = '/'; // 强制跳转回首页刷新状态
     } catch (err) {
       alert('失败: ' + (err.response?.data?.detail || '网络错误'));
     } finally {
@@ -334,8 +343,8 @@ const MobileProfilePage = ({ isMobile }) => {
           )}
           <SettingItem 
             icon={<RefreshCw size={20} className={loading ? 'loading-spin' : ''} />} 
-            label="清理任务锁" 
-            sublabel="解决生图卡死问题" 
+            label="清理任务锁 & 刷新" 
+            sublabel="解决生图卡死及前台同步问题" 
             onClick={handleResetTasks} 
             color="#FF9500"
           />
@@ -481,10 +490,7 @@ const MobileProfilePage = ({ isMobile }) => {
             <div style={{ fontSize: '12px', color: '#A87B6D', marginBottom: '8px' }}>您的专属邀请码</div>
             <div style={{ fontSize: '32px', fontWeight: '900', color: '#FF6B00', letterSpacing: '4px' }}>{userInfo?.uid}</div>
             <button 
-              onClick={() => {
-                navigator.clipboard.writeText(userInfo?.uid);
-                alert('邀请码已复制');
-              }}
+              onClick={() => copyToClipboard(userInfo?.uid, (msg) => setToast({ show: true, message: `邀请码 ${msg}` }))}
               style={{ marginTop: '16px', padding: '8px 20px', borderRadius: '20px', background: '#FF6B00', color: 'white', border: 'none', fontWeight: '800', fontSize: '13px' }}
             >
               复制邀请码
@@ -519,8 +525,7 @@ const MobileProfilePage = ({ isMobile }) => {
              <button 
                 onClick={() => {
                   const url = `${window.location.origin}/register?invite=${userInfo?.uid}`;
-                  navigator.clipboard.writeText(url);
-                  alert('邀请链接已复制，去发给好友吧！');
+                  copyToClipboard(url, (msg) => setToast({ show: true, message: `邀请链接 ${msg}` }));
                 }}
                 style={{ width: '100%', padding: '16px', borderRadius: '20px', background: '#1D1D1F', color: '#fff', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
               >
@@ -544,6 +549,8 @@ const MobileProfilePage = ({ isMobile }) => {
       {showIosGuide && (
         <PWAIosGuideModal onClose={() => setShowIosGuide(false)} />
       )}
+
+      {toast.show && <Toast message={toast.message} onClose={() => setToast({ show: false, message: '' })} />}
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

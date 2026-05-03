@@ -150,6 +150,51 @@ const Showcase = ({ setPreviewImage, isMobile: propIsMobile }) => {
             tags: ['极致写实', '8K 画质'], 
             featureLabel: "旗舰版 - 极致写实", 
             desc: "针对产品与静物进行了专项增强。对皮肤纹理、金属材质、瞳孔倒影有着令人惊叹的还原力，完美适配电商、时尚等高要求商业场景。" 
+          },
+          { 
+            id: '06', 
+            title: "商业美学：从灵感到工业大片", 
+            color: "#1a1a1f", 
+            img: "/showcase/master_product_razer.png", 
+            tags: ['UI 视觉进化', '8K 渲染', '材质补全'], 
+            featureLabel: "旗舰版 - 商业视觉引擎", 
+            desc: "专为产品设计师打造。系统能自动补全产品的材质细节与环境布光，生成极具工业美感的商业详情页。无论电子产品还是高端家居，都能呈现极致的精良质感。" 
+          },
+          { 
+            id: '07', 
+            title: "文博图鉴：让知识“跃然纸上”", 
+            color: "#8d6e63", 
+            img: "/showcase/master_encyclopedia_chess.png", 
+            tags: ['结构拆解', '中文标注', '文博专题'], 
+            featureLabel: "旗舰版 - 博物馆图鉴", 
+            desc: "打破 AI 对文字标注的局限。支持自动生成精确的中文结构拆解、材质解析和历史背景说明，将枯燥的资料转化为极具收藏价值的信息可视化图谱。" 
+          },
+          { 
+            id: '08', 
+            title: "逻辑可视化：重塑作品叙事结构", 
+            color: "#455a64", 
+            img: "/showcase/master_relation_map.png", 
+            tags: ['人物关系', '立绘统一', '叙事排版'], 
+            featureLabel: "旗舰版 - 人物关系图谱", 
+            desc: "复杂关系，一图尽收。系统能深度解析作品背景，自动梳理角色间的血缘、敌对、盟友等微妙逻辑，生成专业级的作品关系说明海报。" 
+          },
+          { 
+            id: '09', 
+            title: "运营全案：顶尖品牌的视觉传达", 
+            color: "#b8860b", 
+            img: "/showcase/master_commercial_equestrian.png", 
+            tags: ['品牌调性', '排版设计', '运营海报'], 
+            featureLabel: "旗舰版 - 运营活动页", 
+            desc: "全自动化的高端海报设计。系统不仅能捕捉人物的神韵与动态，更能完美融合品牌调性，自动排版核心卖点，一站式解决品牌运营物料需求。" 
+          },
+          { 
+            id: '10', 
+            title: "艺术触感：唤醒远方的生活美学", 
+            color: "#f3a481", 
+            img: "/showcase/master_travel_poster.png", 
+            tags: ['色彩校准', '艺术海报', '时尚杂志'], 
+            featureLabel: "专业版 - 生活美学引擎", 
+            desc: "模拟顶级设计师的排版逻辑，将绝美风光与复古字体完美融合。自带电影感的色彩校准，为您生成具备国际时尚杂志质感的艺术海报。" 
           }
         ].map((item, idx) => (
           <div key={item.id} style={{ 

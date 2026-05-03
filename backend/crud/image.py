@@ -58,25 +58,25 @@ def count_active_tasks(db: Session, user_id: int):
     ).count()
 
 def reset_active_tasks(db: Session, user_id: int):
-    # 查找所有挂起的任务
-    pending_tasks = db.query(models.ImageLog).filter(
+    # 查找所有非最终状态的任务 (pending, generating, storing)
+    active_tasks = db.query(models.ImageLog).filter(
         models.ImageLog.user_id == user_id,
-        models.ImageLog.status == "pending"
+        models.ImageLog.status.in_(["pending", "generating", "storing"])
     ).all()
     
-    if not pending_tasks:
+    if not active_tasks:
         return
         
-    # 计算需要退还的总积分
-    total_refund = sum(task.cost_points for task in pending_tasks)
+    # 计算需要释放的总冻结积分
+    total_cost = sum(task.cost_points for task in active_tasks)
     
-    # 执行退费
+    # 释放冻结积分
     db.query(models.User).filter(models.User.id == user_id).update(
-        {models.User.points: models.User.points + total_refund}
+        {models.User.frozen_points: models.User.frozen_points - total_cost}
     )
     
     # 标记任务为失败
-    for task in pending_tasks:
+    for task in active_tasks:
         task.status = "failed"
         task.error_msg = "User manually reset task lock"
     

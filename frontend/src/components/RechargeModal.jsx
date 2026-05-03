@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import request from '../api/request';
-import { CreditCard, MessageSquare, ExternalLink, Loader2, CheckCircle2 } from 'lucide-react';
+import { CreditCard, MessageSquare, ExternalLink, Loader2, CheckCircle2, Copy } from 'lucide-react';
+import { copyToClipboard } from '../utils/clipboard';
+import Toast from './Toast';
 
 const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperience }) => {
   const [money, setMoney] = useState(initialAmount || 10);
@@ -9,6 +11,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
   const [step, setStep] = useState(1); // 1: Choose Method, 2: Manual Guide, 3: Manual Report, 4: Online Processing
   const [orderInfo, setOrderInfo] = useState(null);
   const [payStatus, setPayStatus] = useState('pending'); // pending, success
+  const [toast, setToast] = useState({ show: false, message: '' });
   const pollTimer = useRef(null);
 
   // 如果已经使用过体验包，过滤掉 1 元选项
@@ -50,6 +53,29 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
     }, 3000);
   };
 
+  // 手动触发状态检查
+  const handleManualStatusCheck = async () => {
+    if (!orderInfo?.out_trade_no) return;
+    setLoading(true);
+    try {
+      const res = await request.get(`/payment/status/${orderInfo.out_trade_no}`);
+      if (res.status === 'success') {
+        setPayStatus('success');
+        if (pollTimer.current) clearInterval(pollTimer.current);
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 2000);
+      } else {
+        setToast({ show: true, message: '支付确认中，请稍后' });
+      }
+    } catch (err) {
+      setToast({ show: true, message: '查询失败，请稍后重试' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 发起在线支付
   const handleOnlinePay = async () => {
     setLoading(true);
@@ -58,8 +84,15 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
       const res = await request.post('/payment/create', { money_amount: money });
       setOrderInfo(res);
       setStep(4);
-      // 跳转支付页面
-      window.open(res.pay_url, '_blank');
+      
+      // 环境感知跳转：移动端使用 location.href，PC 端维持 window.open
+      const isMobile = window.innerWidth <= 1024;
+      if (isMobile) {
+        window.location.href = res.pay_url;
+      } else {
+        window.open(res.pay_url, '_blank');
+      }
+      
       // 开始轮询
       startPolling(res.out_trade_no);
     } catch (err) {
@@ -181,12 +214,28 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
       case 2: // 人工指引
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ background: '#fff7e6', border: '1px solid #ffd591', padding: '15px', borderRadius: '8px', fontSize: '14px' }}>
-              <p style={{ margin: 0, color: '#d46b08', fontWeight: 'bold' }}>第一步：添加客服微信并支付</p>
-              <p style={{ margin: '8px 0 0', color: '#666' }}>客服微信：<strong style={{ color: '#000' }}>wxid_4rp8jzrnord822</strong></p>
-              <p style={{ margin: '4px 0 0', color: '#666' }}>付款备注您的 UID：<strong style={{ color: '#e66b33' }}>{uid}</strong></p>
+            <div style={{ background: '#fff7e6', border: '1px solid #ffd591', padding: '20px', borderRadius: '16px', fontSize: '14px' }}>
+              <p style={{ margin: 0, color: '#d46b08', fontWeight: 'bold', marginBottom: '12px' }}>第一步：添加客服微信并支付</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div 
+                  onClick={() => copyToClipboard('wxid_4rp8jzrnord822', (msg) => setToast({ show: true, message: msg }))}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.6)', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer' }}
+                >
+                  <span style={{ color: '#666' }}>客服微信：<strong style={{ color: '#000' }}>wxid_4rp8jzrnord822</strong></span>
+                  <Copy size={14} color="#e66b33" />
+                </div>
+                
+                <div 
+                  onClick={() => copyToClipboard(uid, (msg) => setToast({ show: true, message: `UID ${msg}` }))}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.6)', padding: '10px 12px', borderRadius: '10px', cursor: 'pointer' }}
+                >
+                  <span style={{ color: '#666' }}>付款备注 UID：<strong style={{ color: '#e66b33' }}>{uid}</strong></span>
+                  <Copy size={14} color="#e66b33" />
+                </div>
+              </div>
             </div>
-            <button className="btn-primary" style={{ width: '100%', padding: '12px' }} onClick={() => setStep(3)}>已支付，去报备</button>
+            <button className="btn-primary" style={{ width: '100%', padding: '12px', borderRadius: '16px' }} onClick={() => setStep(3)}>已支付，去报备</button>
             <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer' }}>返回选择支付方式</button>
           </div>
         );
@@ -217,9 +266,17 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
                 </p>
                 <button 
                   onClick={() => window.open(orderInfo?.pay_url, '_blank')}
-                  style={{ background: 'none', border: 'none', color: '#e66b33', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', margin: '0 auto' }}
+                  style={{ background: 'none', border: 'none', color: '#e66b33', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', margin: '0 auto 15px' }}
                 >
                   未打开窗口？点此重新跳转 <ExternalLink size={14} />
+                </button>
+
+                <button 
+                  onClick={handleManualStatusCheck} 
+                  disabled={loading}
+                  style={{ width: '100%', padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: '800', cursor: 'pointer', boxShadow: '0 8px 20px rgba(230,107,51,0.2)' }}
+                >
+                  {loading ? '正在校验...' : '我已支付，点击手动校验'}
                 </button>
               </>
             ) : (
@@ -240,10 +297,14 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div className="card" style={{ width: '420px', padding: '30px', position: 'relative', borderRadius: '20px', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
+      <div className="card recharge-modal-card" style={{ 
+        width: '100%', maxWidth: '420px', padding: '30px', position: 'relative', borderRadius: '24px', 
+        boxShadow: '0 20px 50px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' 
+      }}>
         <button onClick={onClose} style={{ position: 'absolute', right: '20px', top: '20px', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#999' }}>×</button>
         <h2 style={{ marginBottom: '24px', textAlign: 'center', fontSize: '20px', fontWeight: 'bold' }}>充值积分</h2>
         {renderContent()}
+        {toast.show && <Toast message={toast.message} onClose={() => setToast({ show: false, message: '' })} />}
       </div>
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
