@@ -232,6 +232,7 @@ const MobileHomePage = () => {
     // --- 专业梯队 ---
     { id: 'travel', name: '旅游海报', desc: '高阶旅行杂志封面', icon: '✈️', pts: 'HD+', placeholder: '灵感：【如：京都极简小巷、霓虹下的东京、海岛日落】 氛围：【如：复古排版、莫兰迪色调】' },
     { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🛋️', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true },
+    { id: 'product_detail', name: '详情页设计', desc: '复古简约商业视觉', icon: '📱', pts: 'HD+', placeholder: '产品：【在此输入产品名称】' },
     { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📡', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】', requiresImage: true },
     { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '🎞️', pts: 'HD+', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true },
     { id: 'ccd_snap', name: 'CCD 随手抓拍', desc: '闪光灯氛围', icon: '⚡', pts: 'HD+', placeholder: '人物：【在此输入，支持多样化构图】 环境：【如：深夜旺角街头、雨夜霓虹】', requiresImage: true },
@@ -242,7 +243,9 @@ const MobileHomePage = () => {
     { id: 'silk_road', name: '国风月夜', desc: '宋代山水意境', icon: '🎋', pts: 'Master', placeholder: '主题：【在此输入主题名称】' },
     { id: 'relation_map', name: '人物关系图谱', desc: '作品逻辑梳理', icon: '🕸️', pts: 'Master', placeholder: '作品：【在此输入名称】' },
     { id: 'encyclopedia', name: '博物馆图鉴', desc: '国家博物馆级文博信息图', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】' },
-    { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: '🪟', pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true }
+    { id: 'knowledge_card', name: '知识图卡', desc: '现代百科科普图鉴', icon: '🃏', pts: 'Master', placeholder: '百科主题：【在此输入】' },
+    { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: '🪟', pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true },
+    { id: 'app_ui_design', name: 'APP UI 设计', desc: 'iOS 原生视觉全案', icon: '📱', pts: 'Master', placeholder: 'APP 主题：【在此输入】' }
   ];
 
   // AI 润色白名单 (Task: Strict Whitelist)
