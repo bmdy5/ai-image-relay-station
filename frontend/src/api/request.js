@@ -26,12 +26,12 @@ request.interceptors.response.use(
     // 处理 503 或网络彻底连不上（无 response）的情况
     if (error.response?.status === 503 || !error.response) {
       window.dispatchEvent(new CustomEvent('system-maintenance'));
-      return new Promise(() => {}); 
+      return Promise.reject(error); 
     }
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       const isGuest = localStorage.getItem('isGuest') === 'true';
-      if (!isGuest) {
+      if (!isGuest && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
