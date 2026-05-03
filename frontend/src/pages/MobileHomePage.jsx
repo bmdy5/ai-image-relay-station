@@ -735,7 +735,6 @@ const MobileHomePage = () => {
       <MobileDrawer isOpen={activeDrawer === 'style'} onClose={() => setActiveDrawer(null)} title="艺术风格实验室">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
           {styles.map(s => {
-            let isLocked = false;
             return (
               <div 
                 key={s.id} 
@@ -745,44 +744,41 @@ const MobileHomePage = () => {
                   else if (s.pts === 'HD+') setQuality('hd');
                   else setQuality('standard');
 
-                  if(!isLocked) { 
-                    const applyStyle = (forceOverwrite = false) => {
+                  const applyStyle = (forceOverwrite = false) => {
+                    setSelectedStyle(s);
+                    if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
+                    
+                    // 覆盖提示词逻辑：
+                    // 1. 强制覆盖 (用户在弹窗点确定)
+                    // 2. 当前输入为空
+                    // 3. 当前输入仍是模板占位符 (包含 【 )
+                    if (forceOverwrite || !prompt.trim() || prompt.includes('【')) {
+                      setPrompt(s.placeholder || '');
+                    }
+                    
+                    setActiveDrawer(null);
+                    if (refImageUrl && !s.requiresImage) {
+                      const tip = document.createElement('div');
+                      tip.innerHTML = '📸 当前带有参考图，生图将参考此图';
+                      tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 2s forwards;border:1px solid rgba(255,255,255,0.1);';
+                      document.body.appendChild(tip);
+                      setTimeout(() => tip.remove(), 2000);
+                    }
+                  };
+
+                  const isCustomPrompt = prompt && prompt.trim() && !prompt.includes('【');
+                  if (isCustomPrompt) {
+                    if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前输入的内容。')) {
+                      applyStyle(true);
+                    } else {
+                      // 用户取消覆盖：仅切换风格，保留原提示词，同步更新推荐比例
                       setSelectedStyle(s);
                       if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
-                      
-                      // 覆盖提示词逻辑：
-                      // 1. 强制覆盖 (用户在弹窗点确定)
-                      // 2. 当前输入为空
-                      // 3. 当前输入仍是模板占位符 (包含 【 )
-                      if (forceOverwrite || !prompt.trim() || prompt.includes('【')) {
-                        setPrompt(s.placeholder || '');
-                      }
-                      
                       setActiveDrawer(null);
-                      if (refImageUrl && !s.requiresImage) {
-                        const tip = document.createElement('div');
-                        tip.innerHTML = '📸 当前带有参考图，生图将参考此图';
-                        tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 2s forwards;border:1px solid rgba(255,255,255,0.1);';
-                        document.body.appendChild(tip);
-                        setTimeout(() => tip.remove(), 2000);
-                      }
-                    };
-
-                    const isCustomPrompt = prompt && prompt.trim() && !prompt.includes('【');
-                    if (isCustomPrompt) {
-                      if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前输入的内容。')) {
-                        applyStyle(true);
-                      } else {
-                        // 用户取消覆盖：仅切换风格，保留原提示词，同步更新推荐比例
-                        setSelectedStyle(s);
-                        if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
-                        setActiveDrawer(null);
-                      }
-                    } else {
-                      applyStyle(false);
                     }
-                  } 
-                }} 
+                  } else {
+                    applyStyle(false);
+                  }                }} 
                 style={{ 
                   padding: '16px', borderRadius: '20px', background: selectedStyle.id === s.id ? 'var(--primary-glow)' : '#fff',
                   border: selectedStyle.id === s.id ? '2px solid var(--primary)' : '1px solid #F2F2F7',

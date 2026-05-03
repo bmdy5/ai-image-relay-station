@@ -942,8 +942,6 @@ const HomePage = () => {
                 }}>
                   {styles.map(s => {
                     // 严格等级压制逻辑
-                    let isLocked = false;
-                    
                     return (
                       <div 
                         key={s.id} 
@@ -953,36 +951,34 @@ const HomePage = () => {
                           else if (s.pts === 'HD+') setQuality('hd');
                           else setQuality('standard');
 
-                          if (!isLocked) {
-                            const isCustomPrompt = prompt.trim() && !prompt.includes('【');
+                          const isCustomPrompt = prompt.trim() && !prompt.includes('【');
+                          
+                          const applyStyle = (shouldUpdatePrompt = false) => {
+                            setSelectedStyle(s);
+                            if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
                             
-                            const applyStyle = (shouldUpdatePrompt = false) => {
-                              setSelectedStyle(s);
-                              if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
-                              
-                              if (shouldUpdatePrompt || !prompt.trim() || prompt.includes('【')) {
-                                setPrompt(s.placeholder || '');
-                              }
-                              
-                              setShowLab(false);
-                              if (s.requiresImage) {
-                                showToast('✨ 此风格需要上传图片作为参考', 'success');
-                              } else if (refImageUrl) {
-                                showToast('📸 当前带有参考图，生图将参考此图', 'info');
-                              }
-                            };
+                            if (shouldUpdatePrompt || !prompt.trim() || prompt.includes('【')) {
+                              setPrompt(s.placeholder || '');
+                            }
+                            
+                            setShowLab(false);
+                            if (s.requiresImage) {
+                              showToast('✨ 此风格需要上传图片作为参考', 'success');
+                            } else if (refImageUrl) {
+                              showToast('📸 当前带有参考图，生图将参考此图', 'info');
+                            }
+                          };
 
-                            if (!isCustomPrompt) {
+                          if (!isCustomPrompt) {
+                            applyStyle(true);
+                          } else {
+                            if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前的内容。')) {
                               applyStyle(true);
                             } else {
-                              if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前的内容。')) {
-                                applyStyle(true);
-                              } else {
-                                // 仅切换风格，保留提示词，但更新比例
-                                setSelectedStyle(s);
-                                if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
-                                setShowLab(false);
-                              }
+                              // 仅切换风格，保留提示词，但更新比例
+                              setSelectedStyle(s);
+                              if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
+                              setShowLab(false);
                             }
                           }
                         }}
@@ -993,8 +989,8 @@ const HomePage = () => {
                           textAlign: 'center', position: 'relative', opacity: 1,
                           boxShadow: selectedStyle.id === s.id ? '0 10px 25px rgba(230,107,51,0.15)' : 'none'
                         }}
-                        onMouseOver={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(-5px)'; }}
-                        onMouseOut={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(0)'; }}
+                        onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-5px)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
                       >
                         <div style={{ fontSize: '32px', marginBottom: '12px' }}>{s.icon}</div>
                         <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>{s.name}</div>
