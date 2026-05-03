@@ -132,3 +132,30 @@ def wipe_image_record(
     db.delete(log)
     db.commit()
     return {"message": "已彻底抹除记录及图片文件"}
+
+@router.get("/invitation/logs")
+def list_invitation_logs(
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(admin_required)
+):
+    """邀请奖励审计日志 (Task 6.1)"""
+    # 获取所有邀请相关的充值日志
+    logs = db.query(models.RechargeLog, models.User).join(
+        models.User, models.RechargeLog.user_id == models.User.id
+    ).filter(
+        models.RechargeLog.trade_no.like("INVITE_%")
+    ).order_by(models.RechargeLog.created_at.desc()).limit(100).all()
+    
+    return [
+        {
+            "id": l[0].id,
+            "user_id": l[0].user_id,
+            "username": l[1].username,
+            "amount": l[0].amount,
+            "trade_no": l[0].trade_no,
+            "admin_note": l[0].admin_note,
+            "created_at": l[0].created_at,
+            "ip": l[1].last_ip,
+            "fingerprint": l[1].fingerprint
+        } for l in logs
+    ]

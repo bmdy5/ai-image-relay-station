@@ -19,6 +19,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     has_used_experience = Column(Boolean, default=False) # 新增：是否已使用过 1 元体验
     has_install_reward = Column(Boolean, default=False) # 新增：是否已领取安装桌面奖励
+    invited_by_id = Column(Integer, ForeignKey("users.id"), nullable=True) # 新增：邀请人 ID
     created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
 
     # 关联

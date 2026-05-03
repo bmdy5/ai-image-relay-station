@@ -41,7 +41,7 @@ const MaintenanceModal = () => {
         </div>
         <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '12px', color: '#1D1D1F' }}>系统维护中</h2>
         <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '32px', fontSize: '15px' }}>
-          抱歉，系统正在进行紧急维护或数据库连接异常。<br/>
+          抱歉，系统正在进行紧急维护。<br/>
           为了您的数据安全，我们将暂时关闭访问。
         </p>
         <div style={{ 

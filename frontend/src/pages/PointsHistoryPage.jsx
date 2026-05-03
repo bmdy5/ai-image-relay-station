@@ -30,13 +30,20 @@ const PointsHistoryPage = ({ isMobile }) => {
         color: '#ff4d4f'
       }));
 
-      const formattedRecharge = rechargeLogs.map(item => ({
-        ...item,
-        type: 'recharge',
-        display_amount: `+${item.amount}`,
-        display_label: item.trade_no?.startsWith('PWA_') ? '桌面版安装奖励' : `充值到账 (¥${item.money_amount || 0})`,
-        color: '#52c41a'
-      }));
+      const formattedRecharge = rechargeLogs.map(item => {
+        let label = `充值到账 (¥${item.money_amount || 0})`;
+        if (item.trade_no?.startsWith('PWA_')) label = '桌面版安装奖励';
+        if (item.trade_no?.startsWith('INVITE_REGISTER_')) label = '好友邀请注册礼';
+        if (item.trade_no?.startsWith('INVITE_REWARD_')) label = '成功推荐好友奖励';
+        
+        return {
+          ...item,
+          type: 'recharge',
+          display_amount: `+${item.amount}`,
+          display_label: label,
+          color: '#52c41a'
+        };
+      });
 
       const combined = [...formattedConsumption, ...formattedRecharge].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)

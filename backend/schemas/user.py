@@ -20,6 +20,7 @@ class UserCreateEmail(BaseModel):
     password: str
     code: str
     fingerprint: Optional[str] = None
+    invite_code: Optional[str] = None
 
 class UserCreatePhone(BaseModel):
     username: Optional[str] = None
@@ -27,6 +28,7 @@ class UserCreatePhone(BaseModel):
     password: str
     captcha_code: str
     fingerprint: Optional[str] = None
+    invite_code: Optional[str] = None
 
 class UserInfo(UserBase):
     id: int
@@ -39,6 +41,11 @@ class UserInfo(UserBase):
 
     class Config:
         from_attributes = True
+
+class UserRegisterResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserInfo
 
 class Token(BaseModel):
     access_token: str
