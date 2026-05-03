@@ -519,7 +519,16 @@ const MobileHomePage = () => {
           ].map(t => (
             <div 
               key={t.id} 
-              onClick={() => { setQuality(t.id); setActiveDrawer(null); }}
+              onClick={() => { 
+                setQuality(t.id); 
+                setActiveDrawer(null);
+                // 降级检查：如果手动切换到更低等级，且当前风格不支持该等级，则重置回默认
+                if (t.id === 'standard' && selectedStyle.pts !== 'All') {
+                  setSelectedStyle(styles[0]);
+                } else if (t.id === 'hd' && selectedStyle.pts === 'Master') {
+                  setSelectedStyle(styles[0]);
+                }
+              }}
               style={{ 
                 padding: '16px', borderRadius: '18px', border: quality === t.id ? `2px solid ${t.color}` : '2px solid #F2F2F7', 
                 background: quality === t.id ? `${t.color}08` : '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
