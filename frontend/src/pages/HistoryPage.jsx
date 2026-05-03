@@ -414,25 +414,25 @@ const HistoryPage = ({ isMobile }) => {
                 >
                   <Wand2 size={20} /> 开启迭代精修 (Variation)
                 </button>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '10px' }}>
                   <button 
                     onClick={() => handleReuse(selectedImage)} 
                     className="btn-primary" 
-                    style={{ flex: 1, height: '50px', background: 'rgba(255,255,255,0.05)', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: '1px solid rgba(255,255,255,0.1)' }}
+                    style={{ flex: 1.5, height: '50px', background: 'rgba(255,255,255,0.05)', color: '#fff', borderRadius: '14px', fontSize: '13px', fontWeight: '900', border: '1px solid rgba(255,255,255,0.1)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
-                    复用创作环境
+                    复用环境
                   </button>
                   <button 
                     onClick={() => setShowSharePoster(true)} 
                     className="btn-primary" 
-                    style={{ width: '120px', height: '50px', background: '#FF9500', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    style={{ flex: 1.2, height: '50px', background: '#FF9500', color: '#fff', borderRadius: '14px', fontSize: '13px', fontWeight: '900', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', whiteSpace: 'nowrap' }}
                   >
-                    <Share2 size={18} /> 生成海报
+                    <Share2 size={16} /> 海报
                   </button>
                   <button 
                     onClick={() => handleDownload(selectedImage)} 
                     className="btn-primary" 
-                    style={{ width: '100px', height: '50px', background: '#fff', color: '#000', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none' }}
+                    style={{ flex: 1, height: '50px', background: '#fff', color: '#000', borderRadius: '14px', fontSize: '13px', fontWeight: '900', border: 'none', whiteSpace: 'nowrap' }}
                   >
                     下载
                   </button>
