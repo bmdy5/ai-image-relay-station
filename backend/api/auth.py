@@ -287,7 +287,7 @@ def forgot_password_send_code(data: user_schema.ForgotPasswordSendCode, db: Sess
     else:
         raise HTTPException(status_code=500, detail="邮件发送失败，请稍后重试")
 
-@router.post("/forgot-password/reset")
+@router.post("/forgot-password/reset", response_model=user_schema.UserRegisterResponse)
 def forgot_password_reset(data: user_schema.ForgotPasswordReset, db: Session = Depends(get_db)):
     # 1. 校验邮箱是否已注册
     db_user = user_crud.get_user_by_email(db, email=data.email)
