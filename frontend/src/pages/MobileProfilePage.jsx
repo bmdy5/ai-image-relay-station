@@ -333,7 +333,7 @@ const MobileProfilePage = ({ isMobile }) => {
                 label="添加至主屏幕" 
                 sublabel="体验原生 App 并获赠 10 积分" 
                 onClick={() => {
-                  if (isIOS) setShowIosGuide(true);
+                  if (isInWechat || isIOS || !isInstallable) setShowIosGuide(true);
                   else promptInstall();
                 }} 
                 color="#C56A50"
@@ -547,7 +547,12 @@ const MobileProfilePage = ({ isMobile }) => {
       )}
 
       {showIosGuide && (
-        <PWAIosGuideModal onClose={() => setShowIosGuide(false)} />
+        <PWAIosGuideModal 
+          isIOS={isIOS}
+          isAndroid={isAndroid}
+          isInWechat={isInWechat}
+          onClose={() => setShowIosGuide(false)} 
+        />
       )}
 
       {toast.show && <Toast message={toast.message} onClose={() => setToast({ show: false, message: '' })} />}
