@@ -18,6 +18,7 @@ class User(Base):
     last_ip = Column(String)
     is_admin = Column(Boolean, default=False)
     has_used_experience = Column(Boolean, default=False) # 新增：是否已使用过 1 元体验
+    has_install_reward = Column(Boolean, default=False) # 新增：是否已领取安装桌面奖励
     created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
 
     # 关联

@@ -8,13 +8,16 @@ import {
   User, 
   X,
   CheckCircle,
-  ChevronLeft
+  ChevronLeft,
+  Download
 } from 'lucide-react';
 import NeuralPlexus from './NeuralPlexus';
+import { usePWA } from '../hooks/usePWA';
 
 const PCLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isInstallable, isStandalone, isInstalled, promptInstall } = usePWA();
   const [userInfo, setUserInfo] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
@@ -120,6 +123,26 @@ const PCLayout = ({ children }) => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            {/* PWA 安装按钮 (仅非游客且未安装且支持安装时显示) */}
+            {isInstallable && !isInstalled && localStorage.getItem('isGuest') !== 'true' && !isStandalone && (
+              <button
+                onClick={promptInstall}
+                style={{
+                  background: 'linear-gradient(135deg, #E88D72 0%, #C56A50 100%)',
+                  border: 'none', padding: '8px 16px', borderRadius: '14px',
+                  color: '#fff', fontSize: '13px', fontWeight: '700',
+                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(197, 106, 80, 0.2)',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <Download size={16} strokeWidth={2.5} />
+                添加桌面版 <span style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '8px', fontSize: '11px', marginLeft: '4px' }}>+10积分</span>
+              </button>
+            )}
+
             <div style={{ 
               background: 'white', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '14px', 
               fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', color: 'var(--primary)',

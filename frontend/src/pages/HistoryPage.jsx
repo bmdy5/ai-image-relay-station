@@ -335,7 +335,7 @@ const HistoryPage = ({ isMobile }) => {
             </div>
 
             {/* 右侧：信息面板区 */}
-            <div style={{ width: '360px', display: 'flex', flexDirection: 'column', background: '#1c1c1e', borderLeft: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ width: '360px', flexShrink: 0, display: 'flex', flexDirection: 'column', background: '#1c1c1e', borderLeft: '1px solid rgba(255,255,255,0.05)' }}>
               {/* 顶部标题区 */}
               <div style={{ padding: '32px 32px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

@@ -40,9 +40,15 @@ function App() {
     };
     checkHealth();
     
+    const handlePwaReward = (e) => {
+      alert(`🎉 恭喜！您已成功安装桌面版，获赠 10 积分！`);
+    };
+    window.addEventListener('pwa-reward-success', handlePwaReward);
+    
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('system-maintenance', handleMaintenance);
+      window.removeEventListener('pwa-reward-success', handlePwaReward);
     };
   }, []);
 
