@@ -122,9 +122,9 @@ const HomePage = () => {
     { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: <Armchair size={24} />, pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true, recommendedRatio: '16:9' },
     { id: 'product_detail', name: '详情页设计', desc: '复古简约商业视觉', icon: <Layout size={24} />, pts: 'HD+', placeholder: '产品：【在此输入产品名称】', recommendedRatio: '9:16' },
     { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: <Radio size={24} />, pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】', requiresImage: true, recommendedRatio: '16:9' },
-    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: <Film size={24} />, pts: 'HD+', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true, recommendedRatio: '9:16' },
+    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: <Film size={24} />, pts: 'All', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true, recommendedRatio: '9:16' },
     { id: 'ccd_snap', name: 'CCD 随手抓拍', desc: '闪光灯氛围', icon: <Zap size={24} />, pts: 'HD+', placeholder: '人物：【在此输入，支持多样化构图】 环境：【如：深夜旺角街头、雨夜霓虹】', requiresImage: true, recommendedRatio: '9:16' },
-    { id: 'restore_old', name: '老照片修复', desc: '质感修复与高清还原', icon: <Clock size={24} />, pts: 'HD+', placeholder: '描述照片背景或需要重点修复的细节（可选）', requiresImage: true },
+    { id: 'restore_old', name: '老照片修复', desc: '质感修复与高清还原', icon: <Clock size={24} />, pts: 'All', placeholder: '描述照片背景或需要重点修复的细节（可选）', requiresImage: true },
 
     // --- 旗舰梯队 (旗舰版) ---
     { id: 'eri_silhouette', name: '轮廓宇宙', desc: '史诗级叙事海报', icon: <Orbit size={24} />, pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
@@ -761,12 +761,6 @@ const HomePage = () => {
                   {styles.map(s => {
                     // 严格等级压制逻辑
                     let isLocked = false;
-                    if (quality === 'standard') {
-                      isLocked = s.pts !== 'All';
-                    } else if (quality === 'hd') {
-                      isLocked = s.pts === 'Master';
-                    }
-                    // Master 模式解锁所有
                     
                     return (
                       <div 
@@ -804,9 +798,9 @@ const HomePage = () => {
                         }}
                         style={{ 
                           padding: '24px 16px', borderRadius: '20px', border: selectedStyle.id === s.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                          background: selectedStyle.id === s.id ? 'white' : (isLocked ? '#f5f5f7' : 'white'),
-                          cursor: isLocked ? 'not-allowed' : 'pointer', transition: 'var(--transition)',
-                          textAlign: 'center', position: 'relative', opacity: isLocked ? 0.5 : 1,
+                          background: selectedStyle.id === s.id ? 'white' : 'white',
+                          cursor: 'pointer', transition: 'var(--transition)',
+                          textAlign: 'center', position: 'relative', opacity: 1,
                           boxShadow: selectedStyle.id === s.id ? '0 10px 25px rgba(230,107,51,0.15)' : 'none'
                         }}
                         onMouseOver={(e) => { if (!isLocked) e.currentTarget.style.transform = 'translateY(-5px)'; }}
@@ -815,8 +809,7 @@ const HomePage = () => {
                         <div style={{ fontSize: '32px', marginBottom: '12px' }}>{s.icon}</div>
                         <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>{s.name}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{s.desc}</div>
-                        {isLocked && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: '#ccc', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>🔒</div>}
-                        {!isLocked && s.pts !== 'All' && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: s.pts === 'Master' ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>{s.pts === 'Master' ? '旗舰' : '专业'}</div>}
+                        {s.pts !== 'All' && <div style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '10px', background: s.pts === 'Master' ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>{s.pts === 'Master' ? '旗舰' : '专业'}</div>}
                       </div>
                     );
                   })}
