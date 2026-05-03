@@ -9,6 +9,9 @@ def create_image_log(
     style: str,
     cost_points: int, 
     image_url: str = None, 
+    ref_image_url: str = None,
+    parent_id: int = None,
+    iteration: int = 0,
     status: str = "success", 
     error_msg: str = None
 ):
@@ -19,6 +22,9 @@ def create_image_log(
         style=style,
         cost_points=cost_points,
         image_url=image_url,
+        ref_image_url=ref_image_url,
+        parent_id=parent_id,
+        iteration=iteration,
         status=status,
         error_msg=error_msg
     )

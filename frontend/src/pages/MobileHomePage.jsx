@@ -23,11 +23,6 @@ const STYLE_NAME_MAP = {
 const QUALITY_NAME_MAP = { 'standard': '标准版', 'hd': '专业版', 'master': '旗舰版' };
 
 // 结果卡片组件
-const ResultCard = ({ job, onOpenNotes, onPreview }) => {
-  const isMaster = job.quality === 'master';
-  const qName = QUALITY_NAME_MAP[job.quality] || '标准版';
-  const sName = STYLE_NAME_MAP[job.style] || '默认';
-  
   return (
     <div style={{
       width: '100%',
@@ -75,14 +70,30 @@ const ResultCard = ({ job, onOpenNotes, onPreview }) => {
       {/* 图像显示/生成区 */}
       <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', background: '#F2F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {job.status === 'success' ? (
-          <div style={{ width: '100%', position: 'relative' }} onClick={() => onPreview(job.result)}>
-            <img src={job.result} alt="AI Result" style={{ width: '100%', display: 'block' }} />
+          <div style={{ width: '100%', position: 'relative' }}>
+            <img src={job.result} onClick={() => onPreview(job.result)} alt="AI Result" style={{ width: '100%', display: 'block' }} />
             {isMaster && (
               <div style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(138, 43, 226, 0.9)', color: 'white', padding: '4px 10px', borderRadius: '20px', fontSize: '10px', fontWeight: '800', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                  <Sparkles size={10} /> 大师版 ✦
               </div>
             )}
-            <div style={{ position: 'absolute', bottom: '12px', left: '12px', width: '40px', height: '40px', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+            
+            {/* 迭代精修按钮 */}
+            {(job.quality === 'hd' || job.quality === 'master') && (
+              <div 
+                onClick={() => onRefine && onRefine(job)}
+                style={{ 
+                  position: 'absolute', bottom: '12px', right: '12px', width: '40px', height: '40px', 
+                  background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', borderRadius: '50%', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              >
+                <Wand2 size={20} />
+              </div>
+            )}
+
+            <div onClick={() => onPreview(job.result)} style={{ position: 'absolute', bottom: '12px', left: '12px', width: '40px', height: '40px', background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
               <Maximize2 size={20} />
             </div>
           </div>
@@ -109,6 +120,9 @@ const MobileHomePage = () => {
   const stackRef = useRef(null);
   const [prompt, setPrompt] = useState('');
   const [quality, setQuality] = useState('standard');
+  const [isRefining, setIsRefining] = useState(false);
+  const [refineParentId, setRefineParentId] = useState(null);
+  const [iterationInfo, setIterationInfo] = useState({ current: 0, max: 0 });
   const [jobs, setJobs] = useState([]); 
   const [activeDrawer, setActiveDrawer] = useState(null);
   const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✨', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' });
@@ -163,6 +177,14 @@ const MobileHomePage = () => {
       if (data.quality) setQuality(data.quality);
       if (data.ref_image_url) setRefImageUrl(data.ref_image_url);
       
+      // 捕获精修状态
+      if (data.is_refining) {
+        setIsRefining(true);
+        setRefineParentId(data.parent_id);
+        const maxRefines = data.quality === 'master' ? 3 : (data.quality === 'hd' ? 2 : 0);
+        setIterationInfo({ current: data.iteration || 1, max: maxRefines });
+      }
+      
       sessionStorage.removeItem('pending_reuse');
       focusInput();
     } else if (pending) {
@@ -206,6 +228,36 @@ const MobileHomePage = () => {
       setPrompt(historyPrompt);
       setHistoryPrompt('');
     }
+  };
+
+  // 迭代精修逻辑
+  const handleRefine = (job) => {
+    const maxRefines = job.quality === 'master' ? 3 : (job.quality === 'hd' ? 2 : 0);
+    if (maxRefines === 0) {
+      alert('⚠️ 标准版暂不支持迭代精修，请升级专业版或旗舰版');
+      return;
+    }
+    
+    setRefImageUrl(job.result);
+    setPrompt(job.prompt);
+    setQuality(job.quality);
+    const style = styles.find(s => s.id === job.style);
+    if (style) setSelectedStyle(style);
+    
+    setIsRefining(true);
+    setRefineParentId(job.id);
+    setIterationInfo({ current: (job.iteration || 0) + 1, max: maxRefines });
+    
+    // 平滑滚动
+    if (stackRef.current) {
+        stackRef.current.scrollTo({ top: stackRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  };
+
+  const cancelRefine = () => {
+    setIsRefining(false);
+    setRefImageUrl('');
+    setRefineParentId(null);
   };
 
 
@@ -270,8 +322,15 @@ const MobileHomePage = () => {
         quality: quality, 
         style: selectedStyle.id,
         aspect_ratio: aspectRatio,
-        ref_image_url: refImageUrl
+        ref_image_url: refImageUrl,
+        parent_id: refineParentId,
+        iteration: iterationInfo.current
       });
+      
+      if (isRefining) {
+        setIsRefining(false);
+        setRefineParentId(null);
+      }
       const taskId = res.id;
       
       const tip = document.createElement('div');
@@ -355,6 +414,7 @@ const MobileHomePage = () => {
               job={job} 
               onOpenNotes={(j) => { setSelectedJob(j); setActiveDrawer('notes'); }} 
               onPreview={(img) => setPreviewImage(img)}
+              onRefine={handleRefine}
             />
           ))
         )}
@@ -433,12 +493,30 @@ const MobileHomePage = () => {
           </div>
         )}
 
+        {/* 精修横幅 */}
+        {isRefining && (
+          <div style={{ 
+            margin: '0 16px 8px', padding: '6px 12px', 
+            background: 'linear-gradient(135deg, #e66b33, #ff9800)', 
+            color: 'white', borderRadius: '12px', fontSize: '11px',
+            display: 'flex', alignItems: 'center', gap: '8px',
+            boxShadow: '0 4px 12px rgba(230,107,51,0.2)',
+            animation: 'fadeInUp 0.4s ease-out'
+          }}>
+            <Wand2 size={12} />
+            正在进行迭代精修 ({iterationInfo.current}/{iterationInfo.max})
+            <div onClick={cancelRefine} style={{ marginLeft: 'auto', padding: '4px' }}>
+              <X size={14} />
+            </div>
+          </div>
+        )}
+
         <div 
           className={enhancing ? 'ai-enhancing-border' : ''}
           style={{ 
             background: enhancing ? 'transparent' : 'rgba(255, 255, 255, 0.8)', 
             backdropFilter: 'blur(20px)',
-            height: '56px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: enhancing ? '0' : '0 8px 0 12px', 
+            height: '56px', margin: '0 16px', borderRadius: '28px', display: 'flex', alignItems: 'center', padding: enhancing ? '0' : '0 8px 0 12px', 
             boxShadow: '0 15px 35px rgba(0,0,0,0.08)', border: enhancing ? 'none' : '1px solid rgba(255,255,255,0.9)',
             transition: 'all 0.5s'
           }}

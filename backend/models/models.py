@@ -38,6 +38,8 @@ class ImageLog(Base):
     points_snapshot = Column(Integer, default=0) # 记录当时扣除的积分快照
     image_url = Column(String)
     ref_image_url = Column(String) # 新增：记录参考图
+    parent_id = Column(Integer, index=True, nullable=True) # 新增：迭代父 ID
+    iteration = Column(Integer, default=0) # 新增：迭代次数 (0 为初始)
     status = Column(String)  # success / failed
     error_msg = Column(Text)
     created_at = Column(DateTime, index=True, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))

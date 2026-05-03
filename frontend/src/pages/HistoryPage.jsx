@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import { 
   Images, Coins, ShieldCheck, User, LogOut, Search, X, RefreshCw, 
-  Download, ClipboardCopy, RotateCcw, Sparkles, ArrowLeft, Trash2, Maximize2
+  Download, ClipboardCopy, RotateCcw, Sparkles, ArrowLeft, Trash2, Maximize2, Wand2
 } from 'lucide-react';
 
 import MobileDrawer from '../components/MobileDrawer';
@@ -92,6 +92,25 @@ const HistoryPage = ({ isMobile }) => {
     navigate('/');
   };
 
+  const handleRefine = (img) => {
+    const maxRefines = img.quality === 'master' ? 3 : (img.quality === 'hd' ? 2 : 0);
+    if (maxRefines === 0) {
+      alert('⚠️ 标准版暂不支持迭代精修，请升级专业版或旗舰版');
+      return;
+    }
+
+    sessionStorage.setItem('pending_reuse', JSON.stringify({
+      prompt: img.prompt,
+      style: img.style,
+      quality: img.quality,
+      ref_image_url: img.image_url, // 注意：微调是基于生成后的图片
+      parent_id: img.id,
+      iteration: (img.iteration || 0) + 1,
+      is_refining: true
+    }));
+    navigate('/');
+  };
+
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
@@ -156,10 +175,14 @@ const HistoryPage = ({ isMobile }) => {
             </div>
             <div style={{ fontSize: '14px', color: '#1D1D1F', lineHeight: '1.6' }}>{selectedImage.prompt}</div>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => handleReuse(selectedImage)} style={{ flex: 2, padding: '16px', borderRadius: '16px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><RotateCcw size={18} /> 复用此环境</button>
-
-            <button onClick={() => handleDownload(selectedImage)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#F2F2F7', color: '#1D1D1F', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={18} /></button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button onClick={() => handleRefine(selectedImage)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: 'linear-gradient(135deg, #e66b33, #ff9800)', color: 'white', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 15px rgba(230,107,51,0.2)' }}>
+              <Wand2 size={18} /> 基于此图迭代精修
+            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => handleReuse(selectedImage)} style={{ flex: 2, padding: '16px', borderRadius: '16px', background: '#F2F2F7', color: '#1D1D1F', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><RotateCcw size={18} /> 复用环境</button>
+              <button onClick={() => handleDownload(selectedImage)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#F2F2F7', color: '#1D1D1F', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={18} /></button>
+            </div>
           </div>
           <button onClick={(e) => handleDelete(e, selectedImage.id)} style={{ padding: '12px', background: 'transparent', border: 'none', color: '#FF3B30', fontSize: '13px', fontWeight: '600' }}>删除此作品</button>
         </div>
@@ -379,19 +402,28 @@ const HistoryPage = ({ isMobile }) => {
               {/* 底部操作区 */}
               <div style={{ padding: '32px', background: '#1c1c1e', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <button 
-                  onClick={() => handleDownload(selectedImage)} 
+                  onClick={() => handleRefine(selectedImage)} 
                   className="btn-primary" 
-                  style={{ width: '100%', height: '50px', background: '#fff', color: '#000', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none' }}
+                  style={{ width: '100%', height: '50px', background: 'linear-gradient(135deg, #e66b33, #ff9800)', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
                 >
-                  下载原图作品
+                  <Wand2 size={20} /> 开启迭代精修 (Variation)
                 </button>
-                <button 
-                  onClick={() => handleReuse(selectedImage)} 
-                  className="btn-primary" 
-                  style={{ width: '100%', height: '50px', background: 'var(--primary)', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none' }}
-                >
-                  复用此创作环境
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    onClick={() => handleReuse(selectedImage)} 
+                    className="btn-primary" 
+                    style={{ flex: 1, height: '50px', background: 'rgba(255,255,255,0.05)', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: '1px solid rgba(255,255,255,0.1)' }}
+                  >
+                    复用创作环境
+                  </button>
+                  <button 
+                    onClick={() => handleDownload(selectedImage)} 
+                    className="btn-primary" 
+                    style={{ width: '100px', height: '50px', background: '#fff', color: '#000', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none' }}
+                  >
+                    下载
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -71,6 +71,9 @@ const HomePage = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
+  const [refineParentId, setRefineParentId] = useState(null);
+  const [iterationInfo, setIterationInfo] = useState({ current: 0, max: 0 });
   const [historyPrompt, setHistoryPrompt] = useState('');
   
   // 处理剪贴板粘贴图片 (Task: Paste to Ref Image)
@@ -140,6 +143,36 @@ const HomePage = () => {
   // AI 润色白名单 (Task: Strict Whitelist)
   const ALLOWED_ENHANCE_STYLES = ['default', 'real', 'product', 'tech_poster'];
 
+  // 迭代精修逻辑
+  const handleRefine = (job) => {
+    const maxRefines = job.quality === 'master' ? 3 : (job.quality === 'hd' ? 2 : 0);
+    if (maxRefines === 0) {
+      showToast('⚠️ 标准版暂不支持迭代精修，请升级专业版或旗舰版', 'error');
+      return;
+    }
+    
+    // 一键装填
+    setRefImageUrl(job.url);
+    setPrompt(job.prompt);
+    setQuality(job.quality);
+    const style = styles.find(s => s.id === job.style);
+    if (style) setSelectedStyle(style);
+    
+    setIsRefining(true);
+    setRefineParentId(job.id);
+    setIterationInfo({ current: (job.iteration || 0) + 1, max: maxRefines });
+    
+    // 平滑滚动到顶
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('✨ 已进入精修模式，您可以修改提示词进行迭代', 'success');
+  };
+
+  const cancelRefine = () => {
+    setIsRefining(false);
+    setRefImageUrl('');
+    setRefineParentId(null);
+  };
+
   useEffect(() => {
     const guestFlag = localStorage.getItem('isGuest') === 'true';
     setIsGuest(guestFlag);
@@ -173,6 +206,15 @@ const HomePage = () => {
       }
       if (data.quality) setQuality(data.quality);
       if (data.ref_image_url) setRefImageUrl(data.ref_image_url);
+      
+      // 捕获精修状态
+      if (data.is_refining) {
+        setIsRefining(true);
+        setRefineParentId(data.parent_id);
+        const maxRefines = data.quality === 'master' ? 3 : (data.quality === 'hd' ? 2 : 0);
+        setIterationInfo({ current: data.iteration || 1, max: maxRefines });
+        showToast('✨ 已进入迭代精修模式，您可以修改提示词', 'success');
+      }
       
       sessionStorage.removeItem('pending_reuse');
       focusInput();
@@ -272,8 +314,15 @@ const HomePage = () => {
         quality, 
         style: selectedStyle.id,
         aspect_ratio: aspectRatio,
-        ref_image_url: refImageUrl
+        ref_image_url: refImageUrl,
+        parent_id: refineParentId,
+        iteration: iterationInfo.current
       });
+      
+      if (isRefining) {
+        setIsRefining(false);
+        setRefineParentId(null);
+      }
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
       
@@ -391,9 +440,22 @@ const HomePage = () => {
 
           {/* 2. 提示词输入 */}
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>灵感输入</div>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              灵感输入
+              {isRefining && (
+                <div style={{ 
+                  fontSize: '11px', background: 'linear-gradient(135deg, #e66b33, #ff9800)', color: 'white', 
+                  padding: '2px 10px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px',
+                  boxShadow: '0 4px 10px rgba(230,107,51,0.2)', animation: 'pulse 2s infinite'
+                }}>
+                  <Wand2 size={10} />
+                  迭代精修中 ({iterationInfo.current}/{iterationInfo.max})
+                  <X size={10} style={{ cursor: 'pointer', marginLeft: '4px' }} onClick={cancelRefine} />
+                </div>
+              )}
+            </div>
             
-            <div className={enhancing ? 'ai-enhancing-border' : ''}>
+            <div className={enhancing ? 'ai-enhancing-border' : (isRefining ? 'refining-border' : '')}>
               <textarea
                 className={`prompt-box ${enhancing ? 'ai-enhancing-inner' : ''}`}
                 placeholder="描述你脑海中的画面..."
@@ -659,8 +721,17 @@ const HomePage = () => {
                 </>
               )}
 
-              <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '400px' }}>
-                <a href={result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none' }}>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '450px' }}>
+                {(quality === 'hd' || quality === 'master') && (
+                  <button 
+                    onClick={() => handleRefine({ url: result, result, prompt, quality, style: selectedStyle.id, iteration: (iterationInfo.current || 0) })} 
+                    className="btn-primary" 
+                    style={{ flex: 1.5, background: 'linear-gradient(135deg, #e66b33, #ff9800)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    <Wand2 size={18} /> 迭代精修
+                  </button>
+                )}
+                <a href={result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none', background: '#f5f5f7', color: '#1d1d1f', border: 'none' }}>
                   <Download size={18} /> 高清保存
                 </a>
               </div>
