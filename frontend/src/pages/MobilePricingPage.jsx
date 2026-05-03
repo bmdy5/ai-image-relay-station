@@ -200,16 +200,16 @@ const MobilePricingPage = ({ isMobile }) => {
       name: '标准版', 
       price: 10, 
       points: 150, 
-      description: '开启 AI 艺术之旅，体验初步感知力',
-      features: ['150 创作积分永久有效', '标准生成引擎支持', '移动端全功能同步'] 
+      description: '开启 AI 艺术之旅，满足日常社交分享',
+      features: ['150 创作积分永久有效', '全量 30+ 艺术风格解锁', '支持多任务并行创作'] 
     },
     { 
       id: 'advanced',
       name: '专业版', 
       price: 30, 
       points: 500, 
-      description: '生产力全开，解锁更高画质与细节',
-      features: ['500 创作积分永久有效', '解锁专业级生成模式', '优先创作队列支持'],
+      description: '生产力全开，解锁专业级高清细节',
+      features: ['500 创作积分永久有效', '高清增强引擎全功能支持', '更具性价比的创作方案'],
       recommended: true 
     },
     { 
@@ -217,8 +217,8 @@ const MobilePricingPage = ({ isMobile }) => {
       name: '旗舰版', 
       price: 50, 
       points: 800, 
-      description: '顶级光影构建，掌控顶级算力',
-      features: ['800 创作积分永久有效', '4K 旗舰视觉引擎通道', '全商业用途授权许可'] 
+      description: '顶级光影构想，掌控商用级视觉进化',
+      features: ['800 创作积分永久有效', '大师级引擎与排版全功能', '大额充值最高优惠方案'] 
     }
   ];
 
@@ -262,22 +262,22 @@ const MobilePricingPage = ({ isMobile }) => {
       <div style={{ padding: '20px', marginTop: '10px' }}>
         <div style={{ background: '#fff', borderRadius: '24px', padding: '24px', boxShadow: 'var(--shadow)' }}>
           <h4 style={{ fontSize: '16px', fontWeight: '800', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Info size={18} color="var(--primary)" /> 权益对比
+            <Info size={18} color="var(--primary)" /> 生成模式能力对比
           </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', fontWeight: '800', color: '#999' }}>
               <span style={{ width: '80px' }}>对比项</span>
               <div style={{ display: 'flex', gap: '24px', marginRight: '4px' }}>
-                <span style={{ width: '45px', textAlign: 'center' }}>标准版</span>
-                <span style={{ width: '45px', textAlign: 'center' }}>专业版</span>
-                <span style={{ width: '45px', textAlign: 'center' }}>旗舰版</span>
+                <span style={{ width: '45px', textAlign: 'center' }}>标准模式</span>
+                <span style={{ width: '45px', textAlign: 'center' }}>专业模式</span>
+                <span style={{ width: '45px', textAlign: 'center' }}>旗舰模式</span>
               </div>
             </div>
             {[
-              { label: '生成画质', std: '720P', adv: '1080P', master: '4K Pro ✦' },
-              { label: '生成速度', std: '排队', adv: '优先', master: '极速' },
-              { label: 'AI 创作笔记', std: '✕', adv: '✕', master: '大师笔记' },
-              { label: '商业授权', std: '✕', adv: '支持', master: '全支持' }
+              { label: '风格种类', std: '基础风格', adv: '全量解锁', master: '旗舰专属' },
+              { label: '迭代精修', std: '不支持', adv: '2次精修', master: '深度进化' },
+              { label: '渲染性能', std: 'Core', adv: 'Pro', master: 'Ultra' },
+              { label: '单次消耗', std: '5 积分', adv: '10 积分', master: '15 积分' }
             ].map(row => (
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontWeight: '600' }}>{row.label}</span>

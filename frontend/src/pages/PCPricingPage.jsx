@@ -272,16 +272,16 @@ const PCPricingPage = () => {
       name: '标准版', 
       price: 10, 
       points: 150, 
-      description: '开启 AI 艺术之旅，体验初步感知力',
-      features: ['150 创作积分永久有效', '标准生成引擎支持', '移动端全功能同步'] 
+      description: '开启 AI 艺术之旅，满足日常社交分享',
+      features: ['150 创作积分永久有效', '全量 30+ 艺术风格解锁', '支持多任务并行创作'] 
     },
     { 
       id: 'advanced',
       name: '专业版', 
       price: 30, 
       points: 500, 
-      description: '生产力全开，解锁更高画质与细节',
-      features: ['500 创作积分永久有效', '解锁专业级生成模式', '优先创作队列支持'],
+      description: '生产力全开，解锁专业级高清细节',
+      features: ['500 创作积分永久有效', '高清增强引擎全功能支持', '更具性价比的创作方案'],
       recommended: true 
     },
     { 
@@ -289,8 +289,8 @@ const PCPricingPage = () => {
       name: '旗舰版', 
       price: 50, 
       points: 800, 
-      description: '顶级光影构建，掌控顶级算力',
-      features: ['800 创作积分永久有效', '4K 旗舰视觉引擎通道', '全商业用途授权许可'] 
+      description: '顶级光影构想，掌控商用级视觉进化',
+      features: ['800 创作积分永久有效', '大师级引擎与排版全功能', '大额充值最高优惠方案'] 
     }
   ];
 
@@ -328,6 +328,45 @@ const PCPricingPage = () => {
 
       <div style={{ marginTop: '30px', color: 'var(--text-secondary)', fontSize: '14px', opacity: 0.6, fontWeight: '500' }}>
         * 以上为推荐套餐，您也可以点击“立即充值”后 <span style={{ color: 'var(--pricing-primary)', fontWeight: '700' }}>自定义任意金额</span>（1元起充）
+      </div>
+
+      {/* PC 端生成模式对比看板 */}
+      <div style={{ 
+        marginTop: '60px', 
+        width: '100%', 
+        maxWidth: '1000px', 
+        background: 'rgba(255,255,255,0.03)', 
+        borderRadius: '32px', 
+        padding: '40px',
+        border: '1px solid rgba(255,255,255,0.05)',
+        backdropFilter: 'blur(20px)'
+      }}>
+        <h3 style={{ fontSize: '20px', fontWeight: '900', marginBottom: '30px', textAlign: 'center', letterSpacing: '1px' }}>生成模式能力矩阵</h3>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              <th style={{ padding: '20px', fontSize: '14px', opacity: 0.5 }}>对比维度</th>
+              <th style={{ padding: '20px', textAlign: 'center' }}>标准模式</th>
+              <th style={{ padding: '20px', textAlign: 'center' }}>专业模式</th>
+              <th style={{ padding: '20px', textAlign: 'center' }}>旗舰模式</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { label: '艺术风格库', std: '基础风格 (适合入门)', adv: '全量解锁 (30+ 风格)', master: '旗舰专属 (商业级排版)' },
+              { label: '迭代精修能力', std: '不支持精修', adv: '支持 2 次重塑精修', master: '深度进化 (无限精修潜力)' },
+              { label: '渲染引擎核心', std: 'Core 基础核心', adv: 'Visionary Pro 增强引擎', master: 'Master Ultra 顶级引擎' },
+              { label: '单次积分消耗', std: '5 积分 / 张', adv: '10 积分 / 张', master: '15 积分 / 张' }
+            ].map((row, i) => (
+              <tr key={i} style={{ borderBottom: i === 3 ? 'none' : '1px solid rgba(255,255,255,0.05)' }}>
+                <td style={{ padding: '25px 20px', fontWeight: '700', fontSize: '15px' }}>{row.label}</td>
+                <td style={{ padding: '25px 20px', textAlign: 'center', fontSize: '14px', opacity: 0.7 }}>{row.std}</td>
+                <td style={{ padding: '25px 20px', textAlign: 'center', fontSize: '14px', color: '#3b82f6', fontWeight: '600' }}>{row.adv}</td>
+                <td style={{ padding: '25px 20px', textAlign: 'center', fontSize: '15px', color: '#e66b33', fontWeight: '900' }}>{row.master}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <footer style={{
@@ -408,7 +447,6 @@ const PCPricingPage = () => {
                  borderRadius: '50%', animation: 'inner-pulse 1.5s infinite' }} 
                />
             </div>
-            
             <div className="pill-text-content" style={{ 
               color: '#fff', 
               whiteSpace: 'nowrap',
