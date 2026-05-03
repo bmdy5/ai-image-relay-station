@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Coins } from 'lucide-react';
 import request from '../api/request';
+import EmptyState from '../components/EmptyState';
 
 const PointsHistoryPage = ({ isMobile }) => {
   const navigate = useNavigate();
@@ -76,64 +77,65 @@ const PointsHistoryPage = ({ isMobile }) => {
       <div className="card" style={{ padding: '24px', background: '#fff' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>加载中...</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #f5f5f5', textAlign: 'left' }}>
-                  <th style={{ padding: '12px 8px' }}>时间</th>
-                  <th style={{ padding: '12px 8px' }}>变动</th>
-                  <th style={{ padding: '12px 8px' }}>描述</th>
-                  <th style={{ padding: '12px 8px' }}>状态</th>
+        ) : history.length > 0 ? (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #f5f5f5', textAlign: 'left' }}>
+                <th style={{ padding: '12px 8px' }}>时间</th>
+                <th style={{ padding: '12px 8px' }}>变动</th>
+                <th style={{ padding: '12px 8px' }}>描述</th>
+                <th style={{ padding: '12px 8px' }}>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map(item => (
+                <tr key={`${item.type}-${item.id}`} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                  <td style={{ padding: '12px 8px', color: '#888', whiteSpace: 'nowrap' }}>
+                    {new Date(item.created_at).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td style={{ padding: '12px 8px', fontWeight: 'bold', color: item.color }}>
+                    {item.display_amount}
+                  </td>
+                  <td style={{ padding: '12px 8px' }}>
+                    <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.display_label}>
+                      {item.display_label}
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px 8px' }}>
+                    <span style={{ 
+                      padding: '2px 8px', 
+                      borderRadius: '4px', 
+                      fontSize: '12px',
+                      background: 
+                        item.status === 'success' ? '#f6ffed' : 
+                        item.status === 'failed' ? '#fff1f0' : '#fff7e6',
+                      color: 
+                        item.status === 'success' ? '#52c41a' : 
+                        item.status === 'failed' ? '#ff4d4f' : '#faad14',
+                      border: `1px solid ${
+                        item.status === 'success' ? '#b7eb8f' : 
+                        item.status === 'failed' ? '#ffa39e' : '#ffe58f'
+                      }`
+                    }}>
+                      {item.status === 'success' && '成功'}
+                      {item.status === 'failed' && '失败'}
+                      {item.status === 'pending' && '已提交'}
+                      {item.status === 'generating' && '生成中'}
+                      {item.status === 'storing' && '保存中'}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {history.map(item => (
-                  <tr key={`${item.type}-${item.id}`} style={{ borderBottom: '1px solid #f5f5f5' }}>
-                    <td style={{ padding: '12px 8px', color: '#888', whiteSpace: 'nowrap' }}>
-                      {new Date(item.created_at).toLocaleString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td style={{ padding: '12px 8px', fontWeight: 'bold', color: item.color }}>
-                      {item.display_amount}
-                    </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.display_label}>
-                        {item.display_label}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <span style={{ 
-                        padding: '2px 8px', 
-                        borderRadius: '4px', 
-                        fontSize: '12px',
-                        background: 
-                          item.status === 'success' ? '#f6ffed' : 
-                          item.status === 'failed' ? '#fff1f0' : '#fff7e6',
-                        color: 
-                          item.status === 'success' ? '#52c41a' : 
-                          item.status === 'failed' ? '#ff4d4f' : '#faad14',
-                        border: `1px solid ${
-                          item.status === 'success' ? '#b7eb8f' : 
-                          item.status === 'failed' ? '#ffa39e' : '#ffe58f'
-                        }`
-                      }}>
-                        {item.status === 'success' && '成功'}
-                        {item.status === 'failed' && '失败'}
-                        {item.status === 'pending' && '已提交'}
-                        {item.status === 'generating' && '生成中'}
-                        {item.status === 'storing' && '保存中'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {history.length === 0 && (
-                  <tr>
-                    <td colSpan="4" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无记录</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <EmptyState 
+            icon={Coins}
+            title="账单空空如也" 
+            description="每一笔积分流转都记录在这里" 
+            actionText="立即充值" 
+            onAction={() => navigate('/profile')} 
+          />
         )}
       </div>
     </div>

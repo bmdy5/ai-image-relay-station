@@ -149,12 +149,19 @@ const PCProfilePage = () => {
   };
 
   const handleResetTasks = async () => {
-    if (!window.confirm('清理挂起任务？')) return;
+    if (!window.confirm('清理挂起任务并同步刷新前台缓存？')) return;
     setLoading(true);
     try {
       await request.post('/image/reset');
-      alert('清理成功');
-      fetchData();
+      
+      // 清理前台任务缓存
+      localStorage.removeItem('visionary_active_jobs');
+      localStorage.removeItem('visionary_active_jobs_mobile');
+      sessionStorage.removeItem('pending_prompt');
+      sessionStorage.removeItem('pending_reuse');
+      
+      alert('清理成功，即将刷新前台状态');
+      window.location.href = '/'; // 强制跳转回首页刷新状态
     } catch (err) {
       alert('失败: ' + (err.response?.data?.detail || '网络错误'));
     } finally {
@@ -268,8 +275,8 @@ const PCProfilePage = () => {
                 <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f5f5f7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#FF9500' }}>
                   <RefreshCw size={20} className={loading ? 'loading-spin' : ''} />
                 </div>
-                <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px' }}>清理任务锁</div>
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>解决生图任务卡死或无法提交</div>
+                <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px' }}>清理任务锁 & 刷新</div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>解决生图卡死及前台同步问题</div>
               </div>
             </div>
 

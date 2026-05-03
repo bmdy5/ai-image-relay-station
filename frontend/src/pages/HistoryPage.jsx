@@ -9,6 +9,7 @@ import {
 
 import MobileDrawer from '../components/MobileDrawer';
 import SharePosterModal from '../components/SharePosterModal';
+import EmptyState from '../components/EmptyState';
 import './HistoryPage.css';
 
 const HistoryPage = ({ isMobile }) => {
@@ -287,10 +288,12 @@ const HistoryPage = ({ isMobile }) => {
             )}
           </>
         ) : (
-          <div style={{ textAlign: 'center', padding: '100px 0', color: '#999' }}>
-            <Sparkles size={48} style={{ opacity: 0.2, marginBottom: '20px' }} />
-            <p>暂无创作记录</p>
-          </div>
+          <EmptyState 
+            title="灵感暂未落笔" 
+            description="从第一张草图开始，构建您的视觉宇宙" 
+            actionText="开启创作" 
+            onAction={() => navigate('/')} 
+          />
         )}
       </main>
 

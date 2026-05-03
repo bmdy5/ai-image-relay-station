@@ -449,3 +449,9 @@ def increment_share_count(log_id: int, db: Session = Depends(get_db), current_us
     log.share_count = (log.share_count or 0) + 1
     db.commit()
     return {"status": "ok", "share_count": log.share_count}
+
+@router.post("/reset")
+async def reset_tasks(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """手动清理用户的挂起任务锁并同步积分状态"""
+    image_crud.reset_active_tasks(db, current_user.id)
+    return {"message": "ok"}
