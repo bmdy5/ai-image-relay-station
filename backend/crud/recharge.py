@@ -89,3 +89,16 @@ def is_invitee_rewarded(db: Session, invitee_id: int):
     return db.query(models.RechargeLog).filter(
         models.RechargeLog.trade_no.like(f"INVITE_REWARD_{invitee_id}_%")
     ).first() is not None
+
+def create_recharge_log(db: Session, user_id: int, amount: int, operator_id: int = 0, status: str = "success", admin_note: str = "系统充值", trade_no: str = None):
+    db_log = models.RechargeLog(
+        user_id=user_id,
+        amount=amount,
+        money_amount=0,
+        status=status,
+        admin_note=admin_note,
+        operator_id=operator_id,
+        trade_no=trade_no or f"REWARD_{user_id}_{int(__import__('time').time())}"
+    )
+    db.add(db_log)
+    return db_log

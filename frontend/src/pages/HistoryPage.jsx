@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import { 
   Images, Coins, ShieldCheck, User, LogOut, Search, X, RefreshCw, 
-  Download, ClipboardCopy, RotateCcw, Sparkles, ArrowLeft, Trash2, Maximize2, Wand2
+  Download, ClipboardCopy, RotateCcw, Sparkles, ArrowLeft, Trash2, Maximize2, Wand2, Share2
 } from 'lucide-react';
 
 import MobileDrawer from '../components/MobileDrawer';
+import SharePosterModal from '../components/SharePosterModal';
 import './HistoryPage.css';
 
 const HistoryPage = ({ isMobile }) => {
@@ -22,6 +23,7 @@ const HistoryPage = ({ isMobile }) => {
   const [hasMore, setHasMore] = useState(true);
   const [keyword, setKeyword] = useState('');
   const [previewImage, setPreviewImage] = useState(null);
+  const [showSharePoster, setShowSharePoster] = useState(false);
   const LIMIT = 20;
 
 
@@ -182,6 +184,9 @@ const HistoryPage = ({ isMobile }) => {
             </button>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button onClick={() => handleReuse(selectedImage)} style={{ flex: 2, padding: '16px', borderRadius: '16px', background: '#F2F2F7', color: '#1D1D1F', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><RotateCcw size={18} /> 复用环境</button>
+              <button onClick={() => setShowSharePoster(true)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#FF9500', color: 'white', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Share2 size={18} />
+              </button>
               <button onClick={() => handleDownload(selectedImage)} style={{ flex: 1, padding: '16px', borderRadius: '16px', background: '#F2F2F7', color: '#1D1D1F', border: 'none', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Download size={18} /></button>
             </div>
           </div>
@@ -418,6 +423,13 @@ const HistoryPage = ({ isMobile }) => {
                     复用创作环境
                   </button>
                   <button 
+                    onClick={() => setShowSharePoster(true)} 
+                    className="btn-primary" 
+                    style={{ width: '120px', height: '50px', background: '#FF9500', color: '#fff', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    <Share2 size={18} /> 生成海报
+                  </button>
+                  <button 
                     onClick={() => handleDownload(selectedImage)} 
                     className="btn-primary" 
                     style={{ width: '100px', height: '50px', background: '#fff', color: '#000', borderRadius: '14px', fontSize: '15px', fontWeight: '900', border: 'none' }}
@@ -430,7 +442,15 @@ const HistoryPage = ({ isMobile }) => {
           </div>
 
 
-          <style>{`
+      {showSharePoster && (
+        <SharePosterModal 
+          imageLog={{ id: selectedImage?.id, image_url: selectedImage?.image_url }} 
+          userInfo={userInfo} 
+          onClose={() => setShowSharePoster(false)} 
+        />
+      )}
+
+      <style>{`
             @keyframes modalZoom {
               from { transform: scale(0.9); opacity: 0; }
               to { transform: scale(1); opacity: 1; }

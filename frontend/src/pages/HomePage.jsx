@@ -767,8 +767,19 @@ const HomePage = () => {
                       {p.text}
                     </div>
                   ))}
-                  <div style={{ position: 'absolute', color: 'var(--master)', fontWeight: '800', letterSpacing: '4px', fontSize: '12px' }}>
-                    REASONING...
+                  <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ color: 'var(--master)', fontWeight: '800', letterSpacing: '4px', fontSize: '12px' }}>
+                      REASONING...
+                    </div>
+                    {/* 新增：大师模式进度条 */}
+                    <div style={{ width: '120px', height: '3px', background: 'rgba(138,43,226,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ 
+                        width: `${activeJobs.find(j => j.id === currentJobId)?.progress || 0}%`, 
+                        height: '100%', 
+                        background: 'var(--master)', 
+                        transition: 'width 0.5s ease' 
+                      }}></div>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -885,8 +896,8 @@ const HomePage = () => {
 
 
 
-          {/* 底部特性背书 (New) */}
-          {!loading && !result && (
+          {/* 底部特性背书 (New) - 仅在完全没有作品时显示，避免干扰创作区 */}
+          {activeJobs.length === 0 && (
             <div style={{ position: 'absolute', bottom: '40px', display: 'flex', gap: '32px', zIndex: 2 }}>
               {[
                 { icon: <Sparkles size={18} />, title: 'AI 智能生成', desc: '强大模型，精细呈现' },

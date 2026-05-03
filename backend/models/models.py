@@ -52,6 +52,7 @@ class ImageLog(Base):
     generation_duration = Column(Integer, default=0)  # AI 生成总时间 (含 API 和本地处理) (ms)
     storage_duration = Column(Integer, default=0)     # 转存 COS 时间 (ms)
     total_duration = Column(Integer, default=0)       # 总任务耗时 (ms)
+    share_count = Column(Integer, default=0)          # 分享次数
 
     owner = relationship("User", back_populates="image_logs")
 
