@@ -55,6 +55,8 @@ const HomePage = () => {
   const [finalPrompt, setFinalPrompt] = useState('');
   const [isGuest, setIsGuest] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [historyPrompt, setHistoryPrompt] = useState('');
   
   // 处理剪贴板粘贴图片 (Task: Paste to Ref Image)
   const handlePaste = (e) => {
@@ -167,6 +169,38 @@ const HomePage = () => {
         textarea.setSelectionRange(textarea.value.length, textarea.value.length);
       }
     }, 100);
+  };
+
+  const handleEnhance = async () => {
+    if (!prompt.trim() || enhancing) return;
+    
+    // 备份当前内容用于撤销
+    setHistoryPrompt(prompt);
+    setEnhancing(true);
+    
+    try {
+      const res = await request.post('/image/enhance-prompt', { 
+        prompt: prompt.trim(),
+        style_id: selectedStyle.id
+      });
+      
+      if (res.enhanced) {
+        setPrompt(res.enhanced);
+        showToast('✨ 提示词已智能润色', 'success');
+      }
+    } catch (err) {
+      showToast(err.response?.data?.detail || 'AI 优化失败，请稍后重试', 'error');
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleUndo = () => {
+    if (historyPrompt) {
+      setPrompt(historyPrompt);
+      setHistoryPrompt('');
+      showToast('已恢复原始输入', 'info');
+    }
   };
 
 
@@ -328,21 +362,51 @@ const HomePage = () => {
           {/* 2. 提示词输入 */}
           <div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px' }}>灵感输入</div>
-            <textarea
-              className="prompt-box"
-              placeholder="描述你脑海中的画面..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onPaste={handlePaste}
-              disabled={loading}
-              style={{
-                width: '100%', height: '120px', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px',
-                fontSize: '13px', lineHeight: '1.6', resize: 'none', background: '#fafafa', transition: 'all 0.3s',
-                outline: 'none', marginBottom: '12px'
-              }}
-              onFocus={(e) => { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px var(--primary-glow)'; }}
-              onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = '#fafafa'; e.target.style.boxShadow = 'none'; }}
-            />
+            
+            <div className={enhancing ? 'ai-enhancing-border' : ''}>
+              <textarea
+                className={`prompt-box ${enhancing ? 'ai-enhancing-inner' : ''}`}
+                placeholder="描述你脑海中的画面..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onPaste={handlePaste}
+                disabled={loading || enhancing}
+                style={{
+                  width: '100%', height: '120px', border: enhancing ? 'none' : '1px solid var(--border)', borderRadius: '12px', padding: '12px',
+                  fontSize: '13px', lineHeight: '1.6', resize: 'none', background: '#fafafa', transition: 'all 0.3s',
+                  outline: 'none', marginBottom: '0'
+                }}
+                onFocus={(e) => { if(!enhancing) { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px var(--primary-glow)'; } }}
+                onBlur={(e) => { if(!enhancing) { e.target.style.borderColor = 'var(--border)'; e.target.style.background = '#fafafa'; e.target.style.boxShadow = 'none'; } }}
+              />
+            </div>
+            
+            {/* AI 润色工具条 (Task 2.2) */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', marginBottom: '16px' }}>
+              <button
+                onClick={handleEnhance}
+                disabled={enhancing || loading || !prompt.trim()}
+                style={{
+                  padding: '6px 12px', borderRadius: '18px', border: '1px solid #e66b33',
+                  background: enhancing ? '#fff8f5' : 'transparent',
+                  color: '#e66b33', cursor: (enhancing || !prompt.trim()) ? 'not-allowed' : 'pointer',
+                  fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  opacity: !prompt.trim() ? 0.5 : 1, transition: 'all 0.3s'
+                }}
+              >
+                <Sparkles size={14} className={enhancing ? 'spin' : ''} />
+                {enhancing ? '正在构思细节...' : '✨ 智能润色提示词'}
+              </button>
+
+              {historyPrompt && !enhancing && (
+                <button 
+                  onClick={handleUndo}
+                  style={{ background: 'none', border: 'none', color: '#999', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  恢复原句
+                </button>
+              )}
+            </div>
             
             {/* 灵感推荐标签 (New) */}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
