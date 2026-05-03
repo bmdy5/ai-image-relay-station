@@ -336,16 +336,33 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
     ).update({"frozen_points": models.User.frozen_points + cost}, synchronize_session=False)
     if result == 0: raise HTTPException(status_code=403, detail="余额不足")
     
-    pending_log = image_crud.create_image_log(db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, style=payload.style, cost_points=cost, status="pending")
+    # 迭代次数校验
+    if payload.parent_id:
+        max_refines = 3 if payload.quality == "master" else (2 if payload.quality == "hd" else 0)
+        if payload.iteration > max_refines:
+            raise HTTPException(status_code=403, detail=f"该档位迭代次数已达上限 ({max_refines}次)")
+
+    pending_log = image_crud.create_image_log(
+        db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, 
+        style=payload.style, cost_points=cost, status="pending",
+        ref_image_url=payload.ref_image_url, parent_id=payload.parent_id, iteration=payload.iteration
+    )
     db.commit()
     background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time(), payload.ref_image_url, payload.aspect_ratio)
-    return {"id": pending_log.id, "status": "pending", "remaining_points": current_user.points}
+    return {"id": pending_log.id, "status": "pending", "remaining_points": current_user.points, "iteration": payload.iteration}
 
 @router.get("/status/{id}")
 async def get_task_status(id: int, db: Session = Depends(get_db)):
     log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
-    if not log: raise HTTPException(status_code=404, detail="不存在")
-    return {"id": log.id, "status": log.status, "image_url": log.image_url, "final_prompt": getattr(log, "final_prompt", None), "error": log.error_msg}
+    return {
+        "id": log.id, 
+        "status": log.status, 
+        "image_url": log.image_url, 
+        "final_prompt": getattr(log, "final_prompt", None), 
+        "iteration": log.iteration,
+        "parent_id": log.parent_id,
+        "error": log.error_msg
+    }
 
 @router.get("/history")
 async def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -357,9 +374,11 @@ async def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_
             "final_prompt": getattr(l, "final_prompt", None), 
             "status": l.status, 
             "image_url": l.image_url, 
-            "ref_image_url": getattr(l, "ref_image_url", None), # 传回参考图
-            "quality": l.quality, # 传回质量档次
-            "style": l.style,     # 传回风格 ID
+            "ref_image_url": getattr(l, "ref_image_url", None), 
+            "quality": l.quality, 
+            "style": l.style,
+            "iteration": l.iteration,
+            "parent_id": l.parent_id,
             "created_at": l.created_at
         } for l in logs
     ]
