@@ -18,6 +18,7 @@ class ImageLogInfo(BaseModel):
     cost_points: int
     image_url: Optional[str] = None
     status: str
+    share_count: Optional[int] = 0
     created_at: __import__('datetime').datetime
 
     class Config:

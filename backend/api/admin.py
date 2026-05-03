@@ -36,7 +36,7 @@ def recharge_points(
     
     # 3. 记录充值日志
     recharge_crud.create_recharge_log(
-        db, user_id=user.id, amount=amount, operator_id=admin.id
+        db, user_id=user.id, amount=amount, operator_id=admin.id, admin_note="管理员手动充值"
     )
     
     db.commit()

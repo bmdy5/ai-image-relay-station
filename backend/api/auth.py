@@ -96,16 +96,15 @@ def register(user: user_schema.UserCreateEmail, request: Request, db: Session = 
     # 6. 如果有邀请人，发放受邀奖励 (5积分)
     if inviter:
         new_user.points += 5
-        db_log = models.RechargeLog(
+        recharge_crud.create_recharge_log(
+            db,
             user_id=new_user.id,
             amount=5,
-            money_amount=0,
             status="success",
             admin_note=f"使用邀请码 {user.invite_code} 注册奖励",
             operator_id=0,
             trade_no=f"INVITE_JOIN_{new_user.id}_{int(datetime.now().timestamp())}"
         )
-        db.add(db_log)
         db.commit()
 
     # 7. 自动登录：生成 Token
@@ -171,13 +170,13 @@ def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Sess
         uid=user_crud.generate_unique_uid(db)
     )
     db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
+    db.flush()
 
     # 6. 如果有邀请人，发放受邀奖励 (5积分)
     if inviter:
         db_user.points += 5
-        db_log = models.RechargeLog(
+        recharge_crud.create_recharge_log(
+            db,
             user_id=db_user.id,
             amount=5,
             money_amount=0,
@@ -186,7 +185,6 @@ def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Sess
             operator_id=0,
             trade_no=f"INVITE_JOIN_PHONE_{db_user.id}_{int(datetime.now().timestamp())}"
         )
-        db.add(db_log)
         db.commit()
 
     # 7. 自动登录：生成 Token
@@ -380,7 +378,8 @@ def claim_install_reward(db: Session = Depends(get_db), current_user: models.Use
     current_user.points += 10
     
     # 记录流水
-    db_log = models.RechargeLog(
+    recharge_crud.create_recharge_log(
+        db,
         user_id=current_user.id,
         amount=10,
         money_amount=0,

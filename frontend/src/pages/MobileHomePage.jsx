@@ -8,6 +8,7 @@ import {
 
 import MobileDrawer from '../components/MobileDrawer';
 import NeuralPlexus from '../components/NeuralPlexus';
+import SharePosterModal from '../components/SharePosterModal';
 
 // 风格映射字典
 const STYLE_NAME_MAP = { 
@@ -112,7 +113,10 @@ const ResultCard = ({ job, onOpenNotes, onPreview, onRefine }) => {
           /* 生成中状态 */
           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid #eee', borderTop: '3px solid var(--primary)', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
-            <div style={{ fontSize: '13px', fontWeight: 'bold' }}>AI 正在创作中... {job.progress}%</div>
+            <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--primary)' }}>AI 正在创作中... {job.progress}%</div>
+            <div style={{ width: '160px', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', marginTop: '12px', overflow: 'hidden' }}>
+              <div style={{ width: `${job.progress}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.5s ease' }}></div>
+            </div>
           </div>
         )}
       </div>
@@ -138,6 +142,7 @@ const MobileHomePage = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [enhancing, setEnhancing] = useState(false);
+  const [showSharePoster, setShowSharePoster] = useState(false);
   const [historyPrompt, setHistoryPrompt] = useState('');
   const [userInfo, setUserInfo] = useState(null);
   const [showPointsModal, setShowPointsModal] = useState(false);
@@ -512,7 +517,7 @@ const MobileHomePage = () => {
               key={job.id} 
               job={job} 
               onOpenNotes={(j) => { setSelectedJob(j); setActiveDrawer('notes'); }} 
-              onPreview={(img) => setPreviewImage(img)}
+              onPreview={(j) => { setSelectedJob(j); setPreviewImage(j.result); }}
               onRefine={handleRefine}
             />
           ))
@@ -934,9 +939,7 @@ const MobileHomePage = () => {
           <div 
             onClick={(e) => {
               e.stopPropagation();
-              const url = `${window.location.origin}/register?invite=${userInfo?.uid}`;
-              navigator.clipboard.writeText(url);
-              alert('✨ 专属邀请链接已复制！分享给好友，成功推荐后您可获 10 积分奖励。');
+              setShowSharePoster(true);
             }}
             style={{ 
               position: 'absolute', bottom: '130px', 
@@ -947,7 +950,7 @@ const MobileHomePage = () => {
               animation: 'scaleIn 0.3s ease-out'
             }}
           >
-            <Share2 size={16} /> 分享并邀请好友 (获 10 积分)
+            <Share2 size={16} /> 生成分享海报 (获 10 积分)
           </div>
         </div>
       )}
@@ -973,6 +976,14 @@ const MobileHomePage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showSharePoster && (
+        <SharePosterModal 
+          imageLog={{ id: selectedJob?.id, image_url: selectedJob?.result }} 
+          userInfo={userInfo} 
+          onClose={() => setShowSharePoster(false)} 
+        />
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `

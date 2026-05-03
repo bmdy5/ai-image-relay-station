@@ -277,16 +277,15 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                             inviter = db.query(models.User).filter(models.User.id == user.invited_by_id).first()
                             if inviter:
                                 inviter.points += 10
-                                db_reward_log = models.RechargeLog(
+                                recharge_crud.create_recharge_log(
+                                    db,
                                     user_id=inviter.id,
                                     amount=10,
-                                    money_amount=0,
                                     status="success",
                                     admin_note=f"邀请好友 {user.uid} 完成首画奖励",
                                     operator_id=0,
                                     trade_no=f"INVITE_REWARD_{user.id}_{int(time.time())}"
                                 )
-                                db.add(db_reward_log)
                                 print(f"--- [Invitation Reward] Inviter {inviter.id} rewarded 10 pts for invitee {user.id} ---")
 
                 # 打印增强版控制台审计日志
@@ -418,6 +417,7 @@ async def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_
             "iteration": l.iteration,
             "parent_id": l.parent_id,
             "root_id": l.root_id,
+            "share_count": l.share_count or 0,
             "created_at": l.created_at
         } for l in logs
     ]
@@ -429,3 +429,11 @@ async def delete_image(id: int, db: Session = Depends(get_db), current_user: mod
     db.delete(log)
     db.commit()
     return {"message": "ok"}
+@router.post("/{log_id}/share")
+def increment_share_count(log_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    log.share_count = (log.share_count or 0) + 1
+    db.commit()
+    return {"status": "ok", "share_count": log.share_count}
