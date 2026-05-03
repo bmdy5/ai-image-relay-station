@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
 import { 
-  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp, Maximize2
+  Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp, Maximize2,
+  Camera, ShoppingBag, Layers, Compass, Plane, Armchair, Layout, Radio, Film, Clock, Orbit, Wind, Share2, Library, CreditCard, Box, Smartphone, Flag
 } from 'lucide-react';
 
 import MobileDrawer from '../components/MobileDrawer';
@@ -223,30 +224,30 @@ const MobileHomePage = () => {
 
   const styles = [
     // --- 基础梯队 ---
-    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: '✦', pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
-    { id: 'real', name: '极致写实', desc: '仿真现实模拟', icon: '📸', pts: 'All', placeholder: '主题：【在此输入人像或画面，支持多样化构图生成】' },
-    { id: 'product', name: '商业大片', desc: '设计师级商业海报质感', icon: '🛒', pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
-    { id: 'tech_poster', name: '科技海报', desc: '高级感信息排版', icon: '🎨', pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
-    { id: 'travel_guide', name: '旅游攻略', desc: '手绘旅行手账', icon: '🧭', pts: 'All', placeholder: '目的地 @ 天数：【如：大理 @ 3】', recommendedRatio: '9:16' },
+    { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: <Sparkles size={24} />, pts: 'All', placeholder: '主题：【在此输入你想生成的画面】' },
+    { id: 'real', name: '极致写实', desc: '仿真现实模拟', icon: <Camera size={24} />, pts: 'All', placeholder: '主题：【在此输入人像或画面，支持多样化构图生成】' },
+    { id: 'product', name: '商业大片', desc: '设计师级商业海报质感', icon: <ShoppingBag size={24} />, pts: 'All', placeholder: '产品名称：【在此输入产品名称】' },
+    { id: 'tech_poster', name: '科技海报', desc: '高级感信息排版', icon: <Layers size={24} />, pts: 'All', placeholder: '海报主题：【在此输入科技主题】' },
+    { id: 'travel_guide', name: '旅游攻略', desc: '手绘旅行手账', icon: <Compass size={24} />, pts: 'All', placeholder: '目的地 @ 天数：【如：大理 @ 3】', recommendedRatio: '9:16' },
 
     // --- 专业梯队 ---
-    { id: 'travel', name: '旅游海报', desc: '高阶旅行杂志封面', icon: '✈️', pts: 'HD+', placeholder: '灵感：【如：京都极简小巷、霓虹下的东京、海岛日落】 氛围：【如：复古排版、莫兰迪色调】', recommendedRatio: '9:16' },
-    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: '🛋️', pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true, recommendedRatio: '16:9' },
-    { id: 'product_detail', name: '详情页设计', desc: '复古简约商业视觉', icon: '📱', pts: 'HD+', placeholder: '产品：【在此输入产品名称】', recommendedRatio: '9:16' },
-    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: '📡', pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】', requiresImage: true, recommendedRatio: '16:9' },
-    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: '🎞️', pts: 'HD+', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true, recommendedRatio: '9:16' },
-    { id: 'ccd_snap', name: 'CCD 随手抓拍', desc: '闪光灯氛围', icon: '⚡', pts: 'HD+', placeholder: '人物：【在此输入，支持多样化构图】 环境：【如：深夜旺角街头、雨夜霓虹】', requiresImage: true, recommendedRatio: '9:16' },
-    { id: 'restore_old', name: '老照片修复', desc: '质感修复与高清还原', icon: '🕰️', pts: 'HD+', placeholder: '描述照片背景或需要重点修复的细节（可选）', requiresImage: true },
+    { id: 'travel', name: '旅游海报', desc: '高阶旅行杂志封面', icon: <Plane size={24} />, pts: 'HD+', placeholder: '灵感：【如：京都极简小巷、霓虹下的东京、海岛日落】 氛围：【如：复古排版、莫兰迪色调】', recommendedRatio: '9:16' },
+    { id: 'interior', name: '室内设计', desc: '空间重构方案', icon: <Armchair size={24} />, pts: 'HD+', placeholder: '装修风格：【在此输入风格】', requiresImage: true, recommendedRatio: '16:9' },
+    { id: 'product_detail', name: '详情页设计', desc: '复古简约商业视觉', icon: <Layout size={24} />, pts: 'HD+', placeholder: '产品：【在此输入产品名称】', recommendedRatio: '9:16' },
+    { id: 'live_stream', name: '直播截图', desc: '还原带货现场', icon: <Radio size={24} />, pts: 'HD+', placeholder: '直播内容：【在此输入直播内容】', requiresImage: true, recommendedRatio: '16:9' },
+    { id: 'vintage_5s', name: '复古纪实', desc: 'iPhone 5s 怀旧', icon: <Film size={24} />, pts: 'HD+', placeholder: '拍摄环境：【如：90年代香港中环、午后老街】', requiresImage: true, recommendedRatio: '9:16' },
+    { id: 'ccd_snap', name: 'CCD 随手抓拍', desc: '闪光灯氛围', icon: <Zap size={24} />, pts: 'HD+', placeholder: '人物：【在此输入，支持多样化构图】 环境：【如：深夜旺角街头、雨夜霓虹】', requiresImage: true, recommendedRatio: '9:16' },
+    { id: 'restore_old', name: '老照片修复', desc: '质感修复与高清还原', icon: <Clock size={24} />, pts: 'HD+', placeholder: '描述照片背景或需要重点修复的细节（可选）', requiresImage: true },
 
     // --- 旗舰梯队 ---
-    { id: 'eri_silhouette', name: '轮廓宇宙', desc: '史诗级叙事海报', icon: '🌑', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
-    { id: 'silk_road', name: '国风月夜', desc: '宋代山水意境', icon: '🎋', pts: 'Master', placeholder: '主题：【在此输入主题名称】' },
-    { id: 'relation_map', name: '人物关系图谱', desc: '作品逻辑梳理', icon: '🕸️', pts: 'Master', placeholder: '作品：【在此输入名称】', recommendedRatio: '9:16' },
-    { id: 'encyclopedia', name: '博物馆图鉴', desc: '国家博物馆级文博信息图', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】', recommendedRatio: '9:16' },
-    { id: 'knowledge_card', name: '知识图卡', desc: '现代百科科普图鉴', icon: '🃏', pts: 'Master', placeholder: '百科主题：【在此输入】', recommendedRatio: '9:16' },
-    { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: '🪟', pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true, recommendedRatio: '9:16' },
-    { id: 'app_ui_design', name: 'APP UI 设计', desc: 'iOS 原生视觉全案', icon: '📱', pts: 'Master', placeholder: 'APP 主题：【在此输入】', recommendedRatio: '9:16' },
-    { id: 'campaign_poster', name: '运营活动页', desc: '移动端运营海报', icon: '🎈', pts: 'Master', placeholder: '活动主题：【在此输入】', recommendedRatio: '9:16' }
+    { id: 'eri_silhouette', name: '轮廓宇宙', desc: '史诗级叙事海报', icon: <Orbit size={24} />, pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
+    { id: 'silk_road', name: '国风月夜', desc: '宋代山水意境', icon: <Wind size={24} />, pts: 'Master', placeholder: '主题：【在此输入主题名称】' },
+    { id: 'relation_map', name: '人物关系图谱', desc: '作品逻辑梳理', icon: <Share2 size={24} />, pts: 'Master', placeholder: '作品：【在此输入名称】', recommendedRatio: '9:16' },
+    { id: 'encyclopedia', name: '博物馆图鉴', desc: '国家博物馆级文博信息图', icon: <Library size={24} />, pts: 'Master', placeholder: '百科对象：【在此输入】', recommendedRatio: '9:16' },
+    { id: 'knowledge_card', name: '知识图卡', desc: '现代百科科普图鉴', icon: <CreditCard size={24} />, pts: 'Master', placeholder: '百科主题：【在此输入】', recommendedRatio: '9:16' },
+    { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: <Box size={24} />, pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true, recommendedRatio: '9:16' },
+    { id: 'app_ui_design', name: 'APP UI 设计', desc: 'iOS 原生视觉全案', icon: <Smartphone size={24} />, pts: 'Master', placeholder: 'APP 主题：【在此输入】', recommendedRatio: '9:16' },
+    { id: 'campaign_poster', name: '运营活动页', desc: '移动端运营海报', icon: <Flag size={24} />, pts: 'Master', placeholder: '活动主题：【在此输入】', recommendedRatio: '9:16' }
   ];
 
   // AI 润色白名单 (Task: Strict Whitelist)
