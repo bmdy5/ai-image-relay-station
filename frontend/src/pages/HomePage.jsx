@@ -73,6 +73,7 @@ const HomePage = () => {
   const [enhancing, setEnhancing] = useState(false);
   const [isRefining, setIsRefining] = useState(false);
   const [refineParentId, setRefineParentId] = useState(null);
+  const [refineRootId, setRefineRootId] = useState(null); // 新增：记录演化根节点
   const [iterationInfo, setIterationInfo] = useState({ current: 0, max: 0 });
   const [historyPrompt, setHistoryPrompt] = useState('');
   
@@ -108,8 +109,8 @@ const HomePage = () => {
   // 积分计算矩阵 (V1.3 激进定价)
   const [pricingMap, setPricingMap] = useState({
     'standard': 5,
-    'hd': 15,
-    'master': 30
+    'hd': 10,
+    'master': 15
   });
 
   const styles = [
@@ -160,6 +161,7 @@ const HomePage = () => {
     
     setIsRefining(true);
     setRefineParentId(job.id);
+    setRefineRootId(job.root_id || job.id); // 建立根指针
     setIterationInfo({ current: (job.iteration || 0) + 1, max: maxRefines });
     
     // 平滑滚动到顶
@@ -171,6 +173,7 @@ const HomePage = () => {
     setIsRefining(false);
     setRefImageUrl('');
     setRefineParentId(null);
+    setRefineRootId(null);
   };
 
   useEffect(() => {
@@ -211,6 +214,7 @@ const HomePage = () => {
       if (data.is_refining) {
         setIsRefining(true);
         setRefineParentId(data.parent_id);
+        setRefineRootId(data.root_id); // 捕获 root_id
         const maxRefines = data.quality === 'master' ? 3 : (data.quality === 'hd' ? 2 : 0);
         setIterationInfo({ current: data.iteration || 1, max: maxRefines });
         showToast('✨ 已进入迭代精修模式，您可以修改提示词', 'success');
@@ -316,12 +320,15 @@ const HomePage = () => {
         aspect_ratio: aspectRatio,
         ref_image_url: refImageUrl,
         parent_id: refineParentId,
+        root_id: refineRootId,
         iteration: iterationInfo.current
       });
       
+      // 只有成功才重置
       if (isRefining) {
         setIsRefining(false);
         setRefineParentId(null);
+        setRefineRootId(null);
       }
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
@@ -449,7 +456,7 @@ const HomePage = () => {
                   boxShadow: '0 4px 10px rgba(230,107,51,0.2)', animation: 'pulse 2s infinite'
                 }}>
                   <Wand2 size={10} />
-                  迭代精修中 ({iterationInfo.current}/{iterationInfo.max})
+                  精修中 ({iterationInfo.current}/{iterationInfo.max}) · 💡 建议保留关键词
                   <X size={10} style={{ cursor: 'pointer', marginLeft: '4px' }} onClick={cancelRefine} />
                 </div>
               )}

@@ -336,16 +336,25 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
     ).update({"frozen_points": models.User.frozen_points + cost}, synchronize_session=False)
     if result == 0: raise HTTPException(status_code=403, detail="余额不足")
     
-    # 迭代次数校验
-    if payload.parent_id:
+    # 迭代次数校验 (基于 root_id 的总变体数限制)
+    if payload.root_id:
         max_refines = 3 if payload.quality == "master" else (2 if payload.quality == "hd" else 0)
-        if payload.iteration > max_refines:
-            raise HTTPException(status_code=403, detail=f"该档位迭代次数已达上限 ({max_refines}次)")
+        # 统计该种子图下的所有成功变体数量
+        total_refined_count = db.query(models.ImageLog).filter(
+            models.ImageLog.root_id == payload.root_id,
+            models.ImageLog.status == "success"
+        ).count()
+        
+        if total_refined_count >= max_refines:
+            raise HTTPException(status_code=403, detail=f"该种子图的迭代变体已达上限 ({max_refines}次)")
 
     pending_log = image_crud.create_image_log(
         db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, 
         style=payload.style, cost_points=cost, status="pending",
-        ref_image_url=payload.ref_image_url, parent_id=payload.parent_id, iteration=payload.iteration
+        ref_image_url=payload.ref_image_url, 
+        parent_id=payload.parent_id, 
+        root_id=payload.root_id,
+        iteration=payload.iteration
     )
     db.commit()
     background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time(), payload.ref_image_url, payload.aspect_ratio)
@@ -379,6 +388,7 @@ async def get_history(skip: int = 0, limit: int = 20, db: Session = Depends(get_
             "style": l.style,
             "iteration": l.iteration,
             "parent_id": l.parent_id,
+            "root_id": l.root_id,
             "created_at": l.created_at
         } for l in logs
     ]

@@ -11,6 +11,7 @@ def create_image_log(
     image_url: str = None, 
     ref_image_url: str = None,
     parent_id: int = None,
+    root_id: int = None,
     iteration: int = 0,
     status: str = "success", 
     error_msg: str = None
@@ -24,6 +25,7 @@ def create_image_log(
         image_url=image_url,
         ref_image_url=ref_image_url,
         parent_id=parent_id,
+        root_id=root_id,
         iteration=iteration,
         status=status,
         error_msg=error_msg
