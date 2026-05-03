@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
@@ -52,8 +52,9 @@ const HomePage = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [quality, setQuality] = useState('standard');
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [activeJobs, setActiveJobs] = useState([]); 
+  const [currentJobId, setCurrentJobId] = useState(null); 
+  const [showConfirmModal, setShowConfirmModal] = useState(false); 
   const [result, setResult] = useState(null);
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [refImageUrl, setRefImageUrl] = useState('');
@@ -73,6 +74,12 @@ const HomePage = () => {
   const [enhancing, setEnhancing] = useState(false);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [requiredPoints, setRequiredPoints] = useState(0);
+  
+  // 派生状态：是否有任务正在运行
+  const loading = activeJobs.some(j => j.status === 'pending' || j.status === 'generating');
+  
+  // 维护一个全局轮询器引用，防止重复
+  const pollTimers = useRef({});
   const [isRefining, setIsRefining] = useState(false);
   const [refineParentId, setRefineParentId] = useState(null);
   const [refineRootId, setRefineRootId] = useState(null); // 新增：记录演化根节点
@@ -189,7 +196,80 @@ const HomePage = () => {
     }
     fetchConfig();
     checkPendingPrompt();
+    loadActiveJobs(); // 加载持久化任务
   }, []);
+
+  // 持久化：保存任务
+  useEffect(() => {
+    if (activeJobs.length > 0) {
+      localStorage.setItem('visionary_active_jobs', JSON.stringify({
+        timestamp: Date.now(),
+        jobs: activeJobs
+      }));
+    } else {
+      localStorage.removeItem('visionary_active_jobs');
+    }
+  }, [activeJobs]);
+
+  const loadActiveJobs = () => {
+    const saved = localStorage.getItem('visionary_active_jobs');
+    if (saved) {
+      const { timestamp, jobs } = JSON.parse(saved);
+      if (Date.now() - timestamp < 300000) {
+        setActiveJobs(jobs);
+        if (jobs.length > 0) setCurrentJobId(jobs[0].id);
+        
+        // 自动接力轮询
+        jobs.forEach(job => {
+          if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
+            startPolling(job.id, job.taskId);
+          }
+        });
+      } else {
+        localStorage.removeItem('visionary_active_jobs');
+      }
+    }
+  };
+
+  const startPolling = (jobId, taskId) => {
+    if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
+    
+    let pollCount = 0;
+    let internalProgress = 0;
+    
+    const timer = setInterval(async () => {
+      pollCount++;
+      try {
+        const statusRes = await request.get(`/image/status/${taskId}`);
+        let targetProgress = internalProgress;
+        
+        if (statusRes.status === 'pending') targetProgress = Math.min(internalProgress + 2, 20);
+        else if (statusRes.status === 'generating') targetProgress = Math.min(internalProgress + 10, 80);
+        else if (statusRes.status === 'success') {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'success', progress: 100, result: statusRes.image_url, final_prompt: statusRes.final_prompt } : j));
+          return;
+        } else if (statusRes.status === 'failed') {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: statusRes.error } : j));
+          return;
+        }
+        
+        internalProgress = targetProgress;
+        setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, progress: Math.floor(internalProgress), status: statusRes.status } : j));
+      } catch (err) {}
+      
+      if (pollCount > 60) {
+        clearInterval(timer);
+        delete pollTimers.current[jobId];
+        setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: '请求超时' } : j));
+      }
+    }, 3000);
+    
+    pollTimers.current[jobId] = timer;
+  };
 
   const fetchConfig = async () => {
     try {
@@ -281,12 +361,25 @@ const HomePage = () => {
     } catch (err) {}
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (forceNew = false) => {
     if (isGuest) {
       setShowGuestModal(true);
       return;
     }
-    
+
+    // 任务冲突与并行上限检查
+    const runningJobs = activeJobs.filter(j => j.status === 'pending' || j.status === 'generating');
+    if (runningJobs.length >= 3) {
+      showToast('⚠️ 当前并行任务已达上限（3路），请稍等片刻', 'error');
+      return;
+    }
+
+    if (runningJobs.length > 0 && !forceNew) {
+      setShowConfirmModal(true);
+      return;
+    }
+    setShowConfirmModal(false);
+
     // 积分预检
     const cost = pricingMap[quality] || 5;
     if (userInfo && userInfo.points < cost) {
@@ -296,10 +389,24 @@ const HomePage = () => {
     }
 
     if (!prompt && selectedStyle.id !== 'ui_upgrade') return;
-    setLoading(true);
-    setProgress(0);
-    setResult(null);
+    
+    const newJobId = Date.now().toString();
+    const newJob = {
+      id: newJobId,
+      prompt,
+      quality,
+      style: selectedStyle.id,
+      status: 'pending',
+      progress: 0,
+      timestamp: Date.now()
+    };
+
+    setActiveJobs(prev => [newJob, ...prev]);
+    setCurrentJobId(newJobId);
+    setPrompt('');
     setShowNotes(false);
+    
+    // 大师模式粒子流...
     
     // 大师模式粒子流初始化
     let particleInterval = null;
@@ -320,7 +427,7 @@ const HomePage = () => {
       // 验证图片约束 (Task 3.3)
       if (selectedStyle.requiresImage && !refImageUrl) {
         showToast('✨ 此风格必须上传参考图以获得最佳效果', 'error');
-        setLoading(false);
+        setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, status: 'failed', error: '请上传参考图' } : j));
         return;
       }
 
@@ -335,7 +442,6 @@ const HomePage = () => {
         iteration: iterationInfo.current
       });
       
-      // 只有成功才重置
       if (isRefining) {
         setIsRefining(false);
         setRefineParentId(null);
@@ -344,61 +450,20 @@ const HomePage = () => {
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
       
+      // 更新任务对象，保存 taskId 用于接力轮询
+      setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, taskId } : j));
+
       const toastMsg = quality === 'master' 
-        ? '✦ 大师引擎已启动！您可以继续输入新灵感，后台支持 3 路并行，任务完成后自动存入历史。' 
-        : '🚀 任务提交成功！支持 3 个任务并行，您可以离开此页面，完成后请在“我的创作”中查看。';
+        ? '✦ 大师引擎已启动！您可以继续输入新灵感，后台支持多路并行。' 
+        : '🚀 任务提交成功！您可以离开此页面，完成后请在“我的创作”中查看。';
       showToast(toastMsg, 'success');
 
-      let pollCount = 0;
-      let internalProgress = 0;
-      
-      const pollTimer = setInterval(async () => {
-        pollCount++;
-        try {
-          const statusRes = await request.get(`/image/status/${taskId}`);
-          
-          let targetProgress = internalProgress;
-          if (statusRes.status === 'pending') {
-            targetProgress = Math.min(internalProgress + 2, 20);
-          } else if (statusRes.status === 'generating') {
-            targetProgress = Math.min(internalProgress + 10, 80);
-          } else if (statusRes.status === 'success') {
-            clearInterval(pollTimer);
-            if (particleInterval) clearInterval(particleInterval);
-            setProgress(100);
-            setResult(statusRes.image_url);
-            setFinalPrompt(statusRes.final_prompt || '');
-            setLoading(false);
-            setParticles([]);
-            return;
-          } else if (statusRes.status === 'failed') {
-            clearInterval(pollTimer);
-            if (particleInterval) clearInterval(particleInterval);
-            setProgress(0);
-            setLoading(false);
-            setParticles([]);
-            showToast(`生成失败: ${statusRes.error}`, 'error');
-            return;
-          }
-
-          internalProgress = targetProgress;
-          setProgress(Math.floor(internalProgress));
-
-        } catch (err) {}
-
-        if (pollCount > 60) {
-          clearInterval(pollTimer);
-          if (particleInterval) clearInterval(particleInterval);
-          setLoading(false);
-        }
-      }, 3000);
+      startPolling(newJobId, taskId);
 
     } catch (err) {
       if (particleInterval) clearInterval(particleInterval);
-      setProgress(0);
-      setLoading(false);
+      setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, status: 'failed', error: err.response?.data?.detail || '提交失败' } : j));
       setParticles([]);
-      // ... 错误处理逻辑保持不变
     }
   };
 
@@ -707,79 +772,18 @@ const HomePage = () => {
                   </div>
                 </div>
               ) : (
-                <div style={{ 
-                  width: '80px', height: '80px', borderRadius: '50%', 
-                  border: '4px solid rgba(230,107,51,0.1)', borderTop: '4px solid var(--primary)',
-                  animation: 'spin 1s linear infinite', margin: '0 auto 24px'
-                }}></div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '4px solid rgba(0,0,0,0.05)', borderTop: '4px solid var(--primary)', animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
+                   <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-secondary)' }}>AI 正在为您创作...</div>
+                </div>
               )}
-              <div style={{ color: 'var(--text-main)', fontSize: '20px', fontWeight: '800', marginTop: '20px' }}>
-                {quality === 'master' ? '旗舰引擎深度构建中...' : 'AI 正在捕获灵感...'}
-              </div>
-              <div style={{ width: '240px', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', margin: '24px auto', overflow: 'hidden' }}>
-                <div style={{ width: `${progress}%`, height: '100%', background: quality === 'master' ? 'var(--master)' : 'var(--primary)', transition: 'width 0.5s ease' }}></div>
-              </div>
             </div>
-          ) : result ? (
-            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-              <img 
-                src={result} 
-                alt="Result" 
-                style={{ 
-                  maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '24px', 
-                  boxShadow: '0 40px 100px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.05)'
-                }} 
-              />
-              
-              {/* 大师版专属笔记入口 */}
-              {quality === 'master' && (
-                <>
-                  <div 
-                    className="glass-badge"
-                    onMouseEnter={() => setShowNotes(true)}
-                    onMouseLeave={() => setShowNotes(false)}
-                    style={{
-                      position: 'absolute', bottom: '24px', right: '24px', width: '48px', height: '48px',
-                      borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: 'pointer', color: 'var(--master)', fontSize: '20px'
-                    }}
-                  >
-                    ✦
-                  </div>
-                </>
-              )}
-
-              <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '450px' }}>
-                {(quality === 'hd' || quality === 'master') && (
-                  <button 
-                    onClick={() => handleRefine({ url: result, result, prompt, quality, style: selectedStyle.id, iteration: (iterationInfo.current || 0) })} 
-                    className="btn-primary" 
-                    style={{ flex: 1.5, background: 'linear-gradient(135deg, #e66b33, #ff9800)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  >
-                    <Wand2 size={18} /> 迭代精修
-                  </button>
-                )}
-                <a href={result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none', background: '#f5f5f7', color: '#1d1d1f', border: 'none' }}>
-                  <Download size={18} /> 高清保存
-                </a>
-              </div>
-            </div>
-          ) : (
+          ) : activeJobs.length === 0 ? (
             <div style={{ textAlign: 'center', maxWidth: '450px', animation: 'fadeIn 0.8s ease-out', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              
-              {/* Illustration */}
               <div style={{ position: 'relative', width: '240px', height: '200px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {/* Blob */}
                 <svg style={{ position: 'absolute', width: '220px', height: '220px' }} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                   <path fill="#fdf6f2" d="M44.7,-76.4C58.9,-69.2,71.8,-59.1,81.1,-46.3C90.4,-33.5,96,-18.1,96.5,-2.5C97,13.2,92.5,29.1,83.1,41.9C73.7,54.6,59.3,64.2,44.4,72.6C29.5,81,14.7,88.2,-1.3,90.5C-17.3,92.8,-34.7,90.2,-48.9,81.4C-63.1,72.6,-74.2,57.7,-81.4,41.4C-88.6,25.1,-91.9,7.4,-88.9,-9.2C-85.9,-25.8,-76.5,-41.2,-64.2,-53.4C-51.9,-65.6,-36.6,-74.6,-21.8,-79.8C-7,-84.9,7.4,-86.2,21.8,-82.9C36.2,-79.6,50.6,-71.8,44.7,-76.4Z" transform="translate(100 100)" />
                 </svg>
-                
-                {/* Sparkles */}
-                <svg style={{ position: 'absolute', top: '40px', left: '15px', width: '18px', height: '18px', color: '#e2c6b5' }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg>
-                <svg style={{ position: 'absolute', top: '50px', right: '35px', width: '26px', height: '26px', color: '#e2c6b5' }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg>
-                <svg style={{ position: 'absolute', bottom: '30px', right: '45px', width: '14px', height: '14px', color: '#e2c6b5' }} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.5 9.5L24 12l-9.5 2.5L12 24l-2.5-9.5L0 12l9.5-2.5z"/></svg>
-                
-                {/* Palette */}
                 <svg style={{ position: 'relative', zIndex: 2, width: '120px', height: '120px' }} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M 48 15 C 23 15 13 35 13 55 C 13 75 33 85 53 85 C 63 85 68 80 68 75 C 68 70 63 65 58 65 C 53 65 53 55 58 55 C 68 55 83 50 83 35 C 83 20 68 15 48 15 Z" fill="#fff" stroke="#D1ABA0" strokeWidth="3" strokeLinejoin="round"/>
                   <circle cx="33" cy="35" r="3.5" fill="#C59C8F" />
@@ -787,29 +791,99 @@ const HomePage = () => {
                   <circle cx="42" cy="68" r="3.5" fill="#E8D1C7" />
                   <circle cx="52" cy="30" r="3.5" fill="#D1ABA0" />
                   <circle cx="68" cy="42" r="3.5" fill="#C59C8F" />
-                  
-                  {/* Brush */}
-                  <g transform="translate(46, 12) rotate(35)">
-                    <path d="M0 25 L12 25 L9 70 L3 70 Z" fill="#A88B7D" />
-                    <path d="M1 25 L11 25 L12 15 C12 5 6 0 6 0 C6 0 0 5 0 15 Z" fill="#fff" stroke="#A88B7D" strokeWidth="2.5" strokeLinejoin="round"/>
-                    <rect x="0" y="25" width="12" height="6" fill="#C59C8F" />
-                  </g>
                 </svg>
               </div>
-              
-              <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#2c2c2e', marginBottom: '16px', letterSpacing: '0.5px' }}>你的创意画布</h2>
-              
-              <div style={{ position: 'relative' }}>
-                <p style={{ fontSize: '15px', color: '#8e8e93', lineHeight: '1.6' }}>在左侧输入你的灵感，开启AI创作之旅</p>
-                {/* Hand drawn arrow */}
-                <svg width="60" height="30" viewBox="0 0 60 30" fill="none" style={{ position: 'absolute', left: '-55px', bottom: '-15px' }}>
-                  <path d="M55 20 Q30 30 5 10" stroke="#b0b0b5" strokeWidth="2" strokeLinecap="round" fill="none" />
-                  <path d="M5 10 L15 6 M5 10 L10 18" stroke="#b0b0b5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
+              <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#2c2c2e', marginBottom: '16px' }}>您的创意画布</h2>
+              <p style={{ fontSize: '15px', color: '#8e8e93' }}>在左侧输入您的灵感，支持多任务并行生成</p>
+            </div>
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', gap: '24px', position: 'relative' }}>
+              {/* 主展示区 */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '600px' }}>
+                {activeJobs.find(j => j.id === currentJobId)?.status === 'success' ? (
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeIn 0.5s' }}>
+                    <img 
+                      src={activeJobs.find(j => j.id === currentJobId).result} 
+                      alt="Result" 
+                      style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain', borderRadius: '24px', boxShadow: '0 40px 100px rgba(0,0,0,0.1)' }} 
+                    />
+                    <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '450px' }}>
+                      <button 
+                        onClick={() => handleRefine(activeJobs.find(j => j.id === currentJobId))} 
+                        className="btn-primary" 
+                        style={{ flex: 1.5, background: 'linear-gradient(135deg, #e66b33, #ff9800)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                      >
+                        <Wand2 size={18} /> 迭代精修
+                      </button>
+                      <a href={activeJobs.find(j => j.id === currentJobId).result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none', background: '#f5f5f7', color: '#1d1d1f', border: 'none' }}>
+                        <Download size={18} /> 高清保存
+                      </a>
+                    </div>
+                  </div>
+                ) : activeJobs.find(j => j.id === currentJobId)?.status === 'failed' ? (
+                  <div style={{ textAlign: 'center', padding: '40px' }}>
+                    <div style={{ color: '#ff4d4f', marginBottom: '16px' }}><X size={48} /></div>
+                    <div style={{ fontSize: '18px', fontWeight: '700' }}>生成失败</div>
+                    <p style={{ color: '#999', marginTop: '8px' }}>{activeJobs.find(j => j.id === currentJobId).error}</p>
+                    <button onClick={() => setActiveJobs(prev => prev.filter(j => j.id !== currentJobId))} className="btn-secondary" style={{ marginTop: '20px' }}>清除此任务</button>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center' }}>
+                     <div style={{ 
+                        width: '80px', height: '80px', borderRadius: '50%', 
+                        border: '4px solid rgba(230,107,51,0.1)', borderTop: '4px solid var(--primary)',
+                        animation: 'spin 1s linear infinite', margin: '0 auto 24px'
+                      }}></div>
+                      <div style={{ color: 'var(--text-main)', fontSize: '20px', fontWeight: '800' }}>AI 正在捕获灵感...</div>
+                      <div style={{ width: '240px', height: '4px', background: 'rgba(0,0,0,0.05)', borderRadius: '2px', margin: '24px auto', overflow: 'hidden' }}>
+                        <div style={{ width: `${activeJobs.find(j => j.id === currentJobId)?.progress || 0}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.5s ease' }}></div>
+                      </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 右侧任务栈 */}
+              <div style={{ 
+                width: '70px', display: 'flex', flexDirection: 'column', gap: '16px', 
+                borderLeft: '1px solid rgba(0,0,0,0.05)', paddingLeft: '20px', 
+                maxHeight: '600px', overflowY: 'auto', paddingTop: '10px'
+              }}>
+                {activeJobs.map(job => (
+                  <div 
+                    key={job.id}
+                    onClick={() => setCurrentJobId(job.id)}
+                    style={{ 
+                      width: '50px', height: '50px', borderRadius: '12px', overflow: 'hidden', 
+                      position: 'relative', cursor: 'pointer', border: currentJobId === job.id ? '2px solid var(--primary)' : '2px solid transparent',
+                      transition: 'all 0.3s', flexShrink: 0,
+                      boxShadow: currentJobId === job.id ? '0 4px 12px rgba(230,107,51,0.2)' : 'none'
+                    }}
+                  >
+                    {job.status === 'success' ? (
+                      <img src={job.result} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : job.status === 'failed' ? (
+                      <div style={{ width: '100%', height: '100%', background: '#fff1f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff4d4f' }}>
+                        <X size={20} />
+                      </div>
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: '#f5f5f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #ddd', borderTopColor: 'var(--primary)', animation: 'spin 1s linear infinite' }}></div>
+                        <div style={{ position: 'absolute', fontSize: '9px', fontWeight: 'bold', color: 'var(--primary)' }}>{job.progress}%</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <button 
+                  onClick={() => setActiveJobs([])}
+                  style={{ border: 'none', background: 'transparent', color: '#999', fontSize: '11px', cursor: 'pointer', marginTop: 'auto' }}
+                >
+                  清除全部
+                </button>
               </div>
             </div>
-
           )}
+
+
 
           {/* 底部特性背书 (New) */}
           {!loading && !result && (
@@ -880,30 +954,33 @@ const HomePage = () => {
                           else setQuality('standard');
 
                           if (!isLocked) {
-                            const currentPlaceholder = selectedStyle.placeholder;
-                            const isInputEmpty = !prompt.trim() || prompt === currentPlaceholder;
+                            const isCustomPrompt = prompt.trim() && !prompt.includes('【');
                             
-                              const applyStyle = () => {
-                                setSelectedStyle(s);
-                                if (s.recommendedRatio) {
-                                  setAspectRatio(s.recommendedRatio);
-                                }
+                            const applyStyle = (shouldUpdatePrompt = false) => {
+                              setSelectedStyle(s);
+                              if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
+                              
+                              if (shouldUpdatePrompt || !prompt.trim() || prompt.includes('【')) {
                                 setPrompt(s.placeholder || '');
-                                setShowLab(false);
-                                if (s.requiresImage) {
-                                  showToast('✨ 此风格需要上传图片作为参考', 'success');
-                                } else if (refImageUrl) {
-                                  showToast('📸 当前带有参考图，生图将参考此图', 'info');
-                                }
-                              };
+                              }
+                              
+                              setShowLab(false);
+                              if (s.requiresImage) {
+                                showToast('✨ 此风格需要上传图片作为参考', 'success');
+                              } else if (refImageUrl) {
+                                showToast('📸 当前带有参考图，生图将参考此图', 'info');
+                              }
+                            };
 
-                            if (isInputEmpty) {
-                              applyStyle();
+                            if (!isCustomPrompt) {
+                              applyStyle(true);
                             } else {
                               if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前的内容。')) {
-                                applyStyle();
+                                applyStyle(true);
                               } else {
+                                // 仅切换风格，保留提示词，但更新比例
                                 setSelectedStyle(s);
+                                if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
                                 setShowLab(false);
                               }
                             }
@@ -980,6 +1057,24 @@ const HomePage = () => {
             document.body
           )}
         </div>
+        {/* 并发任务确认弹窗 */}
+        {showConfirmModal && (
+          <div className="modal-overlay" style={{ zIndex: 11000 }}>
+            <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center', padding: '40px' }}>
+              <div style={{ width: '80px', height: '80px', background: 'var(--primary-glow)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--primary)' }}>
+                <Zap size={40} />
+              </div>
+              <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '12px' }}>任务正在进行中</h3>
+              <p style={{ color: '#666', lineHeight: '1.6', marginBottom: '32px' }}>
+                您已有一个创作任务正在运行。您可以选择继续等待，或者<b>同时开启新任务</b>。
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button onClick={() => handleGenerate(true)} className="btn-primary" style={{ width: '100%' }}>开启新任务</button>
+                <button onClick={() => setShowConfirmModal(false)} className="btn-secondary" style={{ width: '100%' }}>继续等待</button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* 落地页模块：核心优势 + 深度画廊 */}

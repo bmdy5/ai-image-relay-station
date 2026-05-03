@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
 import { 
   Sparkles, Zap, Diamond, Crown, X, Download, ArrowUpCircle, Palette, Settings2, Award, Images, Plus, ArrowUp, Maximize2, Wand2,
-  Camera, ShoppingBag, Layers, Compass, Plane, Armchair, Layout, Radio, Film, Clock, Orbit, Wind, Share2, Library, CreditCard, Box, Smartphone, Flag
+  Camera, ShoppingBag, Layers, Compass, Plane, Armchair, Layout, Radio, Film, Clock, Orbit, Wind, Share2, Library, CreditCard, Box, Smartphone, Flag, Coins
 } from 'lucide-react';
 
 import MobileDrawer from '../components/MobileDrawer';
@@ -144,6 +144,8 @@ const MobileHomePage = () => {
   const [requiredPoints, setRequiredPoints] = useState(0);
   const [isGuest, setIsGuest] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const pollTimers = useRef({});
 
   
   // 处理粘贴图片 (Task: Mobile Paste to Ref)
@@ -179,7 +181,64 @@ const MobileHomePage = () => {
     }
     fetchConfig();
     checkPendingPrompt();
+    loadActiveJobs(); // 加载持久化任务
   }, []);
+
+  // 持久化：保存任务
+  useEffect(() => {
+    if (jobs.length > 0) {
+      localStorage.setItem('visionary_active_jobs_mobile', JSON.stringify({
+        timestamp: Date.now(),
+        jobs: jobs
+      }));
+    } else {
+      localStorage.removeItem('visionary_active_jobs_mobile');
+    }
+  }, [jobs]);
+
+  const loadActiveJobs = () => {
+    const saved = localStorage.getItem('visionary_active_jobs_mobile');
+    if (saved) {
+      const { timestamp, jobs: savedJobs } = JSON.parse(saved);
+      if (Date.now() - timestamp < 300000) {
+        setJobs(savedJobs);
+        // 自动接力轮询
+        savedJobs.forEach(job => {
+          if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
+            startPolling(job.id, job.taskId);
+          }
+        });
+      } else {
+        localStorage.removeItem('visionary_active_jobs_mobile');
+      }
+    }
+  };
+
+  const startPolling = (jobId, taskId) => {
+    if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
+    
+    const timer = setInterval(async () => {
+      try {
+        const statusRes = await request.get(`/image/status/${taskId}`);
+        if (statusRes.status === 'success') {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setJobs(prev => prev.map(j => j.id === jobId ? { 
+            ...j, status: 'success', progress: 100, result: statusRes.image_url, 
+            ref_image_url: statusRes.ref_image_url, quality: statusRes.quality, style: statusRes.style 
+          } : j));
+        } else if (statusRes.status === 'failed') {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: statusRes.error } : j));
+        } else {
+          setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: statusRes.status, progress: j.progress + 5 > 95 ? 95 : j.progress + 5 } : j));
+        }
+      } catch (err) {}
+    }, 3000);
+    
+    pollTimers.current[jobId] = timer;
+  };
 
   const fetchUserInfo = async () => {
     try {
@@ -333,11 +392,24 @@ const MobileHomePage = () => {
   // AI 润色白名单 (Task: Strict Whitelist)
   const ALLOWED_ENHANCE_STYLES = ['default', 'real', 'product', 'tech_poster'];
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (forceNew = false) => {
     if (isGuest) {
       setShowGuestModal(true);
       return;
     }
+
+    // 任务冲突与并行上限检查
+    const runningJobs = jobs.filter(j => j.status === 'pending' || j.status === 'generating');
+    if (runningJobs.length >= 3) {
+      alert('⚠️ 当前并行任务已达上限（3路），请稍等片刻');
+      return;
+    }
+
+    if (runningJobs.length > 0 && !forceNew) {
+      setShowConfirmModal(true);
+      return;
+    }
+    setShowConfirmModal(false);
 
     // 积分预检
     const cost = pricingMap[quality] || 5;
@@ -383,31 +455,11 @@ const MobileHomePage = () => {
       document.body.appendChild(tip);
       setTimeout(() => tip.remove(), 3000);
 
-      const pollTimer = setInterval(async () => {
-        try {
-          const statusRes = await request.get(`/image/status/${taskId}`);
-          setJobs(prev => prev.map(j => {
-            if (j.id === newJob.id) {
-              if (statusRes.status === 'success') { 
-                clearInterval(pollTimer); 
-                return { 
-                    ...j, 
-                    status: 'success', 
-                    progress: 100, 
-                    result: statusRes.image_url, 
-                    ref_image_url: statusRes.ref_image_url, // 同步参考图
-                    quality: statusRes.quality,           // 同步档次
-                    style: statusRes.style,               // 同步风格
-                    final_prompt: statusRes.final_prompt 
-                }; 
-              }
-              else if (statusRes.status === 'failed') { clearInterval(pollTimer); return { ...j, status: 'failed', error: statusRes.error }; }
-              return { ...j, status: statusRes.status, progress: Math.min(j.progress + 5, 95) };
-            }
-            return j;
-          }));
-        } catch (err) { clearInterval(pollTimer); }
-      }, 3000);
+      // 更新任务对象，保存 taskId 用于接力轮询
+      setJobs(prev => prev.map(j => j.id === newJob.id ? { ...j, taskId } : j));
+      
+      startPolling(newJob.id, taskId);
+
     } catch (err) {
       setJobs(prev => prev.map(j => j.id === newJob.id ? { ...j, status: 'failed', error: '提交失败' } : j));
     }
@@ -694,11 +746,18 @@ const MobileHomePage = () => {
                   else setQuality('standard');
 
                   if(!isLocked) { 
-                    const applyStyle = () => {
+                    const applyStyle = (forceOverwrite = false) => {
                       setSelectedStyle(s);
-                      if (s.placeholder && (!prompt || prompt.includes('【'))) {
-                        setPrompt(s.placeholder);
+                      if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
+                      
+                      // 覆盖提示词逻辑：
+                      // 1. 强制覆盖 (用户在弹窗点确定)
+                      // 2. 当前输入为空
+                      // 3. 当前输入仍是模板占位符 (包含 【 )
+                      if (forceOverwrite || !prompt.trim() || prompt.includes('【')) {
+                        setPrompt(s.placeholder || '');
                       }
+                      
                       setActiveDrawer(null);
                       if (refImageUrl && !s.requiresImage) {
                         const tip = document.createElement('div');
@@ -709,17 +768,18 @@ const MobileHomePage = () => {
                       }
                     };
 
-                    if (prompt && prompt !== s.placeholder && !prompt.includes('【')) {
+                    const isCustomPrompt = prompt && prompt.trim() && !prompt.includes('【');
+                    if (isCustomPrompt) {
                       if (window.confirm('是否应用新风格的提示词模版？这会覆盖您当前输入的内容。')) {
-                        applyStyle();
+                        applyStyle(true);
                       } else {
+                        // 用户取消覆盖：仅切换风格，保留原提示词，同步更新推荐比例
                         setSelectedStyle(s);
                         if (s.recommendedRatio) setAspectRatio(s.recommendedRatio);
-                        setPrompt('');
                         setActiveDrawer(null);
                       }
                     } else {
-                      applyStyle();
+                      applyStyle(false);
                     }
                   } 
                 }} 
@@ -809,6 +869,42 @@ const MobileHomePage = () => {
         </div>
       </MobileDrawer>
 
+      {/* 任务并发确认弹窗 (Mobile) */}
+      {showConfirmModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ textAlign: 'center' }}>
+            <div style={{ width: '64px', height: '64px', background: 'var(--primary-glow)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: 'var(--primary)' }}>
+              <Zap size={32} />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>任务正在进行中</h3>
+            <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '32px' }}>
+              已有任务正在运行。您可以继续等待，或者选择<b>开启新任务</b>并行处理。
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={() => handleGenerate(true)} className="btn-primary" style={{ width: '100%' }}>开启新任务</button>
+              <button onClick={() => setShowConfirmModal(false)} className="btn-secondary" style={{ width: '100%' }}>继续等待</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 游客拦截弹窗 */}
+      {showGuestModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎨</div>
+            <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '12px' }}>开启艺术之旅</h3>
+            <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '32px' }}>
+              检测到您当前为游客模式。为了保存您的创作记录并获得更多免费积分，请先登录。
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={() => navigate('/auth')} className="btn-primary" style={{ width: '100%' }}>立即登录 / 注册</button>
+              <button onClick={() => setShowGuestModal(false)} className="btn-secondary" style={{ width: '100%' }}>先随便逛逛</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 移动端全屏预览 Modal */}
       {previewImage && (
         <div 
@@ -842,34 +938,22 @@ const MobileHomePage = () => {
 
       {/* 积分不足弹窗 */}
       {showPointsModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', 
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10002, padding: '20px'
-        }}>
-          <div style={{
-            background: 'white', borderRadius: '24px', width: '100%', maxWidth: '320px',
-            padding: '32px 24px', textAlign: 'center', animation: 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }}>
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ textAlign: 'center' }}>
             <div style={{ 
               width: '64px', height: '64px', background: '#fff7e6', borderRadius: '50%', 
               display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#faad14' 
             }}>
               <Coins size={32} />
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '8px' }}>积分余额不足</h3>
-            <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '12px' }}>积分余额不足</h3>
+            <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '32px' }}>
               当前生成需要 <b style={{ color: '#C59C8F' }}>{requiredPoints}</b> 积分<br/>
               您的余额仅剩 <b style={{ color: '#faad14' }}>{userInfo?.points || 0}</b> 积分
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={() => navigate('/pricing')} style={{ 
-                background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', color: 'white',
-                border: 'none', padding: '12px', borderRadius: '14px', fontSize: '14px', fontWeight: 'bold'
-              }}>立即充值</button>
-              <button onClick={() => setShowPointsModal(false)} style={{ 
-                background: '#F2F2F7', color: '#666',
-                border: 'none', padding: '12px', borderRadius: '14px', fontSize: '14px', fontWeight: '600'
-              }}>稍后再说</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={() => navigate('/pricing')} className="btn-primary" style={{ width: '100%' }}>立即充值</button>
+              <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ width: '100%' }}>稍后再说</button>
             </div>
           </div>
         </div>
