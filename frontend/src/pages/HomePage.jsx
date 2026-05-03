@@ -114,7 +114,7 @@ const HomePage = () => {
     { id: 'eri_silhouette', name: '轮廓宇宙', desc: '史诗级叙事海报', icon: '🌑', pts: 'Master', placeholder: '叙事主题：【在此输入主题】' },
     { id: 'silk_road', name: '国风月夜', desc: '宋代山水意境', icon: '🎋', pts: 'Master', placeholder: '主题：【在此输入主题名称】' },
     { id: 'relation_map', name: '人物关系图谱', desc: '作品逻辑梳理', icon: '🕸️', pts: 'Master', placeholder: '作品：【在此输入名称】' },
-    { id: 'encyclopedia', name: '科普百科', desc: '图鉴模块化卡片', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】' },
+    { id: 'encyclopedia', name: '博物馆图鉴', desc: '国家博物馆级文博信息图', icon: '🏮', pts: 'Master', placeholder: '百科对象：【在此输入】' },
     { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: '🪟', pts: 'Master', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击“开始创作”，系统将自动分析并重构。', requiresImage: true }
   ];
 
