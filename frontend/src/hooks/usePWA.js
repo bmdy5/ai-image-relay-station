@@ -5,12 +5,22 @@ export const usePWA = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [isInWechat, setIsInWechat] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     // 1. Detect iOS
     const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     setIsIOS(ios);
+
+    // 1.2 Detect Android
+    const android = /Android/i.test(navigator.userAgent);
+    setIsAndroid(android);
+
+    // 1.5 Detect WeChat
+    const wechat = /MicroMessenger/i.test(navigator.userAgent);
+    setIsInWechat(wechat);
 
     // 2. Detect Standalone mode (PWA active)
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
@@ -85,6 +95,8 @@ export const usePWA = () => {
     isInstallable: !!deferredPrompt,
     isStandalone,
     isIOS,
+    isAndroid,
+    isInWechat,
     isInstalled,
     promptInstall
   };
