@@ -7,6 +7,7 @@ from ..models.database import get_db
 from ..models import models
 from ..schemas import user as user_schema
 from ..crud import user as user_crud
+from ..crud import recharge as recharge_crud
 from ..core import security
 from ..core.deps import get_current_user
 from ..core.email import send_verification_email
@@ -179,7 +180,6 @@ def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Sess
             db,
             user_id=db_user.id,
             amount=5,
-            money_amount=0,
             status="success",
             admin_note=f"使用邀请码 {user.invite_code} 注册奖励",
             operator_id=0,
@@ -382,13 +382,11 @@ def claim_install_reward(db: Session = Depends(get_db), current_user: models.Use
         db,
         user_id=current_user.id,
         amount=10,
-        money_amount=0,
         status="success",
         admin_note="系统自动发放 PWA 安装奖励",
         operator_id=0,
         trade_no=f"PWA_{current_user.id}_{int(datetime.now().timestamp())}"
     )
-    db.add(db_log)
     db.commit()
     
     return {"message": "安装奖励领取成功！", "points": current_user.points}
