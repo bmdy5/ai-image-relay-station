@@ -72,8 +72,16 @@ export const useForgotPasswordController = () => {
         code,
         new_password: newPassword
       });
-      setSuccess(res.message || '密码重置成功！');
-      setTimeout(() => navigate('/login'), 2000);
+      
+      // 自动登录逻辑
+      if (res.access_token) {
+        localStorage.setItem('token', res.access_token);
+        setSuccess('密码重置成功！已为您自动登录');
+        setTimeout(() => navigate('/'), 1500);
+      } else {
+        setSuccess(res.message || '密码重置成功！');
+        setTimeout(() => navigate('/login'), 2000);
+      }
     } catch (err) {
       setError(err.response?.data?.detail || '重置失败，请重试');
     }
