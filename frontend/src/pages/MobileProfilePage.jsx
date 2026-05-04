@@ -42,7 +42,7 @@ const MobileProfilePage = ({ isMobile }) => {
   const [bindForm, setBindForm] = useState({ email: '', code: '' });
   const [phoneBind, setPhoneBind] = useState('');
   const [countdown, setCountdown] = useState(0);
-  const { isInstallable, isStandalone, isIOS, isInstalled, promptInstall } = usePWA();
+  const { isInstallable, isStandalone, isIOS, isAndroid, isInWechat, isInstalled, promptInstall } = usePWA();
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [inviteStats, setInviteStats] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '' });
@@ -326,7 +326,7 @@ const MobileProfilePage = ({ isMobile }) => {
       <div style={{ padding: '24px 20px 0 20px' }}>
         <div style={{ fontSize: '12px', fontWeight: '600', color: '#8E8E93', marginBottom: '8px', paddingLeft: '10px' }}>高级功能</div>
         <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
-          {(!isInstalled && !isStandalone && localStorage.getItem('isGuest') !== 'true' && (isInstallable || isIOS)) && (
+          {(!isInstalled && !isStandalone && localStorage.getItem('isGuest') !== 'true' && (isIOS || isAndroid || isInWechat)) && (
             <>
               <SettingItem 
                 icon={<Download size={20} />} 
@@ -551,6 +551,8 @@ const MobileProfilePage = ({ isMobile }) => {
           isIOS={isIOS}
           isAndroid={isAndroid}
           isInWechat={isInWechat}
+          promptInstall={promptInstall}
+          isInstallable={isInstallable}
           onClose={() => setShowIosGuide(false)} 
         />
       )}

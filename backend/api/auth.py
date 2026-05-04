@@ -7,6 +7,7 @@ from ..models.database import get_db
 from ..models import models
 from ..schemas import user as user_schema
 from ..crud import user as user_crud
+from ..crud import recharge as recharge_crud
 from ..core import security
 from ..core.deps import get_current_user
 from ..core.email import send_verification_email
@@ -179,7 +180,6 @@ def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Sess
             db,
             user_id=db_user.id,
             amount=5,
-            money_amount=0,
             status="success",
             admin_note=f"使用邀请码 {user.invite_code} 注册奖励",
             operator_id=0,
@@ -287,7 +287,7 @@ def forgot_password_send_code(data: user_schema.ForgotPasswordSendCode, db: Sess
     else:
         raise HTTPException(status_code=500, detail="邮件发送失败，请稍后重试")
 
-@router.post("/forgot-password/reset")
+@router.post("/forgot-password/reset", response_model=user_schema.UserRegisterResponse)
 def forgot_password_reset(data: user_schema.ForgotPasswordReset, db: Session = Depends(get_db)):
     # 1. 校验邮箱是否已注册
     db_user = user_crud.get_user_by_email(db, email=data.email)
@@ -312,7 +312,16 @@ def forgot_password_reset(data: user_schema.ForgotPasswordReset, db: Session = D
     hashed_password = security.get_password_hash(data.new_password)
     user_crud.update_user_password(db, db_user.id, hashed_password)
     
-    return {"message": "密码重置成功，请使用新密码登录"}
+    # 5. 自动登录：生成 Token
+    sub_val = db_user.username if db_user.username else db_user.email
+    access_token = security.create_access_token(data={"sub": sub_val})
+    
+    return {
+        "message": "密码重置成功，已为您自动登录",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": db_user
+    }
 
 @router.post("/bind-email")
 def bind_email(
@@ -382,13 +391,11 @@ def claim_install_reward(db: Session = Depends(get_db), current_user: models.Use
         db,
         user_id=current_user.id,
         amount=10,
-        money_amount=0,
         status="success",
         admin_note="系统自动发放 PWA 安装奖励",
         operator_id=0,
         trade_no=f"PWA_{current_user.id}_{int(datetime.now().timestamp())}"
     )
-    db.add(db_log)
     db.commit()
     
     return {"message": "安装奖励领取成功！", "points": current_user.points}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Share, PlusSquare, X, MoreHorizontal, ExternalLink, Compass } from 'lucide-react';
 
-const PWAIosGuideModal = ({ onClose, isIOS, isAndroid, isInWechat }) => {
+const PWAIosGuideModal = ({ onClose, isIOS, isAndroid, isInWechat, promptInstall, isInstallable }) => {
   return (
     <div style={{
       position: 'fixed',
@@ -114,6 +114,38 @@ const PWAIosGuideModal = ({ onClose, isIOS, isAndroid, isInWechat }) => {
             </>
           )}
         </div>
+
+        {/* 安卓专用一键安装按钮 */}
+        {isAndroid && !isInWechat && (
+          <div style={{ marginTop: '20px' }}>
+            <button 
+              onClick={() => {
+                if (isInstallable) {
+                  promptInstall();
+                  onClose();
+                } else {
+                  alert('由于当前未使用 HTTPS 安全连接，浏览器禁用了自动安装。请点击浏览器右上角三个点，手动选择“安装应用”或“添加到主屏幕”。');
+                }
+              }}
+              style={{
+                width: '100%', padding: '14px',
+                background: isInstallable ? 'linear-gradient(135deg, #e66b33 0%, #f09060 100%)' : '#F5F5F5',
+                color: isInstallable ? 'white' : '#999',
+                border: 'none', borderRadius: '16px',
+                fontSize: '16px', fontWeight: '700',
+                boxShadow: isInstallable ? '0 10px 20px rgba(230, 107, 51, 0.2)' : 'none',
+                cursor: 'pointer', transition: 'all 0.2s'
+              }}
+            >
+              {isInstallable ? '立即一键安装' : '环境限制 (需手动添加)'}
+            </button>
+            {!isInstallable && (
+              <p style={{ fontSize: '11px', color: '#999', marginTop: '8px', textAlign: 'center' }}>
+                提示：部署 HTTPS 后可开启一键自动安装
+              </p>
+            )}
+          </div>
+        )}
 
         {/* 动态指示箭头 */}
         <div style={{ 
