@@ -38,7 +38,7 @@ class ImageLog(Base):
     cost_points = Column(Integer)
     points_snapshot = Column(Integer, default=0) # 记录当时扣除的积分快照
     image_url = Column(String)
-    ref_image_url = Column(String) # 新增：记录参考图
+    ref_image_url = Column(Text) # 修改：记录参考图 (使用 Text 以防 Base64 溢出)
     parent_id = Column(Integer, index=True, nullable=True) # 新增：迭代父 ID
     root_id = Column(Integer, index=True, nullable=True) # 新增：迭代根 ID (用于统计总变体数)
     iteration = Column(Integer, default=0) # 新增：迭代次数 (0 为初始)

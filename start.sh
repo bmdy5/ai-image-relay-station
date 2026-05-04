@@ -42,11 +42,16 @@ start_tunnel() {
     # 在后台开启一个守护循环
     (
         while true; do
-            # 检查 3307 端口是否已被监听
-            if ! lsof -i:3307 > /dev/null; then
-                echo "[$(date)] 隧道已断开，正在尝试重连..." >> $LOG_TUNNEL
+            # 检查隧道是否真的通畅 (尝试建立连接而不只是检查端口)
+            if ! nc -zv 127.0.0.1 3307 > /dev/null 2>&1; then
+                echo "[$(date)] 隧道检测到异常或未建立，正在强制清理并重连..." >> $LOG_TUNNEL
+                # 强制清理 3307 端口，防止 "Address already in use"
+                PID_OLD=$(lsof -t -i:3307)
+                [ ! -z "$PID_OLD" ] && kill -9 $PID_OLD
+                
                 ssh -o ServerAliveInterval=30 \
                     -o ServerAliveCountMax=3 \
+                    -o ConnectTimeout=10 \
                     -o ExitOnForwardFailure=yes \
                     -o StrictHostKeyChecking=no \
                     -N -L 3307:localhost:3306 root@119.29.232.114 >> $LOG_TUNNEL 2>&1
