@@ -14,8 +14,8 @@ engine = create_engine(
     MYSQL_URL,
     pool_size=20,        # 扩大连接池
     max_overflow=10,     # 允许溢出连接
-    pool_recycle=3600,
-    pool_pre_ping=True
+    pool_recycle=300,    # 缩短回收时间 (5分钟)，防止隧道断开导致的连接死锁
+    pool_pre_ping=True   # 每次取出连接前先探测，确保可用
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

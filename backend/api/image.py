@@ -391,7 +391,7 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
     pending_log = image_crud.create_image_log(
         db, user_id=current_user.id, prompt=payload.prompt, quality=payload.quality, 
         style=payload.style, cost_points=cost, status="pending",
-        ref_image_url=payload.ref_image_url, 
+        ref_image_url=payload.ref_image_url if payload.ref_image_url and not (payload.ref_image_url.startswith("data:image") or len(payload.ref_image_url) > 500) else (payload.ref_image_url[:50] + "..." if payload.ref_image_url else None), 
         parent_id=payload.parent_id, 
         root_id=payload.root_id,
         iteration=payload.iteration
