@@ -26,8 +26,27 @@ def upload_base64_to_cos(base64_data: str, filename: str):
         _, encoded = base64_data.split(",", 1)
     else:
         encoded = base64_data
-    
-    body = base64.b64decode(encoded)
+
+    raw_bytes = base64.b64decode(encoded)
+
+    # 图像净化层 (Sanitization Layer)：自动裁剪正方形 + 缩放 + 转 PNG
+    # gpt-image-2 /images/generations 要求参考图必须为正方形
+    try:
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(raw_bytes)).convert("RGBA")
+        w, h = img.size
+        min_side = min(w, h)
+        left = (w - min_side) // 2
+        top = (h - min_side) // 2
+        img = img.crop((left, top, left + min_side, top + min_side))
+        img = img.resize((1024, 1024), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        body = buf.getvalue()
+    except Exception:
+        # Pillow 处理失败则回退使用原始字节
+        body = raw_bytes
 
     # 上传
     client.put_object(

@@ -190,38 +190,67 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                 log.status = "generating"
                 if hasattr(log, "final_prompt"): log.final_prompt = prompt_to_send
 
-        # 3. API 调用 (GPT-Image-2 专用 Vision-JSON 协议)
+        # 3. API 调用 (二进制 Multipart 协议，兼容中转站)
         for attempt in range(3):
             try:
                 async with httpx.AsyncClient(timeout=180.0) as client:
-                    # 终极实锤协议：/v1/images/edits + JSON
-                    api_path = "/images/generations"
-                    payload = {
-                        "model": "gpt-image-2", 
-                        "prompt": final_api_prompt, 
-                        "n": 1,
-                        "response_format": "url",
-                        "quality": "low" # 极致省钱模式
-                    }
-
-                    # 图生图模式切换 (Verified Protocol)
+                    # 准备二进制图片数据
+                    image_data = None
                     if processed_ref_url:
+                        if processed_ref_url.startswith("data:image"):
+                            import base64
+                            header, encoded = processed_ref_url.split(",", 1)
+                            image_data = base64.b64decode(encoded)
+                        elif processed_ref_url.startswith("http"):
+                            img_resp = await client.get(processed_ref_url, timeout=30.0)
+                            if img_resp.status_code == 200:
+                                image_data = img_resp.content
+
+                    # 根据是否有参考图选择端点
+                    # /images/edits  → 图生图（multipart，含 image 字段）
+                    # /images/generations → 纯文生图（JSON）
+                    files = {}
+                    if image_data:
                         api_path = "/images/edits"
-                        payload["images"] = [{"image_url": processed_ref_url}]
+                        files = {"image": ("ref.png", image_data, "image/png")}
+                    else:
+                        api_path = "/images/generations"
+
+                    data = {
+                        "model": "gpt-image-2",
+                        "prompt": final_api_prompt,
+                        "n": 1,
+                        "quality": "low",
+                    }
+                    if not files:
+                        # generations 才支持 response_format
+                        data["response_format"] = "url"
+                        data["input_fidelity"] = "low"
 
                     # 分辨率强制合规
-                    if aspect_ratio == "9:16": payload["size"] = "1024x1536"
-                    elif aspect_ratio == "16:9": payload["size"] = "1536x1024"
-                    else: payload["size"] = "1024x1024"
+                    if aspect_ratio == "9:16": data["size"] = "1024x1536"
+                    elif aspect_ratio == "16:9": data["size"] = "1536x1024"
+                    else: data["size"] = "1024x1024"
 
-                    print(f"--- [API Request] ID: {log_id} | Model: gpt-image-2 | Quality: {payload['quality']} | Img2Img: {'YES' if processed_ref_url else 'NO'} ---")
-                    
+                    print(f"--- [API Request] ID: {log_id} | Endpoint: {api_path} | Quality: {data['quality']} | Img2Img: {'YES' if files else 'NO'} ---")
+
                     api_start = time.time()
-                    resp = await client.post(
-                        f"{base_url}{api_path}", 
-                        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, 
-                        json=payload
-                    )
+                    if files:
+                        # 图生图：multipart/form-data
+                        resp = await client.post(
+                            f"{base_url}{api_path}",
+                            headers={"Authorization": f"Bearer {api_key}"},
+                            data=data, files=files
+                        )
+                    else:
+                        # 无图时：纯 JSON
+                        resp = await client.post(
+                            f"{base_url}{api_path}",
+                            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                            json=data
+                        )
+                    # 统一 payload 引用（后续日志用）
+                    payload = data
                     api_ms = int((time.time() - api_start) * 1000)
                 
                 if resp.status_code == 200:
