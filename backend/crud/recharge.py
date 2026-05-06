@@ -71,10 +71,11 @@ def audit_recharge(db: Session, log_id: int, admin_id: int, approved: bool, admi
 
 def can_receive_invitation_reward(db: Session, inviter_id: int):
     """检查邀请人今日是否已达 5 次奖励上限"""
-    from datetime import datetime, time, timedelta
-    # 转换为北京时间 (UTC+8)
-    now = datetime.utcnow() + timedelta(hours=8)
-    today_start = datetime.combine(now.date(), time.min) - timedelta(hours=8) # 转回 UTC 比较
+    from datetime import time
+    from ..core.utils import get_beijing_time
+    # 统一使用北京时间
+    now = get_beijing_time()
+    today_start = datetime.combine(now.date(), time.min)
     
     count = db.query(models.RechargeLog).filter(
         models.RechargeLog.user_id == inviter_id,
