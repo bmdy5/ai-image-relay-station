@@ -12,6 +12,7 @@ from ..core import security
 from ..core.deps import get_current_user
 from ..core.email import send_verification_email
 from ..core.config import get_config
+from ..core.utils import get_beijing_time
 from ..services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -27,15 +28,19 @@ def send_code(data: user_schema.EmailSendCode, db: Session = Depends(get_db)):
         models.VerificationCode.email == email
     ).order_by(models.VerificationCode.created_at.desc()).first()
     
-    if last_code and (datetime.utcnow() - last_code.created_at) < timedelta(seconds=60):
-        raise HTTPException(status_code=429, detail="发送太频繁，请稍后再试")
+    now = get_beijing_time()
+    if last_code:
+        # 加固：强制转换为 naive 进行对比
+        last_time = last_code.created_at.replace(tzinfo=None) if last_code.created_at.tzinfo else last_code.created_at
+        if (now - last_time) < timedelta(seconds=60):
+            raise HTTPException(status_code=429, detail="发送太频繁，请稍后再试")
         
     code = f"{random.randint(100000, 999999)}"
     success = send_verification_email(email, code)
     if success:
         vc = models.VerificationCode(
             email=email, code=code,
-            expires_at=datetime.utcnow() + timedelta(minutes=5)
+            expires_at=now + timedelta(minutes=5)
         )
         db.add(vc)
         db.commit()
@@ -91,15 +96,19 @@ def forgot_password_send_code(data: user_schema.ForgotPasswordSendCode, db: Sess
         models.VerificationCode.email == email
     ).order_by(models.VerificationCode.created_at.desc()).first()
     
-    if last_code and (datetime.utcnow() - last_code.created_at) < timedelta(seconds=60):
-        raise HTTPException(status_code=429, detail="发送太频繁，请稍后再试")
+    now = get_beijing_time()
+    if last_code:
+        # 加固：强制转换为 naive 进行对比
+        last_time = last_code.created_at.replace(tzinfo=None) if last_code.created_at.tzinfo else last_code.created_at
+        if (now - last_time) < timedelta(seconds=60):
+            raise HTTPException(status_code=429, detail="发送太频繁，请稍后再试")
         
     code = f"{random.randint(100000, 999999)}"
     success = send_verification_email(email, code, purpose="reset_password")
     if success:
         vc = models.VerificationCode(
             email=email, code=code,
-            expires_at=datetime.utcnow() + timedelta(minutes=5)
+            expires_at=now + timedelta(minutes=5)
         )
         db.add(vc)
         db.commit()
@@ -126,9 +135,9 @@ def claim_install_reward(db: Session = Depends(get_db), current_user: models.Use
 @router.get("/invitation-stats")
 def get_invitation_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     invited_count = db.query(models.User).filter(models.User.invited_by_id == current_user.id).count()
-    from datetime import datetime, time, timedelta
-    now = datetime.utcnow() + timedelta(hours=8)
-    today_start = datetime.combine(now.date(), time.min) - timedelta(hours=8)
+    from datetime import time
+    now = get_beijing_time()
+    today_start = datetime.combine(now.date(), time.min)
     
     today_reward_count = db.query(models.RechargeLog).filter(
         models.RechargeLog.user_id == current_user.id,

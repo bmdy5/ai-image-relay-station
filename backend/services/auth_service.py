@@ -6,6 +6,7 @@ from ..crud import user as user_crud
 from ..crud import recharge as recharge_crud
 from ..core import security
 from ..core.config import get_config
+from ..core.utils import get_beijing_time
 
 class AuthService:
     @staticmethod
@@ -17,7 +18,14 @@ class AuthService:
             models.VerificationCode.is_used == False
         ).order_by(models.VerificationCode.created_at.desc()).first()
         
-        if not vc or vc.expires_at < datetime.utcnow():
+        # 使用统一的北京时间进行过期校验
+        now = get_beijing_time()
+        if not vc:
+            return False
+            
+        # 兼容数据库中可能存在的有时区/无时区格式
+        expiry_time = vc.expires_at.replace(tzinfo=None) if vc.expires_at.tzinfo else vc.expires_at
+        if expiry_time < now:
             return False
             
         vc.is_used = True
@@ -27,7 +35,6 @@ class AuthService:
     @staticmethod
     def register_user_by_email(db: Session, user_data, client_ip: str):
         """处理邮箱注册逻辑：限额、邀请、奖励、自动登录"""
-        # 1. 硬性限额校验 (前 100 名)
         user_count = db.query(models.User).count()
         if user_count >= 100:
             raise HTTPException(
@@ -35,13 +42,11 @@ class AuthService:
                 detail="内测名额已满 (限额 100 人)"
             )
         
-        # 2. 校验唯一性
         if user_crud.get_user_by_email(db, email=user_data.email):
             raise HTTPException(status_code=400, detail="此邮箱已注册，请直接登录")
         if user_crud.get_user_by_username(db, username=user_data.username):
             raise HTTPException(status_code=400, detail="用户名已被占用，请换一个")
             
-        # 3. 校验邀请码
         invited_by_id = None
         inviter = None
         if user_data.invite_code:
@@ -49,14 +54,12 @@ class AuthService:
             if inviter:
                 invited_by_id = inviter.id
 
-        # 4. 创建用户
         hashed_password = security.get_password_hash(user_data.password)
         new_user = user_crud.create_user_by_email(
             db=db, user=user_data, password_hash=hashed_password, 
             ip=client_ip, invited_by_id=invited_by_id
         )
 
-        # 5. 发放受邀奖励 (5积分)
         if inviter:
             new_user.points += 5
             recharge_crud.create_recharge_log(
@@ -66,11 +69,10 @@ class AuthService:
                 status="success",
                 admin_note=f"使用邀请码 {user_data.invite_code} 注册奖励",
                 operator_id=0,
-                trade_no=f"INVITE_JOIN_{new_user.id}_{int(datetime.now().timestamp())}"
+                trade_no=f"INVITE_JOIN_{new_user.id}_{int(get_beijing_time().timestamp())}"
             )
             db.commit()
 
-        # 6. 生成 Token
         sub_val = new_user.username if new_user.username else new_user.email
         access_token = security.create_access_token(data={"sub": sub_val})
         
@@ -83,25 +85,21 @@ class AuthService:
     @staticmethod
     def register_user_by_phone(db: Session, user_data, client_ip: str):
         """处理手机号注册逻辑"""
-        # 1. 硬性限额校验
         user_count = db.query(models.User).count()
         if user_count >= 100:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="内测名额已满")
         
-        # 2. 校验手机号
         if not user_data.phone.isdigit() or len(user_data.phone) != 11:
             raise HTTPException(status_code=400, detail="请输入正确的手机号")
         if db.query(models.User).filter(models.User.phone == user_data.phone).first():
             raise HTTPException(status_code=400, detail="该手机号已注册")
             
-        # 3. 校验用户名
         if user_data.username:
             if user_crud.get_user_by_username(db, username=user_data.username):
                 raise HTTPException(status_code=400, detail="用户名已被占用")
         else:
             user_data.username = f"user_{user_data.phone[-4:]}"
             
-        # 4. 邀请逻辑
         invited_by_id = None
         inviter = None
         if user_data.invite_code:
@@ -109,7 +107,6 @@ class AuthService:
             if inviter:
                 invited_by_id = inviter.id
 
-        # 5. 创建用户
         hashed_password = security.get_password_hash(user_data.password)
         db_user = models.User(
             username=user_data.username,
@@ -123,7 +120,6 @@ class AuthService:
         db.add(db_user)
         db.flush()
 
-        # 6. 发放奖励
         if inviter:
             db_user.points += 5
             recharge_crud.create_recharge_log(
@@ -133,11 +129,10 @@ class AuthService:
                 status="success",
                 admin_note=f"使用邀请码 {user_data.invite_code} 注册奖励",
                 operator_id=0,
-                trade_no=f"INVITE_JOIN_PHONE_{db_user.id}_{int(datetime.now().timestamp())}"
+                trade_no=f"INVITE_JOIN_PHONE_{db_user.id}_{int(get_beijing_time().timestamp())}"
             )
             db.commit()
 
-        # 7. 生成 Token
         sub_val = db_user.username if db_user.username else db_user.phone
         access_token = security.create_access_token(data={"sub": sub_val})
         
@@ -150,17 +145,14 @@ class AuthService:
     @staticmethod
     def change_password(db: Session, current_user, data):
         """修改密码业务逻辑"""
-        # 1. 校验绑定状态
         if not current_user.email:
             raise HTTPException(status_code=400, detail="请先绑定邮箱")
         if data.email != current_user.email:
             raise HTTPException(status_code=400, detail="只能使用绑定的邮箱进行验证")
 
-        # 2. 校验验证码
         if not AuthService.verify_verification_code(db, data.email, data.code):
             raise HTTPException(status_code=400, detail="验证码无效或已过期")
         
-        # 3. 校验长度并更新
         if len(data.password) < 6:
             raise HTTPException(status_code=400, detail="新密码长度不能少于 6 位")
 
@@ -178,7 +170,6 @@ class AuthService:
         if not AuthService.verify_verification_code(db, data.email, data.code):
             raise HTTPException(status_code=400, detail="验证码无效或已过期")
         
-        # 更新并生成自动登录 Token
         hashed_password = security.get_password_hash(data.new_password)
         user_crud.update_user_password(db, db_user.id, hashed_password)
         
@@ -233,7 +224,7 @@ class AuthService:
             status="success",
             admin_note="系统自动发放 PWA 安装奖励",
             operator_id=0,
-            trade_no=f"PWA_{current_user.id}_{int(datetime.now().timestamp())}"
+            trade_no=f"PWA_{current_user.id}_{int(get_beijing_time().timestamp())}"
         )
         db.commit()
         return {"message": "安装奖励领取成功！", "points": current_user.points}
