@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import request from '../api/request';
 import NeuralPlexus from '../components/NeuralPlexus';
-import Captcha from '../components/Captcha';
 import { useCallback } from 'react';
 
 const RegisterPage = () => {
@@ -14,7 +13,7 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [captchaValid, setCaptchaValid] = useState(false);
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -60,12 +59,6 @@ const RegisterPage = () => {
     setError('');
     try {
       const fingerprint = btoa(navigator.userAgent).substring(0, 32);
-      
-        if (!captchaValid) {
-          setError('请输入正确的验证码');
-          setLoading(false);
-          return;
-        }
         if (!agreeTerms) {
           setError('请先阅读并同意服务协议');
           setLoading(false);
@@ -97,10 +90,6 @@ const RegisterPage = () => {
     }
     setLoading(false);
   };
-
-  const onCaptchaMatch = useCallback((matched) => {
-    setCaptchaValid(matched);
-  }, []);
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'transparent', position: 'relative' }}>
@@ -193,7 +182,7 @@ const RegisterPage = () => {
                 required
                 style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
               />
-              <Captcha onMatch={onCaptchaMatch} />
+
             </>
           )}
 
