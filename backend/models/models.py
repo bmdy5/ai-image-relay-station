@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, T
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
+from ..core.utils import get_beijing_time
 
 class User(Base):
     __tablename__ = "users"
@@ -12,17 +13,16 @@ class User(Base):
     phone = Column(String(20), unique=True, index=True, nullable=True)
     password_hash = Column(String(255))
     fingerprint = Column(String)
-    points = Column(Integer, default=10)  # 默认赠送 10 积分
-    frozen_points = Column(Integer, default=0)  # 冻结积分
+    points = Column(Integer, default=10)
+    frozen_points = Column(Integer, default=0)
     uid = Column(String(20), unique=True, index=True)
     last_ip = Column(String)
     is_admin = Column(Boolean, default=False)
-    has_used_experience = Column(Boolean, default=False) # 新增：是否已使用过 1 元体验
-    has_install_reward = Column(Boolean, default=False) # 新增：是否已领取安装桌面奖励
-    invited_by_id = Column(Integer, ForeignKey("users.id"), nullable=True) # 新增：邀请人 ID
-    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
+    has_used_experience = Column(Boolean, default=False)
+    has_install_reward = Column(Boolean, default=False)
+    invited_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=get_beijing_time)
 
-    # 关联
     image_logs = relationship("ImageLog", back_populates="owner")
     recharge_logs = relationship("RechargeLog", back_populates="target_user")
 
@@ -32,27 +32,26 @@ class ImageLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     prompt = Column(Text)
-    quality = Column(String)  # standard / hd / master
-    style = Column(String, default="default")  # 风格标注
-    final_prompt = Column(Text)  # 最终包装后的提示词
+    quality = Column(String)
+    style = Column(String, default="default")
+    final_prompt = Column(Text)
     cost_points = Column(Integer)
-    points_snapshot = Column(Integer, default=0) # 记录当时扣除的积分快照
+    points_snapshot = Column(Integer, default=0)
     image_url = Column(String)
-    ref_image_url = Column(Text) # 修改：记录参考图 (使用 Text 以防 Base64 溢出)
-    parent_id = Column(Integer, index=True, nullable=True) # 新增：迭代父 ID
-    root_id = Column(Integer, index=True, nullable=True) # 新增：迭代根 ID (用于统计总变体数)
-    iteration = Column(Integer, default=0) # 新增：迭代次数 (0 为初始)
-    status = Column(String)  # success / failed
+    ref_image_url = Column(Text)
+    parent_id = Column(Integer, index=True, nullable=True)
+    root_id = Column(Integer, index=True, nullable=True)
+    iteration = Column(Integer, default=0)
+    status = Column(String)
     error_msg = Column(Text)
-    created_at = Column(DateTime, index=True, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
+    created_at = Column(DateTime, index=True, default=get_beijing_time)
     
-    # Performance tracking (Task: Timing Analysis)
-    queue_duration = Column(Integer, default=0)       # 队列排队时间 (ms)
-    api_duration = Column(Integer, default=0)         # 中转站 API 响应时间 (ms)
-    generation_duration = Column(Integer, default=0)  # AI 生成总时间 (含 API 和本地处理) (ms)
-    storage_duration = Column(Integer, default=0)     # 转存 COS 时间 (ms)
-    total_duration = Column(Integer, default=0)       # 总任务耗时 (ms)
-    share_count = Column(Integer, default=0)          # 分享次数
+    queue_duration = Column(Integer, default=0)
+    api_duration = Column(Integer, default=0)
+    generation_duration = Column(Integer, default=0)
+    storage_duration = Column(Integer, default=0)
+    total_duration = Column(Integer, default=0)
+    share_count = Column(Integer, default=0)
 
     owner = relationship("User", back_populates="image_logs")
 
@@ -61,16 +60,16 @@ class RechargeLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    amount = Column(Integer)  # 对应积分
-    money_amount = Column(Integer)  # 实际金额 (元)
-    screenshot_url = Column(String)  # 截图 URL
-    status = Column(String, default="pending")  # pending / success / rejected
-    admin_note = Column(String)  # 管理员理由
-    operator_id = Column(Integer)  # 操作管理员的 ID
-    out_trade_no = Column(String(64), unique=True, index=True, nullable=True)  # 商户订单号
-    trade_no = Column(String(64), unique=True, index=True, nullable=True)  # 支付平台交易号
-    payment_method = Column(String(20), nullable=True)  # 支付方式 (wxpay/alipay)
-    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
+    amount = Column(Integer)
+    money_amount = Column(Integer)
+    screenshot_url = Column(String)
+    status = Column(String, default="pending")
+    admin_note = Column(String)
+    operator_id = Column(Integer)
+    out_trade_no = Column(String(64), unique=True, index=True, nullable=True)
+    trade_no = Column(String(64), unique=True, index=True, nullable=True)
+    payment_method = Column(String(20), nullable=True)
+    created_at = Column(DateTime, default=get_beijing_time)
 
     target_user = relationship("User", back_populates="recharge_logs")
 
@@ -81,7 +80,7 @@ class SystemConfig(Base):
     config_key = Column(String(100), unique=True, index=True)
     config_value = Column(Text)
     description = Column(String(255))
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=get_beijing_time, onupdate=get_beijing_time)
 
 class Feedback(Base):
     __tablename__ = "feedbacks"
@@ -92,7 +91,7 @@ class Feedback(Base):
     contact = Column(String(100))
     status = Column(String, default="pending")
     admin_note = Column(Text)
-    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
+    created_at = Column(DateTime, default=get_beijing_time)
 
     user = relationship("User")
 
@@ -104,4 +103,4 @@ class VerificationCode(Base):
     code = Column(String(10))
     expires_at = Column(DateTime)
     is_used = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(__import__('datetime').timezone(__import__('datetime').timedelta(hours=8))))
+    created_at = Column(DateTime, default=get_beijing_time)
