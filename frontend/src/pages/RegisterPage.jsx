@@ -65,7 +65,27 @@ const RegisterPage = () => {
           setLoading(false);
           return;
         }
-        
+        if (regMode === 'email' && !username.trim()) {
+          setError('请输入用户名');
+          setLoading(false);
+          return;
+        }
+        if (regMode === 'email' && (!code || code.trim() === '')) {
+          setError('请输入邮箱验证码');
+          setLoading(false);
+          return;
+        }
+        if (regMode === 'phone' && (!phone || phone.length !== 11 || !/^\d{11}$/.test(phone))) {
+          setError('请输入正确的11位手机号');
+          setLoading(false);
+          return;
+        }
+        if (!password || password.length < 6) {
+          setError('密码长度不能少于6位');
+          setLoading(false);
+          return;
+        }
+
         let resp;
         if (regMode === 'email') {
           resp = await request.post('/auth/register', { 
@@ -131,7 +151,7 @@ const RegisterPage = () => {
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <input
             type="text"
-            placeholder="您的用户名 (选填)"
+            placeholder={regMode === 'email' ? '您的用户名' : '您的用户名 (选填)'}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
