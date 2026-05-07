@@ -1,12 +1,6 @@
 import random
 import string
 
-PRICING = {
-    "standard": 5,
-    "hd": 15,
-    "master": 30
-}
-
 # 排除易混淆字符：I, O, L, 0, 1
 CHARSET = "23456789ABCDEFGHJKMNPQRSTWXYZ"
 
