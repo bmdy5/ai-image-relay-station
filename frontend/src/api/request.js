@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearUserCache } from '../utils/userCache';
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || (import.meta.env.DEV
@@ -40,6 +41,7 @@ request.interceptors.response.use(
     _errorCount = 0;
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      clearUserCache();
       const isGuest = localStorage.getItem('isGuest') === 'true';
       if (!isGuest && window.location.pathname !== '/login') {
         window.location.href = '/login';
@@ -52,6 +54,7 @@ request.interceptors.response.use(
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('isGuest');
+  clearUserCache();
   window.location.href = '/login';
 };
 

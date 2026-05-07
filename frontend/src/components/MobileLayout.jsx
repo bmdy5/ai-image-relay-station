@@ -4,11 +4,12 @@ import { Sparkles, LayoutGrid, Gem, User, Download } from 'lucide-react';
 import request from '../api/request';
 import { usePWA } from '../hooks/usePWA';
 import PWAInstallModal from './PWAInstallModal';
+import { loadUserCache, saveUserCache } from '../utils/userCache';
 
 const MobileLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(() => loadUserCache());
   const [showPwaModal, setShowPwaModal] = useState(false);
   const { isInstallable, isStandalone, isInstalled, isIOS, isAndroid, isInWechat, promptInstall } = usePWA();
   const pwaPlatform = isIOS ? 'ios' : isAndroid ? 'android' : isInWechat ? 'wechat' : null;
@@ -57,6 +58,7 @@ const MobileLayout = ({ children }) => {
     try {
       const user = await request.get('/auth/me');
       setUserInfo(user);
+      saveUserCache(user);
     } catch (err) {
       console.error('Failed to fetch userInfo');
     }
