@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, LayoutGrid, Gem, User } from 'lucide-react';
+import { Sparkles, LayoutGrid, Gem, User, Download } from 'lucide-react';
 import request from '../api/request';
+import { usePWA } from '../hooks/usePWA';
+import PWAInstallModal from './PWAInstallModal';
 
 const MobileLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [userInfo, setUserInfo] = useState(null);
+  const [showPwaModal, setShowPwaModal] = useState(false);
+  const { isInstallable, isStandalone, isInstalled, isIOS, isAndroid, isInWechat, promptInstall } = usePWA();
+  const pwaPlatform = isIOS ? 'ios' : isAndroid ? 'android' : isInWechat ? 'wechat' : null;
+  const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true';
 
   // 获取用户信息
   const fetchUserInfo = async () => {
@@ -76,13 +82,29 @@ const MobileLayout = ({ children }) => {
         borderBottom: '1px solid rgba(0,0,0,0.03)'
       }}>
         <div style={{ fontWeight: '800', fontSize: '20px', color: '#C59C8F', letterSpacing: '-0.5px' }}>Visionary</div>
-        <div style={{ 
-          fontSize: '12px', fontWeight: '800', color: '#fff', 
-          background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', 
-          padding: '6px 14px', borderRadius: '20px',
-          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
-        }}>
-          {userInfo?.points || 0} 积分
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {showInstallEntry && (
+            <button
+              onClick={() => setShowPwaModal(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)',
+                border: 'none', color: '#fff', fontSize: '11px', fontWeight: '800',
+                padding: '6px 12px', borderRadius: '20px', cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(255, 61, 0, 0.2)'
+              }}
+            >
+              <Download size={12} /> 安装
+            </button>
+          )}
+          <div style={{
+            fontSize: '12px', fontWeight: '800', color: '#fff',
+            background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)',
+            padding: '6px 14px', borderRadius: '20px',
+            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
+          }}>
+            {userInfo?.points || 0} 积分
+          </div>
         </div>
       </header>
 
@@ -141,6 +163,13 @@ const MobileLayout = ({ children }) => {
           </div>
         ))}
       </nav>
+      {showPwaModal && pwaPlatform && (
+        <PWAInstallModal
+          platform={pwaPlatform}
+          onClose={() => setShowPwaModal(false)}
+          onInstall={() => { promptInstall(); setShowPwaModal(false); }}
+        />
+      )}
     </div>
   );
 };
