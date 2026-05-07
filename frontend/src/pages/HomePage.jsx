@@ -453,6 +453,7 @@ const HomePage = () => {
       }
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
+      window.dispatchEvent(new CustomEvent('points-updated'));
       
       // 更新任务对象，保存 taskId 用于接力轮询
       setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, taskId } : j));

@@ -23,7 +23,13 @@ const PCLayout = ({ children }) => {
 
   useEffect(() => {
     fetchUserInfo();
-  }, [location.pathname]); // 切换页面时刷新用户信息（主要是积分）
+
+    const handlePointsUpdated = () => fetchUserInfo();
+    window.addEventListener('points-updated', handlePointsUpdated);
+    return () => {
+      window.removeEventListener('points-updated', handlePointsUpdated);
+    };
+  }, [location.pathname]);
 
   const fetchUserInfo = async () => {
     const isGuest = localStorage.getItem('isGuest') === 'true';
