@@ -108,6 +108,16 @@ const PCLayout = ({ children }) => {
               >
                 <Images size={18} strokeWidth={2} /> 我的创作
               </span>
+              <span
+                onClick={() => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分')}
+                style={{
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                  color: isActive('/pricing') ? 'var(--primary)' : 'var(--text-secondary)',
+                  transition: 'var(--transition)'
+                }}
+              >
+                <Coins size={18} strokeWidth={2} /> 价格
+              </span>
               {userInfo?.is_admin && (
                 <span 
                   onClick={() => navigate('/admin')}

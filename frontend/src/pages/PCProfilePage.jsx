@@ -241,26 +241,39 @@ const PCProfilePage = () => {
                   {userInfo?.points} <span style={{ fontSize: '18px' }}>积分</span>
                 </div>
               </div>
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await request.post('/auth/daily-reward');
-                    alert(res.message || '签到成功！');
-                    fetchData();
-                  } catch (err) {
-                    alert(err.response?.data?.detail || '签到失败');
-                  }
-                }}
-                style={{
-                  padding: '16px 32px', borderRadius: '16px', background: 'white',
-                  color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '16px',
-                  cursor: 'pointer', transition: 'transform 0.2s'
-                }}
-                onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                每日签到
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                <button
+                  onClick={() => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分')}
+                  style={{
+                    padding: '16px 32px', borderRadius: '16px', background: 'white',
+                    color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '16px',
+                    cursor: 'pointer', transition: 'transform 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  充值
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await request.post('/auth/daily-reward');
+                      alert(res.message || '签到成功！');
+                      fetchData();
+                    } catch (err) {
+                      alert(err.response?.data?.detail || '签到失败');
+                    }
+                  }}
+                  style={{
+                    padding: '10px 24px', borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.3)', color: 'white',
+                    border: '1px solid rgba(255,255,255,0.4)',
+                    fontWeight: '700', fontSize: '13px', cursor: 'pointer'
+                  }}
+                >
+                  签到 +5 积分
+                </button>
+              </div>
             </div>
 
             {/* 快速操作 */}

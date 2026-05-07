@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, LayoutGrid, User } from 'lucide-react';
+import { Sparkles, LayoutGrid, Gem, User } from 'lucide-react';
 import request from '../api/request';
 
 const MobileLayout = ({ children }) => {
@@ -43,6 +43,7 @@ const MobileLayout = ({ children }) => {
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.startsWith('/history')) return 'history';
+    if (path.startsWith('/pricing')) return 'pricing';
     if (path.startsWith('/profile')) return 'profile';
     return 'home';
   };
@@ -112,11 +113,12 @@ const MobileLayout = ({ children }) => {
         {[
           { id: 'home', icon: <Sparkles size={22} />, label: '创作' },
           { id: 'history', icon: <LayoutGrid size={22} />, label: '历史' },
+          { id: 'pricing', icon: <Gem size={22} />, label: '会员', onClick: () => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分') },
           { id: 'profile', icon: <User size={22} />, label: '我的' }
         ].map(tab => (
           <div 
             key={tab.id}
-            onClick={() => handleTabClick(tab.id)}
+            onClick={() => tab.onClick ? tab.onClick() : handleTabClick(tab.id)}
             style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               color: activeTab === tab.id ? '#C59C8F' : '#8E8E93',
