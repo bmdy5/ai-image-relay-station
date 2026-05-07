@@ -71,6 +71,7 @@ export const usePWA = () => {
         localStorage.setItem('pwa_reward_claimed', 'true');
         // We could dispatch an event here to notify UI to show a toast, but usually points update via polling is enough
         window.dispatchEvent(new CustomEvent('pwa-reward-success', { detail: res.points }));
+        window.dispatchEvent(new CustomEvent('points-updated'));
       }
     } catch (err) {
       console.error("Failed to claim PWA reward or already claimed", err);

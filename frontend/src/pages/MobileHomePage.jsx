@@ -453,7 +453,8 @@ const MobileHomePage = () => {
         setRefineRootId(null);
       }
       const taskId = res.id;
-      
+      window.dispatchEvent(new CustomEvent('points-updated'));
+
       const tip = document.createElement('div');
       tip.innerHTML = '✨ 任务已进入后台，您可以继续创作（支持 3 路并行）';
       tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 3s forwards;border:1px solid rgba(255,255,255,0.1);';

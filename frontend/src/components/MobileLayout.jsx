@@ -25,9 +25,15 @@ const MobileLayout = ({ children }) => {
 
   useEffect(() => {
     fetchUserInfo();
-    // 监听导航变化，在切换页面时刷新积分
     const interval = setInterval(fetchUserInfo, 30000); // 30秒轮询一次
-    return () => clearInterval(interval);
+
+    // 监听积分变更事件（充值、生图后立即刷新）
+    const handlePointsUpdated = () => fetchUserInfo();
+    window.addEventListener('points-updated', handlePointsUpdated);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('points-updated', handlePointsUpdated);
+    };
   }, [location.pathname]);
 
   const getActiveTab = () => {
