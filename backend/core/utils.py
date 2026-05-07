@@ -2,12 +2,6 @@ import random
 import string
 from datetime import datetime, timedelta, timezone
 
-PRICING = {
-    "standard": 5,
-    "hd": 15,
-    "master": 30
-}
-
 # 排除易混淆字符：I, O, L, 0, 1
 CHARSET = "23456789ABCDEFGHJKMNPQRSTWXYZ"
 

@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 const request = axios.create({
-  baseURL: import.meta.env.DEV 
-    ? 'http://localhost:8000/api' 
-    : 'http://119.29.232.114/api',
+  baseURL: import.meta.env.VITE_API_BASE || (import.meta.env.DEV
+    ? 'http://localhost:8000/api'
+    : '/api'),
   timeout: 300000, // 增加到 5 分钟，防止生图超时
 });
 
