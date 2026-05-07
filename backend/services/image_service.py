@@ -110,18 +110,24 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                         final_url = data_list[0].get("url") or data_list[0].get("b64_json")
                     elif res_json.get("images"):
                         final_url = res_json["images"][0]
-                    
+
                     if final_url:
                         success = True
                         break
+
+                # 5xx 服务端错误重试，429 限流重试
+                if resp.status_code >= 500 or resp.status_code == 429:
+                    if attempt < 2:
+                        delay = (attempt + 1) * 2  # 2s, 4s 递进等待
+                        print(f"--- [API Retry] ID: {log_id} | Status: {resp.status_code} | Waiting {delay}s (attempt {attempt + 1}/3)")
+                        await asyncio.sleep(delay)
+                        continue
                 raise Exception(f"API Error ({resp.status_code}): {resp.text}")
             except (httpx.ConnectError, httpx.ConnectTimeout) as ce:
-                if attempt < 2: 
+                if attempt < 2:
                     await asyncio.sleep(1)
                     continue
                 raise ce
-            except Exception as e:
-                raise e
 
         if not success: raise Exception("未获取到有效图片链接")
 
