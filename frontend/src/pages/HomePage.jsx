@@ -47,6 +47,7 @@ import {
   Plus
 } from 'lucide-react';
 import Showcase from '../components/Showcase';
+import { downloadWithName, defaultImageName } from '../utils/download';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -889,9 +890,9 @@ const HomePage = () => {
                         >
                           <Wand2 size={18} /> 迭代精修
                         </button>
-                        <a href={currentJob.result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none', background: '#f5f5f7', color: '#1d1d1f', border: 'none' }}>
+                        <button onClick={() => downloadWithName(currentJob.result, defaultImageName())} className="btn-primary" style={{ flex: 1, background: '#f5f5f7', color: '#1d1d1f', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}>
                           <Download size={18} /> 高清保存
-                        </a>
+                        </button>
                       </div>
                     </div>
                   );
