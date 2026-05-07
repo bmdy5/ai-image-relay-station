@@ -5,7 +5,7 @@ import './AnnouncementModal.css';
 const AnnouncementModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
-  const CURRENT_VERSION = '3.1';
+  const CURRENT_VERSION = '2026.05.08';
 
   useEffect(() => {
     const hasSeen = localStorage.getItem(`announcement_seen_${CURRENT_VERSION}`);
@@ -36,48 +36,48 @@ const AnnouncementModal = () => {
           <div className="header-icon-wrapper">
             <Sparkles className="header-icon" />
           </div>
-          <h2>V3.0 焕新升级</h2>
-          <p className="subtitle">更专业，更具创意</p>
+          <h2>Visionary 焕新升级</h2>
+          <p className="subtitle">{new Date().toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric' })}</p>
         </div>
 
         <div className="announcement-body">
           <div className="update-item">
             <div className="item-icon-box style">
-              <Palette size={20} />
+              <Zap size={20} />
             </div>
             <div className="item-text">
-              <h4>风格实验室扩容</h4>
-              <p>新增多种艺术风格，创作灵感不再受限。</p>
+              <h4>每日签到领积分</h4>
+              <p>每天签到 +5 积分，邀请好友首画再得 +10。</p>
             </div>
           </div>
-          
+
           <div className="update-item">
             <div className="item-icon-box ui">
               <Layout size={20} />
             </div>
             <div className="item-text">
-              <h4>全端 UI 交互重塑</h4>
-              <p>PC 专业工作台 + 移动端丝滑手势优化。</p>
+              <h4>一键安装到桌面</h4>
+              <p>支持 Android / iOS / PC，像原生 App 一样流畅使用。</p>
             </div>
           </div>
 
           <div className="update-item">
             <div className="item-icon-box logic">
-              <Zap size={20} />
+              <CheckCircle2 size={20} />
             </div>
             <div className="item-text">
-              <h4>智能影像还原</h4>
-              <p>图生图精度大幅提升，支持图片智能预处理。</p>
+              <h4>系统稳定性提升</h4>
+              <p>修复多项已知问题，登录注册流程更加顺畅。</p>
             </div>
           </div>
 
           <div className="update-item">
             <div className="item-icon-box atmosphere">
-              <CheckCircle2 size={20} />
+              <Palette size={20} />
             </div>
             <div className="item-text">
-              <h4>沉浸式创作氛围</h4>
-              <p>全场域动态背景，操作细节体验全面优化。</p>
+              <h4>交互细节优化</h4>
+              <p>积分即时显示、图片自定义命名、维护模式优雅降级。</p>
             </div>
           </div>
         </div>
