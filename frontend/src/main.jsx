@@ -3,6 +3,13 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
+// 在 React 挂载前捕获 beforeinstallprompt，避免事件丢失
+window.__pwaDeferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.__pwaDeferredPrompt = e;
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
