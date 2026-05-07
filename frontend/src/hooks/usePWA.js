@@ -30,15 +30,21 @@ export const usePWA = () => {
       checkAndClaimReward();
     }
 
-    // 3. Listen for the install prompt (Chrome/Android/PC)
+    // 3. 读取 main.jsx 中提前捕获的 beforeinstallprompt
+    if (window.__pwaDeferredPrompt) {
+      setDeferredPrompt(window.__pwaDeferredPrompt);
+      setIsInstalled(false);
+    }
+
+    // 4. Listen for the install prompt (Chrome/Android/PC)
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // If we get this event, the app is definitely not installed natively
+      window.__pwaDeferredPrompt = e;
       setIsInstalled(false);
     };
 
-    // 4. Listen for successful installation
+    // 5. Listen for successful installation
     const handleAppInstalled = () => {
       setDeferredPrompt(null);
       setIsInstalled(true);
