@@ -151,22 +151,32 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                 user.points -= cost
                 user.frozen_points = max(0, user.frozen_points - cost)
 
-                # 6. 邀请奖励触发：使用 is_invitee_rewarded 防重，避免并行生图竞态
+                # 6. 邀请奖励触发：MySQL 分布式锁 + is_invitee_rewarded 防并发
                 if user.invited_by_id:
-                    if recharge_crud.can_receive_invitation_reward(db, user.invited_by_id) and \
-                       not recharge_crud.is_invitee_rewarded(db, user.id):
-                        inviter = db.query(models.User).filter(models.User.id == user.invited_by_id).first()
-                        if inviter:
-                            inviter.points += 10
-                            recharge_crud.create_recharge_log(
-                                db,
-                                user_id=inviter.id,
-                                amount=10,
-                                status="success",
-                                admin_note=f"邀请好友 {user.uid} 完成首画奖励",
-                                operator_id=0,
-                                trade_no=f"INVITE_REWARD_{user.id}_{int(time.time())}"
-                            )
+                    from sqlalchemy import text
+                    lock_name = f"invite_reward:{user.id}"
+                    result = db.execute(text("SELECT GET_LOCK(:lock_name, 0)"), {"lock_name": lock_name})
+                    if not result.scalar():
+                        print(f"--- [Invite Lock] Skipped: could not acquire lock for user {user.id}")
+                    else:
+                        try:
+                            db.refresh(user)  # 锁后重读，防止并发幻读
+                            if recharge_crud.can_receive_invitation_reward(db, user.invited_by_id) and \
+                               not recharge_crud.is_invitee_rewarded(db, user.id):
+                                inviter = db.query(models.User).filter(models.User.id == user.invited_by_id).first()
+                                if inviter:
+                                    inviter.points += 10
+                                    recharge_crud.create_recharge_log(
+                                        db,
+                                        user_id=inviter.id,
+                                        amount=10,
+                                        status="success",
+                                        admin_note=f"邀请好友 {user.uid} 完成首画奖励",
+                                        operator_id=0,
+                                        trade_no=f"INVITE_REWARD_{user.id}_{int(time.time())}"
+                                    )
+                        finally:
+                            db.execute(text("SELECT RELEASE_LOCK(:lock_name)"), {"lock_name": lock_name})
 
                 print(f"\n--- [Task Audit] ID: {log_id} | SUCCESS ---")
                 print(f"Total Time: {log.total_duration/1000:.2f}s (API: {api_ms/1000:.2f}s, Store: {store_ms/1000:.2f}s)")
