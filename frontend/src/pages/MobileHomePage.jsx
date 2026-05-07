@@ -177,7 +177,12 @@ const MobileHomePage = () => {
   };
 
   useEffect(() => {
-    const guestFlag = localStorage.getItem('isGuest') === 'true';
+    const hasToken = !!localStorage.getItem('token');
+    let guestFlag = localStorage.getItem('isGuest') === 'true';
+    if (guestFlag && hasToken) {
+      localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
+      guestFlag = false;
+    }
     setIsGuest(guestFlag);
     if (!guestFlag) {
       fetchUserInfo();
