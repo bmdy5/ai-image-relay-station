@@ -1378,6 +1378,7 @@ const HomePage = () => {
                 }
               }} className="btn-primary" style={{ width: '100%' }}>每日签到领积分</button>
               <button onClick={() => { setShowPointsModal(false); navigate('/profile'); }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>邀请好友赚积分</button>
+              <button onClick={() => { setShowPointsModal(false); alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分'); }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #ddd', color: '#999', background: 'transparent', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>充值</button>
               <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ width: '100%' }}>稍后再说</button>
             </div>
           </div>

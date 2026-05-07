@@ -249,20 +249,28 @@ const MobileProfilePage = ({ isMobile }) => {
               <div style={{ fontSize: '13px', opacity: 0.8 }}>当前余额</div>
               <div style={{ fontSize: '32px', fontWeight: '900', marginTop: '4px' }}>{userInfo?.points} <span style={{ fontSize: '14px', fontWeight: '700' }}>积分</span></div>
             </div>
-            <button
-              onClick={async () => {
-                try {
-                  const res = await request.post('/auth/daily-reward');
-                  alert(res.message || '签到成功！');
-                  fetchData();
-                } catch (err) {
-                  alert(err.response?.data?.detail || '签到失败');
-                }
-              }}
-              style={{ padding: '12px 24px', borderRadius: '16px', background: 'white', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '14px', cursor: 'pointer' }}
-            >
-              每日签到
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分')}
+                style={{ padding: '10px 20px', borderRadius: '14px', background: 'white', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
+              >
+                充值
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await request.post('/auth/daily-reward');
+                    alert(res.message || '签到成功！');
+                    fetchData();
+                  } catch (err) {
+                    alert(err.response?.data?.detail || '签到失败');
+                  }
+                }}
+                style={{ padding: '8px 20px', borderRadius: '14px', background: 'rgba(255,255,255,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+              >
+                签到+5
+              </button>
+            </div>
           </div>
         </div>
       </div>
