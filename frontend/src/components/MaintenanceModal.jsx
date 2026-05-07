@@ -9,8 +9,7 @@ const MaintenanceModal = () => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+          window.location.href = '/';
           return 0;
         }
         return prev - 1;
