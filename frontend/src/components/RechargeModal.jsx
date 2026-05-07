@@ -43,6 +43,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
           setPayStatus('success');
           clearInterval(pollTimer.current);
           setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('points-updated'));
             onSuccess();
             onClose();
           }, 2000);
@@ -63,6 +64,7 @@ const RechargeModal = ({ onClose, onSuccess, uid, initialAmount, hasUsedExperien
         setPayStatus('success');
         if (pollTimer.current) clearInterval(pollTimer.current);
         setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('points-updated'));
           onSuccess();
           onClose();
         }, 2000);

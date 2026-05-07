@@ -1,23 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, LayoutGrid, Gem, User } from 'lucide-react';
+import { Sparkles, LayoutGrid, Gem, User, Download } from 'lucide-react';
 import request from '../api/request';
+import { usePWA } from '../hooks/usePWA';
+import PWAInstallModal from './PWAInstallModal';
+import { loadUserCache, saveUserCache } from '../utils/userCache';
 
 const MobileLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(() => loadUserCache());
+  const [showPwaModal, setShowPwaModal] = useState(false);
+  const { isInstallable, isStandalone, isInstalled, isIOS, isAndroid, isInWechat, promptInstall } = usePWA();
+  const pwaPlatform = isIOS ? 'ios' : isAndroid ? 'android' : isInWechat ? 'wechat' : null;
+  const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true';
+
+  // 微信环境顶部提示（当日关闭后不再显示）
+  const wechatTipKey = `wechat_tip_${new Date().toDateString()}`;
+  const [showWechatTip, setShowWechatTip] = useState(
+    () => isInWechat && !isStandalone && !localStorage.getItem(wechatTipKey)
+  );
+
+  // PWA 已安装时清除 dismiss 标记，确保卸载后重访会再次提示
+  useEffect(() => {
+    if (isStandalone) {
+      localStorage.removeItem('pwa_modal_dismissed');
+      localStorage.removeItem('pwa_modal_never');
+    }
+  }, [isStandalone]);
+
+  // 首次访问自动弹 PWA 安装提示
+  useEffect(() => {
+    if (!showInstallEntry) return;
+    if (localStorage.getItem('pwa_modal_never')) return; // 永久不再提示
+    const dismissed = localStorage.getItem('pwa_modal_dismissed');
+    if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 3600 * 1000) return;
+    const delay = isAndroid ? 1500 : 3000;
+    const timer = setTimeout(() => setShowPwaModal(true), delay);
+    return () => clearTimeout(timer);
+  }, [showInstallEntry]);
+
+  const handlePwaClose = () => {
+    localStorage.setItem('pwa_modal_dismissed', String(Date.now()));
+    setShowPwaModal(false);
+  };
+
+  const handlePwaNever = () => {
+    localStorage.setItem('pwa_modal_never', '1');
+    setShowPwaModal(false);
+  };
 
   // 获取用户信息
   const fetchUserInfo = async () => {
     const isGuest = localStorage.getItem('isGuest') === 'true';
-    if (isGuest) {
+    const hasToken = !!localStorage.getItem('token');
+    if (isGuest && hasToken) {
+      localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
+    }
+    if (isGuest && !hasToken) {
       setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
       return;
     }
     try {
       const user = await request.get('/auth/me');
       setUserInfo(user);
+      saveUserCache(user);
     } catch (err) {
       console.error('Failed to fetch userInfo');
     }
@@ -25,9 +72,15 @@ const MobileLayout = ({ children }) => {
 
   useEffect(() => {
     fetchUserInfo();
-    // 监听导航变化，在切换页面时刷新积分
     const interval = setInterval(fetchUserInfo, 30000); // 30秒轮询一次
-    return () => clearInterval(interval);
+
+    // 监听积分变更事件（充值、生图后立即刷新）
+    const handlePointsUpdated = () => fetchUserInfo();
+    window.addEventListener('points-updated', handlePointsUpdated);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('points-updated', handlePointsUpdated);
+    };
   }, [location.pathname]);
 
   const getActiveTab = () => {
@@ -66,21 +119,54 @@ const MobileLayout = ({ children }) => {
         borderBottom: '1px solid rgba(0,0,0,0.03)'
       }}>
         <div style={{ fontWeight: '800', fontSize: '20px', color: '#C59C8F', letterSpacing: '-0.5px' }}>Visionary</div>
-        <div style={{ 
-          fontSize: '12px', fontWeight: '800', color: '#fff', 
-          background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)', 
-          padding: '6px 14px', borderRadius: '20px',
-          boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
-        }}>
-          {userInfo?.points || 0} 积分
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {showInstallEntry && (
+            <button
+              onClick={() => setShowPwaModal(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)',
+                border: 'none', color: '#fff', fontSize: '11px', fontWeight: '800',
+                padding: '6px 12px', borderRadius: '20px', cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(255, 61, 0, 0.2)'
+              }}
+            >
+              <Download size={12} /> 安装
+            </button>
+          )}
+          <div style={{
+            fontSize: '12px', fontWeight: '800', color: '#fff',
+            background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)',
+            padding: '6px 14px', borderRadius: '20px',
+            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
+          }}>
+            {userInfo?.points || 0} 积分
+          </div>
         </div>
       </header>
+
+      {/* 微信环境提示横幅 */}
+      {showWechatTip && (
+        <div style={{
+          position: 'fixed', top: '64px', left: 0, right: 0, zIndex: 99,
+          background: 'linear-gradient(135deg, #07C160 0%, #06AD56 100%)',
+          color: '#fff', padding: '10px 16px', fontSize: '13px', fontWeight: '600',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(7, 193, 96, 0.2)'
+        }}>
+          <span>请在浏览器中打开，体验完整功能</span>
+          <button
+            onClick={() => { localStorage.setItem(wechatTipKey, '1'); setShowWechatTip(false); }}
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+          >×</button>
+        </div>
+      )}
 
       {/* 滚动内容区 */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
-        paddingTop: '65px', // 为 Header 留位
+        paddingTop: showWechatTip ? '108px' : '65px', // Header + 微信提示
         paddingBottom: '90px', // 为 Tab Bar 留位
         WebkitOverflowScrolling: 'touch'
       }}>
@@ -103,12 +189,12 @@ const MobileLayout = ({ children }) => {
         {[
           { id: 'home', icon: <Sparkles size={22} />, label: '创作' },
           { id: 'history', icon: <LayoutGrid size={22} />, label: '历史' },
-          { id: 'pricing', icon: <Gem size={22} />, label: '会员' },
+          { id: 'pricing', icon: <Gem size={22} />, label: '会员', onClick: () => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分') },
           { id: 'profile', icon: <User size={22} />, label: '我的' }
         ].map(tab => (
           <div 
             key={tab.id}
-            onClick={() => handleTabClick(tab.id)}
+            onClick={() => tab.onClick ? tab.onClick() : handleTabClick(tab.id)}
             style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
               color: activeTab === tab.id ? '#C59C8F' : '#8E8E93',
@@ -131,6 +217,14 @@ const MobileLayout = ({ children }) => {
           </div>
         ))}
       </nav>
+      {showPwaModal && pwaPlatform && (
+        <PWAInstallModal
+          platform={pwaPlatform}
+          onClose={handlePwaClose}
+          onInstall={() => { promptInstall(); handlePwaClose(); }}
+          onNever={handlePwaNever}
+        />
+      )}
     </div>
   );
 };

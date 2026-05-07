@@ -1,23 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, LogOut } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Loader2 } from 'lucide-react';
 
 const MaintenanceModal = () => {
-  const [countdown, setCountdown] = useState(5);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          return 0;
+    // 每 5 秒探测后端是否恢复
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch('/api/health');
+        if (res.ok) {
+          clearInterval(poll);
+          window.location.href = '/';
         }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
+      } catch (err) {
+        // 后端仍未恢复，继续等待
+      }
+    }, 5000);
+    return () => clearInterval(poll);
   }, []);
+
+  const handleRetry = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch('/api/health');
+      if (res.ok) {
+        window.location.href = '/';
+      }
+    } catch (err) {}
+    setChecking(false);
+  };
 
   return (
     <div style={{
@@ -44,14 +56,24 @@ const MaintenanceModal = () => {
           抱歉，系统正在进行紧急维护。<br/>
           为了您的数据安全，我们将暂时关闭访问。
         </p>
-        <div style={{ 
-          background: '#F97316', color: '#fff', padding: '16px', 
-          borderRadius: '16px', fontWeight: 'bold', display: 'flex', 
-          alignItems: 'center', justifyContent: 'center', gap: '8px',
-          boxShadow: '0 10px 20px rgba(249, 115, 22, 0.2)'
-        }}>
-          <LogOut size={18} /> {countdown}s 后安全退出
-        </div>
+        <p style={{ color: '#999', fontSize: '13px', marginBottom: '20px' }}>
+          系统正在自动检测恢复状态，恢复后将自动返回
+        </p>
+        <button
+          onClick={handleRetry}
+          disabled={checking}
+          style={{
+            width: '100%', padding: '16px', borderRadius: '16px',
+            background: 'linear-gradient(135deg, #F97316, #EA580C)',
+            color: '#fff', border: 'none', fontWeight: 'bold', fontSize: '15px',
+            cursor: 'pointer', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: '8px',
+            boxShadow: '0 10px 20px rgba(249, 115, 22, 0.2)'
+          }}
+        >
+          {checking ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+          {checking ? '检测中...' : '手动重试'}
+        </button>
       </div>
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes modalFadeIn {

@@ -47,6 +47,7 @@ import {
   Plus
 } from 'lucide-react';
 import Showcase from '../components/Showcase';
+import { downloadWithName, defaultImageName } from '../utils/download';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -189,9 +190,14 @@ const HomePage = () => {
   };
 
   useEffect(() => {
-    const guestFlag = localStorage.getItem('isGuest') === 'true';
+    const hasToken = !!localStorage.getItem('token');
+    let guestFlag = localStorage.getItem('isGuest') === 'true';
+    if (guestFlag && hasToken) {
+      localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
+      guestFlag = false;
+    }
     setIsGuest(guestFlag);
-    
+
     if (!guestFlag) {
       fetchUserInfo();
     } else {
@@ -218,13 +224,19 @@ const HomePage = () => {
     const saved = localStorage.getItem('visionary_active_jobs');
     if (saved) {
       const { timestamp, jobs } = JSON.parse(saved);
-      // 延长至 2 小时 (7200000ms)
       if (Date.now() - timestamp < 7200000) {
-        setActiveJobs(jobs);
-        if (jobs.length > 0) setCurrentJobId(jobs[0].id);
-        
-        // 自动接力轮询
-        jobs.forEach(job => {
+        // 超过 10 分钟的 pending/generating 任务标记为过期
+        const stale = Date.now() - timestamp > 600000;
+        const restored = jobs.map(job => {
+          if (stale && (job.status === 'pending' || job.status === 'generating')) {
+            return { ...job, status: 'failed', error: '任务已过期，请重新创作' };
+          }
+          return job;
+        });
+        setActiveJobs(restored);
+        if (restored.length > 0) setCurrentJobId(restored[0].id);
+
+        restored.forEach(job => {
           if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
             startPolling(job.id, job.taskId);
           }
@@ -237,16 +249,18 @@ const HomePage = () => {
 
   const startPolling = (jobId, taskId) => {
     if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
-    
+
     let pollCount = 0;
     let internalProgress = 0;
-    
+    let errors = 0;
+
     const timer = setInterval(async () => {
       pollCount++;
       try {
         const statusRes = await request.get(`/image/status/${taskId}`);
+        errors = 0; // 成功则重置错误计数
         let targetProgress = internalProgress;
-        
+
         if (statusRes.status === 'pending') targetProgress = Math.min(internalProgress + 2, 20);
         else if (statusRes.status === 'generating') targetProgress = Math.min(internalProgress + 10, 80);
         else if (statusRes.status === 'success') {
@@ -260,18 +274,25 @@ const HomePage = () => {
           setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: statusRes.error } : j));
           return;
         }
-        
+
         internalProgress = targetProgress;
         setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, progress: Math.floor(internalProgress), status: statusRes.status } : j));
-      } catch (err) {}
-      
+      } catch (err) {
+        errors++;
+        if (errors >= 3) {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: '网络异常，任务无法继续' } : j));
+        }
+      }
+
       if (pollCount > 60) {
         clearInterval(timer);
         delete pollTimers.current[jobId];
         setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: '请求超时' } : j));
       }
     }, 3000);
-    
+
     pollTimers.current[jobId] = timer;
   };
 
@@ -453,6 +474,7 @@ const HomePage = () => {
       }
       const taskId = res.id;
       setUserInfo(prev => ({ ...prev, points: res.remaining_points }));
+      window.dispatchEvent(new CustomEvent('points-updated'));
       
       // 更新任务对象，保存 taskId 用于接力轮询
       setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, taskId } : j));
@@ -883,9 +905,9 @@ const HomePage = () => {
                         >
                           <Wand2 size={18} /> 迭代精修
                         </button>
-                        <a href={currentJob.result} download className="btn-primary" style={{ flex: 1, textDecoration: 'none', background: '#f5f5f7', color: '#1d1d1f', border: 'none' }}>
+                        <button onClick={() => downloadWithName(currentJob.result, defaultImageName())} className="btn-primary" style={{ flex: 1, background: '#f5f5f7', color: '#1d1d1f', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}>
                           <Download size={18} /> 高清保存
-                        </a>
+                        </button>
                       </div>
                     </div>
                   );
@@ -1344,9 +1366,20 @@ const HomePage = () => {
               当前生成需要 <b style={{ color: 'var(--primary)' }}>{requiredPoints}</b> 积分<br/>
               您的余额仅剩 <b style={{ color: '#faad14' }}>{userInfo?.points || 0}</b> 积分
             </p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ flex: 1 }}>稍后再说</button>
-              <button onClick={() => navigate('/pricing')} className="btn-primary" style={{ flex: 1.2 }}>立即充值</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={async () => {
+                try {
+                  const res = await request.post('/auth/daily-reward');
+                  showToast(res.message || '签到成功！');
+                  fetchUserInfo();
+                  setShowPointsModal(false);
+                } catch (err) {
+                  showToast(err.response?.data?.detail || '今日已签到', 'error');
+                }
+              }} className="btn-primary" style={{ width: '100%' }}>每日签到领积分</button>
+              <button onClick={() => { setShowPointsModal(false); navigate('/profile'); }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>邀请好友赚积分</button>
+              <button onClick={() => { setShowPointsModal(false); alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分'); }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #ddd', color: '#999', background: 'transparent', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>充值</button>
+              <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ width: '100%' }}>稍后再说</button>
             </div>
           </div>
         </div>

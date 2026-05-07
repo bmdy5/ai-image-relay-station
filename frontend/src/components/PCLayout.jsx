@@ -13,27 +13,39 @@ import {
 } from 'lucide-react';
 import NeuralPlexus from './NeuralPlexus';
 import { usePWA } from '../hooks/usePWA';
+import { loadUserCache, saveUserCache } from '../utils/userCache';
 
 const PCLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isInstallable, isStandalone, isInstalled, promptInstall } = usePWA();
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(() => loadUserCache());
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   useEffect(() => {
     fetchUserInfo();
-  }, [location.pathname]); // 切换页面时刷新用户信息（主要是积分）
+
+    const handlePointsUpdated = () => fetchUserInfo();
+    window.addEventListener('points-updated', handlePointsUpdated);
+    return () => {
+      window.removeEventListener('points-updated', handlePointsUpdated);
+    };
+  }, [location.pathname]);
 
   const fetchUserInfo = async () => {
     const isGuest = localStorage.getItem('isGuest') === 'true';
-    if (isGuest) {
+    const hasToken = !!localStorage.getItem('token');
+    if (isGuest && hasToken) {
+      localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
+    }
+    if (isGuest && !hasToken) {
       setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
       return;
     }
     try {
       const data = await request.get('/auth/me');
       setUserInfo(data);
+      saveUserCache(data);
     } catch (err) {}
   };
 
@@ -98,10 +110,10 @@ const PCLayout = ({ children }) => {
               >
                 <Images size={18} strokeWidth={2} /> 我的创作
               </span>
-              <span 
-                onClick={() => navigate('/pricing')}
-                style={{ 
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', 
+              <span
+                onClick={() => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分')}
+                style={{
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
                   color: isActive('/pricing') ? 'var(--primary)' : 'var(--text-secondary)',
                   transition: 'var(--transition)'
                 }}
@@ -123,10 +135,16 @@ const PCLayout = ({ children }) => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            {/* PWA 安装按钮 (仅非游客且未安装且支持安装时显示) */}
-            {isInstallable && !isInstalled && localStorage.getItem('isGuest') !== 'true' && !isStandalone && (
+            {/* PWA 安装按钮 — 非游客始终可见 */}
+            {localStorage.getItem('isGuest') !== 'true' && !isStandalone && (
               <button
-                onClick={promptInstall}
+                onClick={() => {
+                  if (isInstallable) {
+                    promptInstall();
+                  } else {
+                    alert('点击浏览器地址栏右侧的安装图标 ⬇\n或 菜单 → "安装 Visionary"\n即可添加到桌面，首次安装送 10 积分');
+                  }
+                }}
                 style={{
                   background: 'linear-gradient(135deg, #E88D72 0%, #C56A50 100%)',
                   border: 'none', padding: '8px 16px', borderRadius: '14px',

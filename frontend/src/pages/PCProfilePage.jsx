@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
-import { 
-  ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock, 
-  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2
+import {
+  ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock,
+  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2, Download
 } from 'lucide-react';
+import { usePWA } from '../hooks/usePWA';
 
 const PCProfilePage = () => {
   const navigate = useNavigate();
+  const { isInstallable, isStandalone, promptInstall } = usePWA();
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showRecharge, setShowRecharge] = useState(false);
@@ -241,18 +243,39 @@ const PCProfilePage = () => {
                   {userInfo?.points} <span style={{ fontSize: '18px' }}>积分</span>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowRecharge(true)}
-                style={{ 
-                  padding: '16px 32px', borderRadius: '16px', background: 'white', 
-                  color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '16px',
-                  cursor: 'pointer', transition: 'transform 0.2s'
-                }}
-                onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                立即充值
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                <button
+                  onClick={() => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分')}
+                  style={{
+                    padding: '16px 32px', borderRadius: '16px', background: 'white',
+                    color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '16px',
+                    cursor: 'pointer', transition: 'transform 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  充值
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await request.post('/auth/daily-reward');
+                      alert(res.message || '签到成功！');
+                      fetchData();
+                    } catch (err) {
+                      alert(err.response?.data?.detail || '签到失败');
+                    }
+                  }}
+                  style={{
+                    padding: '10px 24px', borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.3)', color: 'white',
+                    border: '1px solid rgba(255,255,255,0.4)',
+                    fontWeight: '700', fontSize: '13px', cursor: 'pointer'
+                  }}
+                >
+                  签到 +5 积分
+                </button>
+              </div>
             </div>
 
             {/* 快速操作 */}
@@ -268,7 +291,22 @@ const PCProfilePage = () => {
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>查看您的积分收支记录</div>
               </div>
 
-              <div 
+              {localStorage.getItem('isGuest') !== 'true' && !isStandalone && (
+                <div
+                  onClick={() => {
+                    if (isInstallable) { promptInstall(); }
+                    else { alert('点击浏览器地址栏右侧的安装图标 ⬇\n或 菜单 → "安装 Visionary"\n即可添加到桌面，首次安装送 10 积分'); }
+                  }}
+                  style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', cursor: 'pointer' }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#fff5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#C56A50' }}>
+                    <Download size={20} />
+                  </div>
+                  <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px', color: '#C56A50' }}>添加桌面版</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>像原生 App 一样快速启动</div>
+                </div>
+              )}
+              <div
                 onClick={handleResetTasks}
                 style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', cursor: 'pointer' }}
               >
