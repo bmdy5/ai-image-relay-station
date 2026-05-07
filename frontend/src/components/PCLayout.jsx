@@ -133,10 +133,16 @@ const PCLayout = ({ children }) => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            {/* PWA 安装按钮 (仅非游客且未安装且支持安装时显示) */}
-            {isInstallable && !isInstalled && localStorage.getItem('isGuest') !== 'true' && !isStandalone && (
+            {/* PWA 安装按钮 — 非游客始终可见 */}
+            {localStorage.getItem('isGuest') !== 'true' && !isStandalone && (
               <button
-                onClick={promptInstall}
+                onClick={() => {
+                  if (isInstallable) {
+                    promptInstall();
+                  } else {
+                    alert('点击浏览器地址栏右侧的安装图标 ⬇\n或 菜单 → "安装 Visionary"\n即可添加到桌面，首次安装送 10 积分');
+                  }
+                }}
                 style={{
                   background: 'linear-gradient(135deg, #E88D72 0%, #C56A50 100%)',
                   border: 'none', padding: '8px 16px', borderRadius: '14px',
