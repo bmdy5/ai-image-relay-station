@@ -72,6 +72,11 @@ BEGIN
     IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='recharge_logs' AND COLUMN_NAME='payment_method' AND TABLE_SCHEMA=DATABASE()) THEN
         ALTER TABLE `recharge_logs` ADD COLUMN `payment_method` VARCHAR(20) AFTER `trade_no`;
     END IF;
+
+    -- 给 users 表补每日签到字段
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='users' AND COLUMN_NAME='last_daily_reward' AND TABLE_SCHEMA=DATABASE()) THEN
+        ALTER TABLE `users` ADD COLUMN `last_daily_reward` DATETIME NULL AFTER `has_install_reward`;
+    END IF;
 END //
 DELIMITER ;
 CALL AppPatch();
