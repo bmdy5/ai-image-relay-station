@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, LayoutGrid, Gem, User } from 'lucide-react';
+import { Sparkles, LayoutGrid, User } from 'lucide-react';
 import request from '../api/request';
 
 const MobileLayout = ({ children }) => {
@@ -43,7 +43,6 @@ const MobileLayout = ({ children }) => {
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.startsWith('/history')) return 'history';
-    if (path.startsWith('/pricing')) return 'pricing';
     if (path.startsWith('/profile')) return 'profile';
     return 'home';
   };
@@ -113,7 +112,6 @@ const MobileLayout = ({ children }) => {
         {[
           { id: 'home', icon: <Sparkles size={22} />, label: '创作' },
           { id: 'history', icon: <LayoutGrid size={22} />, label: '历史' },
-          { id: 'pricing', icon: <Gem size={22} />, label: '会员' },
           { id: 'profile', icon: <User size={22} />, label: '我的' }
         ].map(tab => (
           <div 

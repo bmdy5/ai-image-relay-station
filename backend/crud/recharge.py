@@ -86,9 +86,8 @@ def can_receive_invitation_reward(db: Session, inviter_id: int):
 
 def is_invitee_rewarded(db: Session, invitee_id: int):
     """检查该受邀者是否已经为邀请人贡献过奖励"""
-    # 通过 trade_no 或 admin_note 检查
     return db.query(models.RechargeLog).filter(
-        models.RechargeLog.trade_no.like(f"INVITE_REWARD_{invitee_id}_%")
+        models.RechargeLog.trade_no.op('regexp')(f'^INVITE_REWARD_{invitee_id}_')
     ).first() is not None
 
 def create_recharge_log(db: Session, user_id: int, amount: int, operator_id: int = 0, status: str = "success", admin_note: str = "系统充值", trade_no: str = None):

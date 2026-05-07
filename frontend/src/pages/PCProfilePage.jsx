@@ -241,17 +241,25 @@ const PCProfilePage = () => {
                   {userInfo?.points} <span style={{ fontSize: '18px' }}>积分</span>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowRecharge(true)}
-                style={{ 
-                  padding: '16px 32px', borderRadius: '16px', background: 'white', 
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await request.post('/auth/daily-reward');
+                    alert(res.message || '签到成功！');
+                    fetchData();
+                  } catch (err) {
+                    alert(err.response?.data?.detail || '签到失败');
+                  }
+                }}
+                style={{
+                  padding: '16px 32px', borderRadius: '16px', background: 'white',
                   color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '16px',
                   cursor: 'pointer', transition: 'transform 0.2s'
                 }}
                 onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
                 onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
               >
-                立即充值
+                每日签到
               </button>
             </div>
 

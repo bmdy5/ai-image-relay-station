@@ -108,16 +108,6 @@ const PCLayout = ({ children }) => {
               >
                 <Images size={18} strokeWidth={2} /> 我的创作
               </span>
-              <span 
-                onClick={() => navigate('/pricing')}
-                style={{ 
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', 
-                  color: isActive('/pricing') ? 'var(--primary)' : 'var(--text-secondary)',
-                  transition: 'var(--transition)'
-                }}
-              >
-                <Coins size={18} strokeWidth={2} /> 价格
-              </span>
               {userInfo?.is_admin && (
                 <span 
                   onClick={() => navigate('/admin')}

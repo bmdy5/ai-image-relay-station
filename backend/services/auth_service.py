@@ -230,3 +230,28 @@ class AuthService:
         )
         db.commit()
         return {"message": "安装奖励领取成功！", "points": current_user.points}
+
+    @staticmethod
+    def claim_daily_reward(db: Session, current_user):
+        """发放每日签到奖励"""
+        now = get_beijing_time()
+        today = now.date()
+
+        if current_user.last_daily_reward:
+            last_date = current_user.last_daily_reward.date() if hasattr(current_user.last_daily_reward, 'date') else current_user.last_daily_reward
+            if last_date == today:
+                raise HTTPException(status_code=400, detail="今日已签到，明天再来吧")
+
+        current_user.last_daily_reward = now
+        current_user.points += 5
+        recharge_crud.create_recharge_log(
+            db,
+            user_id=current_user.id,
+            amount=5,
+            status="success",
+            admin_note="每日签到奖励",
+            operator_id=0,
+            trade_no=f"DAILY_{current_user.id}_{int(now.timestamp())}"
+        )
+        db.commit()
+        return {"message": "签到成功！获得 5 积分", "points_awarded": 5, "points": current_user.points}
