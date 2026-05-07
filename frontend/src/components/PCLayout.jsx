@@ -13,12 +13,13 @@ import {
 } from 'lucide-react';
 import NeuralPlexus from './NeuralPlexus';
 import { usePWA } from '../hooks/usePWA';
+import { loadUserCache, saveUserCache } from '../utils/userCache';
 
 const PCLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isInstallable, isStandalone, isInstalled, promptInstall } = usePWA();
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(() => loadUserCache());
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   useEffect(() => {
@@ -44,6 +45,7 @@ const PCLayout = ({ children }) => {
     try {
       const data = await request.get('/auth/me');
       setUserInfo(data);
+      saveUserCache(data);
     } catch (err) {}
   };
 
