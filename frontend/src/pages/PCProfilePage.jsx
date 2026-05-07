@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
-import { 
-  ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock, 
-  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2
+import {
+  ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock,
+  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2, Download
 } from 'lucide-react';
+import { usePWA } from '../hooks/usePWA';
 
 const PCProfilePage = () => {
   const navigate = useNavigate();
+  const { isInstallable, isStandalone, promptInstall } = usePWA();
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showRecharge, setShowRecharge] = useState(false);
@@ -289,7 +291,22 @@ const PCProfilePage = () => {
                 <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>查看您的积分收支记录</div>
               </div>
 
-              <div 
+              {localStorage.getItem('isGuest') !== 'true' && !isStandalone && (
+                <div
+                  onClick={() => {
+                    if (isInstallable) { promptInstall(); }
+                    else { alert('点击浏览器地址栏右侧的安装图标 ⬇\n或 菜单 → "安装 Visionary"\n即可添加到桌面，首次安装送 10 积分'); }
+                  }}
+                  style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', cursor: 'pointer' }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#fff5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', color: '#C56A50' }}>
+                    <Download size={20} />
+                  </div>
+                  <div style={{ fontWeight: '700', fontSize: '16px', marginBottom: '4px', color: '#C56A50' }}>添加桌面版</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>像原生 App 一样快速启动</div>
+                </div>
+              )}
+              <div
                 onClick={handleResetTasks}
                 style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', cursor: 'pointer' }}
               >
