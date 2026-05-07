@@ -15,6 +15,12 @@ const MobileLayout = ({ children }) => {
   const pwaPlatform = isIOS ? 'ios' : isAndroid ? 'android' : isInWechat ? 'wechat' : null;
   const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true';
 
+  // 微信环境顶部提示（当日关闭后不再显示）
+  const wechatTipKey = `wechat_tip_${new Date().toDateString()}`;
+  const [showWechatTip, setShowWechatTip] = useState(
+    () => isInWechat && !isStandalone && !localStorage.getItem(wechatTipKey)
+  );
+
   // PWA 已安装时清除 dismiss 标记，确保卸载后重访会再次提示
   useEffect(() => {
     if (isStandalone) {
@@ -139,11 +145,28 @@ const MobileLayout = ({ children }) => {
         </div>
       </header>
 
+      {/* 微信环境提示横幅 */}
+      {showWechatTip && (
+        <div style={{
+          position: 'fixed', top: '64px', left: 0, right: 0, zIndex: 99,
+          background: 'linear-gradient(135deg, #07C160 0%, #06AD56 100%)',
+          color: '#fff', padding: '10px 16px', fontSize: '13px', fontWeight: '600',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(7, 193, 96, 0.2)'
+        }}>
+          <span>请在浏览器中打开，体验完整功能</span>
+          <button
+            onClick={() => { localStorage.setItem(wechatTipKey, '1'); setShowWechatTip(false); }}
+            style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+          >×</button>
+        </div>
+      )}
+
       {/* 滚动内容区 */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
-        paddingTop: '65px', // 为 Header 留位
+        paddingTop: showWechatTip ? '108px' : '65px', // Header + 微信提示
         paddingBottom: '90px', // 为 Tab Bar 留位
         WebkitOverflowScrolling: 'touch'
       }}>
