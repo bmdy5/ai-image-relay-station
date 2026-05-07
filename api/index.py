@@ -56,25 +56,6 @@ app.include_router(user.router, prefix="/api")
 app.include_router(feedback.router, prefix="/api")
 app.include_router(payment.router, prefix="/api")
 
-@app.get("/api/auth/debug")
-def debug_env():
-    # 诊断接口：检查环境变量是否到位
-    db_url = os.getenv("DATABASE_URL", "NOT_FOUND")
-    secret = os.getenv("SECRET_KEY", "NOT_FOUND")
-    
-    # 脱敏处理
-    masked_url = db_url
-    if "@" in db_url:
-        parts = db_url.split("@")
-        masked_url = "mysql+pymysql://****:****@" + parts[1]
-        
-    return {
-        "DATABASE_URL_FOUND": db_url != "NOT_FOUND",
-        "DATABASE_URL_MASKED": masked_url,
-        "SECRET_KEY_FOUND": secret != "NOT_FOUND",
-        "ENV_LIST": list(os.environ.keys())[:10] # 只列出前10个Key确认连通性
-    }
-
 from sqlalchemy import text
 from backend.models.database import get_db
 from fastapi import Depends

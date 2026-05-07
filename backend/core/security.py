@@ -8,8 +8,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # JWT 配置
-# JWT 配置
-SECRET_KEY = os.getenv("SECRET_KEY", "gpt-image2-relay-station-secret-2024")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    SECRET_KEY = "gpt-image2-relay-station-secret-2024"
+    print("!!! [SECURITY WARNING] Using hardcoded default SECRET_KEY. Configure it in system_configs table or .env file.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 小时过期
 

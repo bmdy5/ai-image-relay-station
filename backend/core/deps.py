@@ -41,5 +41,5 @@ def get_optional_current_user(db: Session = Depends(get_db), token: str = Depend
         if username is None:
             return None
         return user_crud.get_user_by_username(db, username=username)
-    except:
+    except Exception:
         return None
