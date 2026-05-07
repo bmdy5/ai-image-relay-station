@@ -79,7 +79,7 @@ def can_receive_invitation_reward(db: Session, inviter_id: int):
     
     count = db.query(models.RechargeLog).filter(
         models.RechargeLog.user_id == inviter_id,
-        models.RechargeLog.trade_no.like("INVITE_REWARD_%"),
+        models.RechargeLog.trade_no.op('regexp')('^INVITE_REWARD_'),
         models.RechargeLog.created_at >= today_start
     ).count()
     return count < 5
