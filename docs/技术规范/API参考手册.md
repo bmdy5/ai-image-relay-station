@@ -36,10 +36,10 @@
 | GET | `/image/history` | 是 | 获取历史记录（分页，默认 20 条） |
 | DELETE | `/image/{id}` | 是 | 删除生图记录（仅限本人） |
 | POST | `/image/{log_id}/share` | 是 | 记录分享（share_count +1） |
-| POST | `/image/reset` | 是 | 手动重置卡死的并发锁（清理 frozen_points） |
-| POST | `/image/enhance-prompt` | 是 | 调用通义千问润色提示词（每分钟限 5 次，部分风格不支持） |
-| GET | `/image/proxy` | 否 | 图片代理，绕过 CORS |
-| GET | `/image/download` | 否 | 通过记录 ID 下载图片 |
+| POST | `/image/reset` | 是 | 手动重置卡死的并发锁（清理 frozen_points 并批量标记 pending 任务为 failed） |
+| POST | `/image/enhance-prompt` | 是 | 调用通义千问润色提示词（每分钟限 5 次，仅 default/real/product/tech_poster 风格可用） |
+| GET | `/image/proxy` | 否 | 图片代理，绕过 CORS（参数 `url`） |
+| GET | `/image/download` | 否 | 通过记录 ID 重定向到 COS 图片链接 |
 
 ### 2.1 `POST /image/generate` 参数详解
 
@@ -56,15 +56,26 @@
 }
 ```
 
+#### 图生图协议说明
+
+当 `ref_image_url` 非空时，后端自动切换至图生图模式：
+
+- **端点**：`/v1/images/edits`（文生图走 `/v1/images/generations`）
+- **协议**：**Binary Multipart Stream**（`multipart/form-data`），非 JSON
+  - 图片作为 `image` 字段以二进制字节流直接传送
+  - 其余参数（`model`, `prompt`, `n`, `quality`, `size`）作为 form data
+- **预处理**：参考图在进入 API 前经过 Pillow 净化层——强制 1:1 中心裁剪 + 1024x1024 LANCZOS 缩放
+- **文生图额外参数**：仅文生图模式携带 `response_format: "url"` 和 `input_fidelity: "low"`，图生图模式下这些字段不发送（避免中转站 400 错误）
+
 ### 2.2 计费规则（代码实测）
 
-| 档位 | 积分消耗 | API 尺寸 | 内部 API Quality |
+| 档位 | 积分消耗 | 迭代上限 | 实际差异 |
 | :--- | :--- | :--- | :--- |
-| `standard` | **5 积分** | 1024x1024 | `low`（极致省钱模式） |
-| `hd` | **10 积分** | 1024x1536 | `low` |
-| `master` | **15 积分** | 1024x1792 | `low` |
+| `standard` | **5 积分** | 不支持迭代 | 基础提示词 |
+| `hd` | **10 积分** | 最多 2 次变体 | 提示词追加 `high quality, 4k, sharp focus` |
+| `master` | **15 积分** | 最多 3 次变体 | 提示词追加 `masterpiece, 8k, cinematic lighting` |
 
-> **注意**：代码中三档均使用 `quality: "low"` 以控制成本，差异体现在分辨率和提示词增强上。
+> **分辨率**：由 `aspect_ratio` 参数决定（`1:1`→1024x1024, `9:16`→1024x1536, `16:9`→1536x1024），**与档位无关**。所有档位统一使用 `quality: "low"` 以控制 API 成本。
 
 ### 2.3 迭代限制（代码实测）
 
@@ -120,7 +131,15 @@
 ---
 
 ## 6. 反馈模块 `/feedback`
-> 端点详见 `backend/api/feedback.py`，提供用户提交反馈和管理员查看功能。
+
+| 方法 | 端点 | 是否需鉴权 | 说明 |
+| :--- | :--- | :--- | :--- |
+| POST | `/feedback/submit` | 否（支持游客） | 提交意见反馈（content 必填，contact 选填） |
+| GET | `/feedback/list` | 是（管理员） | 分页获取反馈列表（默认 50 条，上限 100） |
+| PATCH | `/feedback/{id}` | 是（管理员） | 更新反馈状态（`pending` → `resolved`）及处理备注 |
+
+---
+*来源: backend/api/ 全量代码审计 | 2026-05-06*
 
 ---
 *来源: backend/api/ 全量代码审计 | 2026-05-06*
