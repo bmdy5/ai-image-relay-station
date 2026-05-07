@@ -11,7 +11,11 @@ const MobileLayout = ({ children }) => {
   // 获取用户信息
   const fetchUserInfo = async () => {
     const isGuest = localStorage.getItem('isGuest') === 'true';
-    if (isGuest) {
+    const hasToken = !!localStorage.getItem('token');
+    if (isGuest && hasToken) {
+      localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
+    }
+    if (isGuest && !hasToken) {
       setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
       return;
     }

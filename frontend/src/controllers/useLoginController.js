@@ -14,6 +14,7 @@ export const useLoginController = () => {
     try {
       const data = await request.post('/auth/login', { username, password });
       localStorage.setItem('token', data.access_token);
+      localStorage.removeItem('isGuest');
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.detail || '登录失败');

@@ -100,6 +100,7 @@ const RegisterPage = () => {
         // 自动登录
         if (resp && resp.access_token) {
           localStorage.setItem('token', resp.access_token);
+          localStorage.removeItem('isGuest');
           alert('注册成功！已为您自动登录');
           navigate('/');
         } else {
