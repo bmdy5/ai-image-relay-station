@@ -211,8 +211,8 @@ const MobileHomePage = () => {
     if (saved) {
       const { timestamp, jobs: savedJobs } = JSON.parse(saved);
       if (Date.now() - timestamp < 300000) {
-        // 超过 3 分钟的 pending/generating 任务标记为过期
-        const stale = Date.now() - timestamp > 180000;
+        // 超过 10 分钟的 pending/generating 任务标记为过期
+        const stale = Date.now() - timestamp > 600000;
         const restored = savedJobs.map(job => {
           if (stale && (job.status === 'pending' || job.status === 'generating')) {
             return { ...job, status: 'failed', error: '任务已过期，请重新创作' };
