@@ -16,12 +16,16 @@ const MobileLayout = ({ children }) => {
 
   // PWA 已安装时清除 dismiss 标记，确保卸载后重访会再次提示
   useEffect(() => {
-    if (isStandalone) localStorage.removeItem('pwa_modal_dismissed');
+    if (isStandalone) {
+      localStorage.removeItem('pwa_modal_dismissed');
+      localStorage.removeItem('pwa_modal_never');
+    }
   }, [isStandalone]);
 
-  // 首次访问自动弹 PWA 安装提示（7天内不再弹）
+  // 首次访问自动弹 PWA 安装提示
   useEffect(() => {
     if (!showInstallEntry) return;
+    if (localStorage.getItem('pwa_modal_never')) return; // 永久不再提示
     const dismissed = localStorage.getItem('pwa_modal_dismissed');
     if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 3600 * 1000) return;
     const delay = isAndroid ? 1500 : 3000;
@@ -31,6 +35,11 @@ const MobileLayout = ({ children }) => {
 
   const handlePwaClose = () => {
     localStorage.setItem('pwa_modal_dismissed', String(Date.now()));
+    setShowPwaModal(false);
+  };
+
+  const handlePwaNever = () => {
+    localStorage.setItem('pwa_modal_never', '1');
     setShowPwaModal(false);
   };
 
@@ -188,6 +197,7 @@ const MobileLayout = ({ children }) => {
           platform={pwaPlatform}
           onClose={handlePwaClose}
           onInstall={() => { promptInstall(); handlePwaClose(); }}
+          onNever={handlePwaNever}
         />
       )}
     </div>

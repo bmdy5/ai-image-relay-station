@@ -1,7 +1,7 @@
 import React from 'react';
 import { Download, Share2, SquarePlus, ArrowRight, X } from 'lucide-react';
 
-const PWAInstallModal = ({ platform, onClose, onInstall }) => {
+const PWAInstallModal = ({ platform, onClose, onInstall, onNever }) => {
   // 确认对话框在 201x 高度下的黄金分割点（视觉重心靠上）
   const isIOS = platform === 'ios';
   const isAndroid = platform === 'android';
@@ -76,6 +76,18 @@ const PWAInstallModal = ({ platform, onClose, onInstall }) => {
             >
               暂时不需要
             </button>
+            {onNever && (
+              <button
+                onClick={onNever}
+                style={{
+                  width: '100%', padding: '8px', marginTop: '4px',
+                  background: 'none', border: 'none', color: '#bbb',
+                  fontSize: '11px', cursor: 'pointer'
+                }}
+              >
+                不再提示
+              </button>
+            )}
           </>
         )}
 
@@ -123,6 +135,9 @@ const PWAInstallModal = ({ platform, onClose, onInstall }) => {
             >
               我知道了
             </button>
+            {onNever && (
+              <button onClick={onNever} style={{ width: '100%', padding: '8px', marginTop: '4px', background: 'none', border: 'none', color: '#bbb', fontSize: '11px', cursor: 'pointer' }}>不再提示</button>
+            )}
           </>
         )}
 
@@ -142,6 +157,9 @@ const PWAInstallModal = ({ platform, onClose, onInstall }) => {
             >
               我知道了
             </button>
+            {onNever && (
+              <button onClick={onNever} style={{ width: '100%', padding: '8px', marginTop: '4px', background: 'none', border: 'none', color: '#bbb', fontSize: '11px', cursor: 'pointer' }}>不再提示</button>
+            )}
           </>
         )}
       </div>

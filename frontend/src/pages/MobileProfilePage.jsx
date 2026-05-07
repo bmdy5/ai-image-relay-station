@@ -342,17 +342,17 @@ const MobileProfilePage = ({ isMobile }) => {
       <div style={{ padding: '24px 20px 0 20px' }}>
         <div style={{ fontSize: '12px', fontWeight: '600', color: '#8E8E93', marginBottom: '8px', paddingLeft: '10px' }}>高级功能</div>
         <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
-          {(!isInstalled && !isStandalone && localStorage.getItem('isGuest') !== 'true' && (isIOS || isAndroid || isInWechat)) && (
+          {localStorage.getItem('isGuest') !== 'true' && (isIOS || isAndroid || isInWechat) && (
             <>
-              <SettingItem 
-                icon={<Download size={20} />} 
-                label="添加至主屏幕" 
-                sublabel="体验原生 App 并获赠 10 积分" 
+              <SettingItem
+                icon={<Download size={20} />}
+                label={isStandalone ? '已添加到主屏幕' : '添加至主屏幕'}
+                sublabel={isStandalone ? '点击可重新安装或刷新桌面版' : '体验原生 App 并获赠 10 积分'}
                 onClick={() => {
-                  if (isInWechat || isIOS || !isInstallable) setShowIosGuide(true);
+                  if (isInWechat || isIOS || (isAndroid && !isInstallable)) setShowIosGuide(true);
                   else promptInstall();
-                }} 
-                color="#C56A50"
+                }}
+                color={isStandalone ? '#34C759' : '#C56A50'}
               />
               <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
             </>
