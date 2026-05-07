@@ -52,7 +52,7 @@ const LoginPage = () => {
         <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <input
             type="text"
-            placeholder="用户名 / 邮箱"
+            placeholder="用户名 / 邮箱 / 手机号"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
