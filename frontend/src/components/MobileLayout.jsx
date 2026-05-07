@@ -14,12 +14,16 @@ const MobileLayout = ({ children }) => {
   const pwaPlatform = isIOS ? 'ios' : isAndroid ? 'android' : isInWechat ? 'wechat' : null;
   const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true';
 
+  // PWA 已安装时清除 dismiss 标记，确保卸载后重访会再次提示
+  useEffect(() => {
+    if (isStandalone) localStorage.removeItem('pwa_modal_dismissed');
+  }, [isStandalone]);
+
   // 首次访问自动弹 PWA 安装提示（7天内不再弹）
   useEffect(() => {
     if (!showInstallEntry) return;
     const dismissed = localStorage.getItem('pwa_modal_dismissed');
     if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 3600 * 1000) return;
-    // Android 等 beforeinstallprompt 就绪再弹（最多等 3s），iOS/微信延迟 3s
     const delay = isAndroid ? 1500 : 3000;
     const timer = setTimeout(() => setShowPwaModal(true), delay);
     return () => clearTimeout(timer);
