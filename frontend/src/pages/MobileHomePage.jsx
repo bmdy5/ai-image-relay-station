@@ -211,9 +211,16 @@ const MobileHomePage = () => {
     if (saved) {
       const { timestamp, jobs: savedJobs } = JSON.parse(saved);
       if (Date.now() - timestamp < 300000) {
-        setJobs(savedJobs);
-        // 自动接力轮询
-        savedJobs.forEach(job => {
+        // 超过 3 分钟的 pending/generating 任务标记为过期
+        const stale = Date.now() - timestamp > 180000;
+        const restored = savedJobs.map(job => {
+          if (stale && (job.status === 'pending' || job.status === 'generating')) {
+            return { ...job, status: 'failed', error: '任务已过期，请重新创作' };
+          }
+          return job;
+        });
+        setJobs(restored);
+        restored.forEach(job => {
           if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
             startPolling(job.id, job.taskId);
           }
@@ -226,16 +233,19 @@ const MobileHomePage = () => {
 
   const startPolling = (jobId, taskId) => {
     if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
-    
+
+    let errors = 0;
+
     const timer = setInterval(async () => {
       try {
         const statusRes = await request.get(`/image/status/${taskId}`);
+        errors = 0; // 成功则重置错误计数
         if (statusRes.status === 'success') {
           clearInterval(timer);
           delete pollTimers.current[jobId];
-          setJobs(prev => prev.map(j => j.id === jobId ? { 
-            ...j, status: 'success', progress: 100, result: statusRes.image_url, 
-            ref_image_url: statusRes.ref_image_url, quality: statusRes.quality, style: statusRes.style 
+          setJobs(prev => prev.map(j => j.id === jobId ? {
+            ...j, status: 'success', progress: 100, result: statusRes.image_url,
+            ref_image_url: statusRes.ref_image_url, quality: statusRes.quality, style: statusRes.style
           } : j));
         } else if (statusRes.status === 'failed') {
           clearInterval(timer);
@@ -244,9 +254,16 @@ const MobileHomePage = () => {
         } else {
           setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: statusRes.status, progress: j.progress + 5 > 95 ? 95 : j.progress + 5 } : j));
         }
-      } catch (err) {}
+      } catch (err) {
+        errors++;
+        if (errors >= 3) {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: '网络异常，任务无法继续' } : j));
+        }
+      }
     }, 3000);
-    
+
     pollTimers.current[jobId] = timer;
   };
 

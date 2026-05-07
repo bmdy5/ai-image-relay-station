@@ -224,13 +224,19 @@ const HomePage = () => {
     const saved = localStorage.getItem('visionary_active_jobs');
     if (saved) {
       const { timestamp, jobs } = JSON.parse(saved);
-      // 延长至 2 小时 (7200000ms)
       if (Date.now() - timestamp < 7200000) {
-        setActiveJobs(jobs);
-        if (jobs.length > 0) setCurrentJobId(jobs[0].id);
-        
-        // 自动接力轮询
-        jobs.forEach(job => {
+        // 超过 10 分钟的 pending/generating 任务标记为过期
+        const stale = Date.now() - timestamp > 600000;
+        const restored = jobs.map(job => {
+          if (stale && (job.status === 'pending' || job.status === 'generating')) {
+            return { ...job, status: 'failed', error: '任务已过期，请重新创作' };
+          }
+          return job;
+        });
+        setActiveJobs(restored);
+        if (restored.length > 0) setCurrentJobId(restored[0].id);
+
+        restored.forEach(job => {
           if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
             startPolling(job.id, job.taskId);
           }
@@ -243,16 +249,18 @@ const HomePage = () => {
 
   const startPolling = (jobId, taskId) => {
     if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
-    
+
     let pollCount = 0;
     let internalProgress = 0;
-    
+    let errors = 0;
+
     const timer = setInterval(async () => {
       pollCount++;
       try {
         const statusRes = await request.get(`/image/status/${taskId}`);
+        errors = 0; // 成功则重置错误计数
         let targetProgress = internalProgress;
-        
+
         if (statusRes.status === 'pending') targetProgress = Math.min(internalProgress + 2, 20);
         else if (statusRes.status === 'generating') targetProgress = Math.min(internalProgress + 10, 80);
         else if (statusRes.status === 'success') {
@@ -266,18 +274,25 @@ const HomePage = () => {
           setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: statusRes.error } : j));
           return;
         }
-        
+
         internalProgress = targetProgress;
         setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, progress: Math.floor(internalProgress), status: statusRes.status } : j));
-      } catch (err) {}
-      
+      } catch (err) {
+        errors++;
+        if (errors >= 3) {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: '网络异常，任务无法继续' } : j));
+        }
+      }
+
       if (pollCount > 60) {
         clearInterval(timer);
         delete pollTimers.current[jobId];
         setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: '请求超时' } : j));
       }
     }, 3000);
-    
+
     pollTimers.current[jobId] = timer;
   };
 
