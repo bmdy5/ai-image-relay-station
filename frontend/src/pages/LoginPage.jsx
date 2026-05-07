@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useLoginController } from '../controllers/useLoginController';
 import Captcha from '../components/Captcha';
 import NeuralPlexus from '../components/NeuralPlexus';
+import TermsModal from '../components/TermsModal';
 
 const LoginPage = () => {
   const {
@@ -15,6 +16,9 @@ const LoginPage = () => {
 
   const [captchaValid, setCaptchaValid] = useState(false);
   const [captchaError, setCaptchaError] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsType, setTermsType] = useState('service');
 
   const onCaptchaMatch = useCallback((matched) => {
     setCaptchaValid(matched);
@@ -25,6 +29,10 @@ const LoginPage = () => {
     e.preventDefault();
     if (!captchaValid) {
       setCaptchaError('请输入正确的验证码');
+      return;
+    }
+    if (!agreeTerms) {
+      setCaptchaError('请先阅读并同意服务协议和隐私政策');
       return;
     }
     setCaptchaError('');
@@ -77,6 +85,29 @@ const LoginPage = () => {
           </div>
           <Captcha onMatch={onCaptchaMatch} />
           {(error || captchaError) && <p style={{ color: '#ff4d4f', fontSize: '14px', margin: 0 }}>{captchaError || error}</p>}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="checkbox"
+              id="agreeTerms"
+              checked={agreeTerms}
+              onChange={(e) => setAgreeTerms(e.target.checked)}
+              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#e66b33' }}
+            />
+            <label htmlFor="agreeTerms" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>
+              我已阅读并同意
+              <span
+                onClick={(e) => { e.preventDefault(); setTermsType('service'); setShowTerms(true); }}
+                style={{ color: '#e66b33', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}
+              >《用户服务协议》</span>
+              与
+              <span
+                onClick={(e) => { e.preventDefault(); setTermsType('privacy'); setShowTerms(true); }}
+                style={{ color: '#e66b33', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}
+              >《隐私政策》</span>
+            </label>
+          </div>
+
           <div style={{ textAlign: 'right', marginTop: '-8px' }}>
             <Link to="/forgot-password" style={{ color: '#e66b33', fontSize: '13px', textDecoration: 'none', fontWeight: '500' }}>忘记密码？</Link>
           </div>
@@ -87,13 +118,13 @@ const LoginPage = () => {
         </p>
         
         <div style={{ marginTop: '24px', opacity: 0.8 }}>
-          <button 
+          <button
             onClick={() => {
               localStorage.setItem('isGuest', 'true');
               window.location.href = '/';
             }}
-            style={{ 
-              background: 'none', border: 'none', color: '#666', 
+            style={{
+              background: 'none', border: 'none', color: '#666',
               fontSize: '13px', fontWeight: '500', cursor: 'pointer',
               textDecoration: 'underline', padding: 0
             }}
@@ -102,6 +133,10 @@ const LoginPage = () => {
           </button>
         </div>
       </div>
+
+      {showTerms && (
+        <TermsModal type={termsType} onClose={() => setShowTerms(false)} />
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import request from '../api/request';
 import NeuralPlexus from '../components/NeuralPlexus';
+import TermsModal from '../components/TermsModal';
 import { useCallback } from 'react';
 
 const RegisterPage = () => {
@@ -253,52 +254,7 @@ const RegisterPage = () => {
 
       {/* 协议详情弹窗 */}
       {showTerms && (
-        <div style={{ 
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', 
-          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          backdropFilter: 'blur(5px)', padding: '20px'
-        }}>
-          <div style={{ 
-            background: 'white', width: '100%', maxWidth: '500px', 
-            borderRadius: '24px', padding: '30px', maxHeight: '80vh', 
-            overflowY: 'auto', position: 'relative', boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
-            animation: 'fadeIn 0.3s ease-out'
-          }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '20px', color: '#1D1D1F' }}>
-              {termsType === 'service' ? '用户服务协议' : '隐私政策'}
-            </h2>
-            <div style={{ fontSize: '14px', color: '#444', lineHeight: '1.8', textAlign: 'left' }}>
-              {termsType === 'service' ? (
-                <>
-                  <p>欢迎使用 Visionary AI 创作平台。在您注册成为我们的用户前，请仔细阅读以下协议：</p>
-                  <p>1. <b>服务内容：</b>我们为您提供 AI 辅助图像生成服务。您需遵守相关法律法规，不得生成色情、暴力、虚假或侵犯他人版权的内容。</p>
-                  <p>2. <b>账号安全：</b>您负责维护账号及密码的保密性，并对该账号下发生的所有活动负责。</p>
-                  <p>3. <b>积分说明：</b>积分用于支付生图费用。内测期间获赠的积分为系统奖励，不可提现或转让。</p>
-                  <p>4. <b>免责声明：</b>AI 生成的内容具有不可控性，结果仅供娱乐与创作参考，不代表本平台立场。</p>
-                </>
-              ) : (
-                <>
-                  <p>我们非常重视您的隐私保护，以下是我们的隐私处理原则：</p>
-                  <p>1. <b>信息收集：</b>我们仅收集实现服务所必须的信息，如邮箱、手机号（用于登录验证）以及浏览器指纹（用于防作弊）。</p>
-                  <p>2. <b>数据安全：</b>我们采用行业标准的加密技术存储您的个人信息，严禁未经授权的访问。</p>
-                  <p>3. <b>图片隐私：</b>您生成的图片将存储在私有云中。除非您主动分享，否则其他用户无法查看您的创作内容。</p>
-                  <p>4. <b>第三方共享：</b>我们绝不会将您的个人信息出售或出租给任何第三方。</p>
-                </>
-              )}
-            </div>
-            <button 
-              onClick={() => setShowTerms(false)}
-              style={{ 
-                width: '100%', padding: '16px', marginTop: '30px', 
-                background: 'linear-gradient(135deg, #1D1D1F 0%, #333 100%)', 
-                color: 'white', border: 'none', 
-                borderRadius: '16px', fontWeight: '700', cursor: 'pointer'
-              }}
-            >
-              已阅读并知晓
-            </button>
-          </div>
-        </div>
+        <TermsModal type={termsType} onClose={() => setShowTerms(false)} />
       )}
     </div>
   );

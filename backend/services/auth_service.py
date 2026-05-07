@@ -131,7 +131,9 @@ class AuthService:
                 operator_id=0,
                 trade_no=f"INVITE_JOIN_PHONE_{db_user.id}_{int(get_beijing_time().timestamp())}"
             )
-            db.commit()
+
+        db.commit()
+        db.refresh(db_user)
 
         sub_val = db_user.username if db_user.username else db_user.phone
         access_token = security.create_access_token(data={"sub": sub_val})
