@@ -76,6 +76,7 @@ export const useForgotPasswordController = () => {
       // 自动登录逻辑
       if (res.access_token) {
         localStorage.setItem('token', res.access_token);
+        localStorage.removeItem('isGuest');
         setSuccess('密码重置成功！已为您自动登录');
         setTimeout(() => navigate('/'), 1500);
       } else {

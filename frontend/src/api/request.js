@@ -41,6 +41,7 @@ request.interceptors.response.use(
 
 export const logout = () => {
   localStorage.removeItem('token');
+  localStorage.removeItem('isGuest');
   window.location.href = '/login';
 };
 
