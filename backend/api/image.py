@@ -117,11 +117,13 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
 @router.get("/status/{id}")
 async def get_task_status(id: int, db: Session = Depends(get_db)):
     log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
+    if not log:
+        return {"id": id, "status": "failed", "image_url": None, "final_prompt": None, "iteration": 0, "parent_id": None, "error": "任务不存在或已过期"}
     return {
-        "id": log.id, 
-        "status": log.status, 
-        "image_url": log.image_url, 
-        "final_prompt": getattr(log, "final_prompt", None), 
+        "id": log.id,
+        "status": log.status,
+        "image_url": log.image_url,
+        "final_prompt": getattr(log, "final_prompt", None),
         "iteration": log.iteration,
         "parent_id": log.parent_id,
         "error": log.error_msg
