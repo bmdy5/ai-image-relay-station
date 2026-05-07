@@ -131,7 +131,9 @@ class AuthService:
                 operator_id=0,
                 trade_no=f"INVITE_JOIN_PHONE_{db_user.id}_{int(get_beijing_time().timestamp())}"
             )
-            db.commit()
+
+        db.commit()
+        db.refresh(db_user)
 
         sub_val = db_user.username if db_user.username else db_user.phone
         access_token = security.create_access_token(data={"sub": sub_val})
@@ -228,3 +230,42 @@ class AuthService:
         )
         db.commit()
         return {"message": "安装奖励领取成功！", "points": current_user.points}
+
+    @staticmethod
+    def claim_daily_reward(db: Session, current_user):
+        """发放每日签到奖励（带 MySQL 分布式锁防并发）"""
+        from sqlalchemy import text
+        lock_name = f"daily_reward:{current_user.id}"
+
+        # 获取锁（非阻塞：拿不到说明并发请求，直接提示已签到）
+        result = db.execute(text("SELECT GET_LOCK(:lock_name, 0)"), {"lock_name": lock_name})
+        got_lock = result.scalar()
+        if not got_lock:
+            raise HTTPException(status_code=400, detail="签到处理中，请稍后")
+
+        try:
+            # 锁内重新加载用户数据，确保读取最新状态
+            db.refresh(current_user)
+            now = get_beijing_time()
+            today = now.date()
+
+            if current_user.last_daily_reward:
+                last_date = current_user.last_daily_reward.date() if hasattr(current_user.last_daily_reward, 'date') else current_user.last_daily_reward
+                if last_date == today:
+                    raise HTTPException(status_code=400, detail="今日已签到，明天再来吧")
+
+            current_user.last_daily_reward = now
+            current_user.points += 5
+            recharge_crud.create_recharge_log(
+                db,
+                user_id=current_user.id,
+                amount=5,
+                status="success",
+                admin_note="每日签到奖励",
+                operator_id=0,
+                trade_no=f"DAILY_{current_user.id}_{int(now.timestamp())}"
+            )
+            db.commit()
+            return {"message": "签到成功！获得 5 积分", "points_awarded": 5, "points": current_user.points}
+        finally:
+            db.execute(text("SELECT RELEASE_LOCK(:lock_name)"), {"lock_name": lock_name})

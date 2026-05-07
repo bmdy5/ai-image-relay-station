@@ -11,6 +11,7 @@ import MobileDrawer from '../components/MobileDrawer';
 import SharePosterModal from '../components/SharePosterModal';
 import EmptyState from '../components/EmptyState';
 import './HistoryPage.css';
+import { defaultImageName } from '../utils/download';
 
 const HistoryPage = ({ isMobile }) => {
   const navigate = useNavigate();
@@ -67,6 +68,9 @@ const HistoryPage = ({ isMobile }) => {
 
   const handleDownload = async (img) => {
     if (!img.image_url) return;
+    const filename = window.prompt('请输入保存的文件名', defaultImageName());
+    if (!filename) return;
+
     setDownloading(true);
     try {
       const response = await fetch(img.image_url);
@@ -74,7 +78,7 @@ const HistoryPage = ({ isMobile }) => {
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = `creation_${img.id}.png`;
+      link.download = `${filename}.png`;
       document.body.appendChild(link);
       link.click();
       link.remove();

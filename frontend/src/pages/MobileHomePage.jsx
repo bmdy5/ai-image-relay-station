@@ -177,7 +177,12 @@ const MobileHomePage = () => {
   };
 
   useEffect(() => {
-    const guestFlag = localStorage.getItem('isGuest') === 'true';
+    const hasToken = !!localStorage.getItem('token');
+    let guestFlag = localStorage.getItem('isGuest') === 'true';
+    if (guestFlag && hasToken) {
+      localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
+      guestFlag = false;
+    }
     setIsGuest(guestFlag);
     if (!guestFlag) {
       fetchUserInfo();
@@ -206,9 +211,16 @@ const MobileHomePage = () => {
     if (saved) {
       const { timestamp, jobs: savedJobs } = JSON.parse(saved);
       if (Date.now() - timestamp < 300000) {
-        setJobs(savedJobs);
-        // 自动接力轮询
-        savedJobs.forEach(job => {
+        // 超过 10 分钟的 pending/generating 任务标记为过期
+        const stale = Date.now() - timestamp > 600000;
+        const restored = savedJobs.map(job => {
+          if (stale && (job.status === 'pending' || job.status === 'generating')) {
+            return { ...job, status: 'failed', error: '任务已过期，请重新创作' };
+          }
+          return job;
+        });
+        setJobs(restored);
+        restored.forEach(job => {
           if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
             startPolling(job.id, job.taskId);
           }
@@ -221,16 +233,19 @@ const MobileHomePage = () => {
 
   const startPolling = (jobId, taskId) => {
     if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
-    
+
+    let errors = 0;
+
     const timer = setInterval(async () => {
       try {
         const statusRes = await request.get(`/image/status/${taskId}`);
+        errors = 0; // 成功则重置错误计数
         if (statusRes.status === 'success') {
           clearInterval(timer);
           delete pollTimers.current[jobId];
-          setJobs(prev => prev.map(j => j.id === jobId ? { 
-            ...j, status: 'success', progress: 100, result: statusRes.image_url, 
-            ref_image_url: statusRes.ref_image_url, quality: statusRes.quality, style: statusRes.style 
+          setJobs(prev => prev.map(j => j.id === jobId ? {
+            ...j, status: 'success', progress: 100, result: statusRes.image_url,
+            ref_image_url: statusRes.ref_image_url, quality: statusRes.quality, style: statusRes.style
           } : j));
         } else if (statusRes.status === 'failed') {
           clearInterval(timer);
@@ -239,9 +254,16 @@ const MobileHomePage = () => {
         } else {
           setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: statusRes.status, progress: j.progress + 5 > 95 ? 95 : j.progress + 5 } : j));
         }
-      } catch (err) {}
+      } catch (err) {
+        errors++;
+        if (errors >= 3) {
+          clearInterval(timer);
+          delete pollTimers.current[jobId];
+          setJobs(prev => prev.map(j => j.id === jobId ? { ...j, status: 'failed', error: '网络异常，任务无法继续' } : j));
+        }
+      }
     }, 3000);
-    
+
     pollTimers.current[jobId] = timer;
   };
 
@@ -453,7 +475,8 @@ const MobileHomePage = () => {
         setRefineRootId(null);
       }
       const taskId = res.id;
-      
+      window.dispatchEvent(new CustomEvent('points-updated'));
+
       const tip = document.createElement('div');
       tip.innerHTML = '✨ 任务已进入后台，您可以继续创作（支持 3 路并行）';
       tip.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);color:white;padding:8px 16px;border-radius:20px;font-size:12px;z-index:10001;white-space:nowrap;pointer-events:none;animation:fadeUpDown 3s forwards;border:1px solid rgba(255,255,255,0.1);';
@@ -900,7 +923,7 @@ const MobileHomePage = () => {
               检测到您当前为游客模式。为了保存您的创作记录并获得更多免费积分，请先登录。
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button onClick={() => navigate('/auth')} className="btn-primary" style={{ width: '100%' }}>立即登录 / 注册</button>
+              <button onClick={() => { localStorage.removeItem('isGuest'); navigate('/login'); }} className="btn-primary" style={{ width: '100%' }}>立即登录 / 注册</button>
               <button onClick={() => setShowGuestModal(false)} className="btn-secondary" style={{ width: '100%' }}>先随便逛逛</button>
             </div>
           </div>
@@ -951,7 +974,7 @@ const MobileHomePage = () => {
               animation: 'scaleIn 0.3s ease-out'
             }}
           >
-            <Share2 size={16} /> 生成分享海报 (获 10 积分)
+            <Share2 size={16} /> 生成分享海报
           </div>
         </div>
       )}
@@ -972,7 +995,18 @@ const MobileHomePage = () => {
               您的余额仅剩 <b style={{ color: '#faad14' }}>{userInfo?.points || 0}</b> 积分
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button onClick={() => navigate('/pricing')} className="btn-primary" style={{ width: '100%' }}>立即充值</button>
+              <button onClick={async () => {
+                try {
+                  const res = await request.post('/auth/daily-reward');
+                  alert(res.message || '签到成功！');
+                  fetchUserInfo();
+                  setShowPointsModal(false);
+                } catch (err) {
+                  alert(err.response?.data?.detail || '今日已签到，邀请好友赚积分吧');
+                }
+              }} className="btn-primary" style={{ width: '100%' }}>每日签到领积分</button>
+              <button onClick={() => { setShowPointsModal(false); navigate('/profile'); }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>邀请好友赚积分</button>
+              <button onClick={() => { setShowPointsModal(false); alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分'); }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #ddd', color: '#999', background: 'transparent', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>充值</button>
               <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ width: '100%' }}>稍后再说</button>
             </div>
           </div>
