@@ -1350,9 +1350,19 @@ const HomePage = () => {
               当前生成需要 <b style={{ color: 'var(--primary)' }}>{requiredPoints}</b> 积分<br/>
               您的余额仅剩 <b style={{ color: '#faad14' }}>{userInfo?.points || 0}</b> 积分
             </p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ flex: 1 }}>稍后再说</button>
-              <button onClick={() => navigate('/pricing')} className="btn-primary" style={{ flex: 1.2 }}>立即充值</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={async () => {
+                try {
+                  const res = await request.post('/auth/daily-reward');
+                  showToast(res.message || '签到成功！');
+                  fetchUserInfo();
+                  setShowPointsModal(false);
+                } catch (err) {
+                  showToast(err.response?.data?.detail || '今日已签到', 'error');
+                }
+              }} className="btn-primary" style={{ width: '100%' }}>每日签到领积分</button>
+              <button onClick={() => { setShowPointsModal(false); navigate('/profile'); }} style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid var(--primary)', color: 'var(--primary)', background: 'transparent', fontWeight: '700', fontSize: '14px', cursor: 'pointer' }}>邀请好友赚积分</button>
+              <button onClick={() => setShowPointsModal(false)} className="btn-secondary" style={{ width: '100%' }}>稍后再说</button>
             </div>
           </div>
         </div>

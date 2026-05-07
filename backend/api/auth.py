@@ -146,6 +146,10 @@ def bind_phone(data: user_schema.UserCreatePhone, db: Session = Depends(get_db),
 def claim_install_reward(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     return AuthService.claim_install_reward(db, current_user)
 
+@router.post("/daily-reward")
+def daily_reward(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    return AuthService.claim_daily_reward(db, current_user)
+
 @router.get("/invitation-stats")
 def get_invitation_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     invited_count = db.query(models.User).filter(models.User.invited_by_id == current_user.id).count()

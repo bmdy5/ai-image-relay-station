@@ -249,11 +249,19 @@ const MobileProfilePage = ({ isMobile }) => {
               <div style={{ fontSize: '13px', opacity: 0.8 }}>当前余额</div>
               <div style={{ fontSize: '32px', fontWeight: '900', marginTop: '4px' }}>{userInfo?.points} <span style={{ fontSize: '14px', fontWeight: '700' }}>积分</span></div>
             </div>
-            <button 
-              onClick={() => setShowRecharge(true)}
-              style={{ padding: '12px 24px', borderRadius: '16px', background: 'white', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '14px' }}
+            <button
+              onClick={async () => {
+                try {
+                  const res = await request.post('/auth/daily-reward');
+                  alert(res.message || '签到成功！');
+                  fetchData();
+                } catch (err) {
+                  alert(err.response?.data?.detail || '签到失败');
+                }
+              }}
+              style={{ padding: '12px 24px', borderRadius: '16px', background: 'white', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '14px', cursor: 'pointer' }}
             >
-              充值
+              每日签到
             </button>
           </div>
         </div>

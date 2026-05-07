@@ -20,6 +20,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     has_used_experience = Column(Boolean, default=False)
     has_install_reward = Column(Boolean, default=False)
+    last_daily_reward = Column(DateTime, nullable=True)
     invited_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=get_beijing_time)
 
