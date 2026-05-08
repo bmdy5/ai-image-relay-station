@@ -1,13 +1,12 @@
 import React from 'react';
 import { Download, Share2, SquarePlus, ArrowRight, X } from 'lucide-react';
 
-const PWAInstallModal = ({ platform, onClose, onInstall, onNever }) => {
-  // 确认对话框在 201x 高度下的黄金分割点（视觉重心靠上）
+const PWAInstallModal = ({ platform, isInstallable, onClose, onInstall, onNever }) => {
   const isIOS = platform === 'ios';
   const isAndroid = platform === 'android';
   const isWechat = platform === 'wechat';
-  // Android 以外的平台（不支持原生 prompt），仅显示流程指引
-  const needsGuide = isIOS || isWechat;
+  // iOS/WeChat 仅显示流程指引；Android HTTP 下无安装权限也显示指引
+  const needsGuide = isIOS || isWechat || (isAndroid && !isInstallable);
 
   return (
     <div style={{
@@ -47,7 +46,7 @@ const PWAInstallModal = ({ platform, onClose, onInstall, onNever }) => {
           {needsGuide ? '添加到主屏幕' : '安装 Visionary'}
         </h2>
 
-        {isAndroid && (
+        {isAndroid && isInstallable && (
           <>
             <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6', marginBottom: '24px' }}>
               点击下方按钮，将 Visionary 安装到桌面，<br />
@@ -75,6 +74,37 @@ const PWAInstallModal = ({ platform, onClose, onInstall, onNever }) => {
               }}
             >
               暂时不需要
+            </button>
+            {onNever && (
+              <button
+                onClick={onNever}
+                style={{
+                  width: '100%', padding: '8px', marginTop: '4px',
+                  background: 'none', border: 'none', color: '#bbb',
+                  fontSize: '11px', cursor: 'pointer'
+                }}
+              >
+                不再提示
+              </button>
+            )}
+          </>
+        )}
+
+        {isAndroid && !isInstallable && (
+          <>
+            <p style={{ fontSize: '14px', color: '#666', lineHeight: '1.6', marginBottom: '20px' }}>
+              当前环境不支持一键安装，请使用 <b style={{ color: '#FF6B00' }}>HTTPS</b> 访问，
+              <br />或通过浏览器菜单手动添加到桌面。
+            </p>
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%', padding: '16px', borderRadius: '16px',
+                background: '#1D1D1F', color: '#fff', border: 'none',
+                fontWeight: '800', fontSize: '16px', cursor: 'pointer'
+              }}
+            >
+              我知道了
             </button>
             {onNever && (
               <button

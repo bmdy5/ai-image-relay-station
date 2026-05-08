@@ -13,7 +13,8 @@ const MobileLayout = ({ children }) => {
   const [showPwaModal, setShowPwaModal] = useState(false);
   const { isInstallable, isStandalone, isInstalled, isIOS, isAndroid, isInWechat, promptInstall } = usePWA();
   const pwaPlatform = isIOS ? 'ios' : isAndroid ? 'android' : isInWechat ? 'wechat' : null;
-  const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true';
+  // Android 必须在 HTTPS 下才能触发 beforeinstallprompt，HTTP 下 isInstallable 为 false
+  const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true' && (isInstallable || isIOS || isWechat);
 
   // 微信环境顶部提示（当日关闭后不再显示）
   const wechatTipKey = `wechat_tip_${new Date().toDateString()}`;
@@ -257,6 +258,7 @@ const MobileLayout = ({ children }) => {
       {showPwaModal && pwaPlatform && (
         <PWAInstallModal
           platform={pwaPlatform}
+          isInstallable={isInstallable}
           onClose={handlePwaClose}
           onInstall={() => { promptInstall(); handlePwaClose(); }}
           onNever={handlePwaNever}
