@@ -666,7 +666,7 @@ const MobileHomePage = () => {
             
             <input 
               type="text" 
-              placeholder={enhancing ? 'AI 正在构思中...' : (selectedStyle.requiresImage ? '⚠️ 请上传图片并输入灵感...' : '描述你的灵感画面...')} 
+              placeholder={enhancing ? 'AI 正在构思中...' : (selectedStyle.requiresImage && !refImageUrl ? '⚠️ 请先上传参考图片' : selectedStyle.placeholder || '描述你的灵感画面...')}
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)} 
               onPaste={handlePaste}
