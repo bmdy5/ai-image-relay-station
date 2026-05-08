@@ -36,7 +36,7 @@ const AnnouncementModal = () => {
           <div className="header-icon-wrapper">
             <Sparkles className="header-icon" />
           </div>
-          <h2>Visionary 焕新升级</h2>
+          <h2>Visionary 持续进化</h2>
           <p className="subtitle">{new Date().toLocaleDateString('zh-CN', { year:'numeric', month:'long', day:'numeric' })}</p>
         </div>
 
@@ -46,8 +46,8 @@ const AnnouncementModal = () => {
               <Zap size={20} />
             </div>
             <div className="item-text">
-              <h4>每日签到领积分</h4>
-              <p>每天签到 +5 积分，邀请好友首画再得 +10。</p>
+              <h4>游客模式上线</h4>
+              <p>未登录也能浏览体验，橙色标签清晰区分，随时随地试用。</p>
             </div>
           </div>
 
@@ -66,8 +66,8 @@ const AnnouncementModal = () => {
               <CheckCircle2 size={20} />
             </div>
             <div className="item-text">
-              <h4>系统稳定性提升</h4>
-              <p>修复多项已知问题，登录注册流程更加顺畅。</p>
+              <h4>系统韧性增强</h4>
+              <p>API 自动重试、维护模式智能恢复、网络异常优雅降级。</p>
             </div>
           </div>
 
@@ -76,8 +76,8 @@ const AnnouncementModal = () => {
               <Palette size={20} />
             </div>
             <div className="item-text">
-              <h4>交互细节优化</h4>
-              <p>积分即时显示、图片自定义命名、维护模式优雅降级。</p>
+              <h4>交互打磨</h4>
+              <p>输入框智能引导、积分即时刷新、图片自定义命名、微信环境适配。</p>
             </div>
           </div>
         </div>
