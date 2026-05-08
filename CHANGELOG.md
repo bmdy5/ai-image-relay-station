@@ -1,0 +1,39 @@
+# 更新日志
+
+## 2026.05.08
+
+### 新增功能
+- 每日签到领积分：`POST /auth/daily-reward`，+5 积分，MySQL GET_LOCK 防并发
+- PWA 安装弹窗：Android 一键安装 / iOS 引导 / 微信提示，7 天内不重复
+- 游客模式可视化：橙色标签、弹窗引导、个人中心横幅
+- 微信环境检测：顶部绿色提示横幅引导浏览器打开
+- userInfo localStorage 缓存加速，登录后即时显示积分
+- 自定义下载图片命名
+
+### 问题修复
+- OpenAI API 503/429 自动重试，递进等待 2s/4s
+- 维护弹窗：死循环 → 健康检查轮询，连续错误阈值 + 时间窗口
+- 断网后旧任务永久转圈：后端超时 + 过期检测 + 连续错误三层防护
+- 手机号注册无邀请码时 `db.commit()` 缺失导致用户数据丢失
+- SQL LIKE `_` 通配符误匹配 → 改用 REGEXP
+- `recharge.py` 缺少 `from datetime import datetime`
+- `isGuest` 残留导致已登录用户显示游客模式
+- `beforeinstallprompt` 事件提前到 React 挂载前捕获
+- PWA 已安装时清除 dismiss 标记，卸载后可重装
+
+### 交互优化
+- 输入框 placeholder 移除，改为上方 💡 hint 引导行
+- 风格对象新增 `hint` 字段，`placeholder` 仅保留后端模板使用
+- 登录/注册页协议勾选 + TermsModal 完整协议文本
+- 公告版本号改为日期格式
+
+### 代码清理
+- 清理 `prompt.py` 中不存在的 anime 风格死代码
+- 仓库深度清理与文档专业化重构
+- API 路由与业务服务解耦（image / auth 模块）
+
+### 基础设施
+- 修复数据库溢出和 SSH 隧道稳定性问题
+- 时区不匹配修复（auth / recharge 模块）
+- 验证码并发重复发送修复（MySQL GET_LOCK 非阻塞锁）
+- 图生图协议兼容性修复 + Pillow 图像净化层
