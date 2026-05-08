@@ -923,7 +923,7 @@ const MobileHomePage = () => {
               检测到您当前为游客模式。为了保存您的创作记录并获得更多免费积分，请先登录。
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button onClick={() => { localStorage.removeItem('isGuest'); navigate('/login'); }} className="btn-primary" style={{ width: '100%' }}>立即登录 / 注册</button>
+              <button onClick={() => { localStorage.removeItem('isGuest'); window.location.href = '/login'; }} className="btn-primary" style={{ width: '100%' }}>立即登录 / 注册</button>
               <button onClick={() => setShowGuestModal(false)} className="btn-secondary" style={{ width: '100%' }}>先随便逛逛</button>
             </div>
           </div>
