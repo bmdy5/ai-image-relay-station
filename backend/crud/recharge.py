@@ -1,3 +1,4 @@
+from datetime import datetime, time
 from sqlalchemy.orm import Session
 from ..models import models
 from fastapi import HTTPException, status
@@ -71,7 +72,6 @@ def audit_recharge(db: Session, log_id: int, admin_id: int, approved: bool, admi
 
 def can_receive_invitation_reward(db: Session, inviter_id: int):
     """检查邀请人今日是否已达 5 次奖励上限"""
-    from datetime import time
     from ..core.utils import get_beijing_time
     # 统一使用北京时间
     now = get_beijing_time()

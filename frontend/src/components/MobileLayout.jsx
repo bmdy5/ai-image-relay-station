@@ -93,9 +93,17 @@ const MobileLayout = ({ children }) => {
 
   const activeTab = getActiveTab();
 
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false);
+  const isGuest = userInfo?.uid === 'GUEST';
+
   const handleTabClick = (tabId) => {
-    if (tabId === 'home') navigate('/');
-    else navigate(`/${tabId}`);
+    if (tabId === 'home' && isGuest) {
+      setShowGuestPrompt(true);
+    } else if (tabId === 'home') {
+      navigate('/');
+    } else {
+      navigate(`/${tabId}`);
+    }
   };
 
   return (
@@ -134,14 +142,25 @@ const MobileLayout = ({ children }) => {
               <Download size={12} /> 安装
             </button>
           )}
-          <div style={{
-            fontSize: '12px', fontWeight: '800', color: '#fff',
-            background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)',
-            padding: '6px 14px', borderRadius: '20px',
-            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
-          }}>
-            {userInfo?.points || 0} 积分
-          </div>
+          {userInfo?.uid === 'GUEST' ? (
+            <div style={{
+              fontSize: '11px', fontWeight: '800', color: '#fff',
+              background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)',
+              padding: '6px 12px', borderRadius: '20px',
+              boxShadow: '0 2px 8px rgba(255, 61, 0, 0.25)'
+            }}>
+              游客模式
+            </div>
+          ) : (
+            <div style={{
+              fontSize: '12px', fontWeight: '800', color: '#fff',
+              background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)',
+              padding: '6px 14px', borderRadius: '20px',
+              boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 4px 12px rgba(197,156,143,0.2)'
+            }}>
+              {userInfo?.points || 0} 积分
+            </div>
+          )}
         </div>
       </header>
 
@@ -217,6 +236,24 @@ const MobileLayout = ({ children }) => {
           </div>
         ))}
       </nav>
+
+      {/* 游客登录引导弹窗 */}
+      {showGuestPrompt && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>🎨</div>
+            <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '12px' }}>开启艺术之旅</h3>
+            <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '32px' }}>
+              登录后即可开始创作，注册即送 10 积分，<br />每日签到还可领取免费积分。
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button onClick={() => { localStorage.removeItem('isGuest'); window.location.href = '/login'; }} className="btn-primary" style={{ width: '100%' }}>立即登录 / 注册</button>
+              <button onClick={() => setShowGuestPrompt(false)} className="btn-secondary" style={{ width: '100%' }}>先随便逛逛</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPwaModal && pwaPlatform && (
         <PWAInstallModal
           platform={pwaPlatform}

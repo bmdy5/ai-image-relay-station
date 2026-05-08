@@ -61,6 +61,13 @@ const MobileProfilePage = ({ isMobile }) => {
   }, [countdown]);
 
   const fetchData = async () => {
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    const hasToken = !!localStorage.getItem('token');
+    if (isGuest && hasToken) localStorage.removeItem('isGuest');
+    if (isGuest && !hasToken) {
+      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+      return;
+    }
     try {
       const user = await request.get('/auth/me');
       setUserInfo(user);
@@ -222,10 +229,32 @@ const MobileProfilePage = ({ isMobile }) => {
       minHeight: '100%', background: 'var(--bg-main)', 
       padding: isMobile ? '0 0 100px 0' : '40px 20px' 
     }}>
+      {/* 游客模式登录引导 */}
+      {userInfo?.uid === 'GUEST' && (
+        <div style={{ padding: '24px 20px 0 20px' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)',
+            borderRadius: '20px', padding: '20px', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ fontSize: '15px', fontWeight: '800', marginBottom: '4px' }}>游客模式</div>
+              <div style={{ fontSize: '12px', opacity: 0.85 }}>登录后解锁全部功能 + 领积分</div>
+            </div>
+            <button
+              onClick={() => { localStorage.removeItem('isGuest'); window.location.href = '/login'; }}
+              style={{ padding: '10px 20px', borderRadius: '14px', background: '#fff', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              立即登录
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 资产看板 */}
       <div style={{ padding: '24px 20px' }}>
-        <div style={{ 
-          background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)', 
+        <div style={{
+          background: 'linear-gradient(135deg, #FF6B00 0%, #FF3D00 100%)',
           borderRadius: '32px', padding: '30px', color: 'white',
           boxShadow: '0 20px 40px rgba(255, 107, 0, 0.2)',
           position: 'relative', overflow: 'hidden'
@@ -246,31 +275,33 @@ const MobileProfilePage = ({ isMobile }) => {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
-              <div style={{ fontSize: '13px', opacity: 0.8 }}>当前余额</div>
-              <div style={{ fontSize: '32px', fontWeight: '900', marginTop: '4px' }}>{userInfo?.points} <span style={{ fontSize: '14px', fontWeight: '700' }}>积分</span></div>
+              <div style={{ fontSize: '13px', opacity: 0.8 }}>{userInfo?.uid === 'GUEST' ? '游客模式' : '当前余额'}</div>
+              <div style={{ fontSize: '32px', fontWeight: '900', marginTop: '4px' }}>{userInfo?.uid === 'GUEST' ? '—' : userInfo?.points} <span style={{ fontSize: '14px', fontWeight: '700' }}>积分</span></div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button
-                onClick={() => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分')}
-                style={{ padding: '10px 20px', borderRadius: '14px', background: 'white', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
-              >
-                充值
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await request.post('/auth/daily-reward');
-                    alert(res.message || '签到成功！');
-                    fetchData();
-                  } catch (err) {
-                    alert(err.response?.data?.detail || '签到失败');
-                  }
-                }}
-                style={{ padding: '8px 20px', borderRadius: '14px', background: 'rgba(255,255,255,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
-              >
-                签到+5
-              </button>
-            </div>
+            {userInfo?.uid !== 'GUEST' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  onClick={() => alert('内测阶段暂不支持充值\n\n可通过每日签到和邀请好友获取积分')}
+                  style={{ padding: '10px 20px', borderRadius: '14px', background: 'white', color: '#FF3D00', border: 'none', fontWeight: '800', fontSize: '13px', cursor: 'pointer' }}
+                >
+                  充值
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await request.post('/auth/daily-reward');
+                      alert(res.message || '签到成功！');
+                      fetchData();
+                    } catch (err) {
+                      alert(err.response?.data?.detail || '签到失败');
+                    }
+                  }}
+                  style={{ padding: '8px 20px', borderRadius: '14px', background: 'rgba(255,255,255,0.3)', color: 'white', border: '1px solid rgba(255,255,255,0.4)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                >
+                  签到+5
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
