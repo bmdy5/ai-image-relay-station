@@ -64,7 +64,7 @@ def wrap_prompt(style_id: str, raw_prompt: str, quality: str) -> str:
     
     # 人像仿真补丁 (Portrait Fusion Patch)
     portrait_fusion = ""
-    if style_id in ["real", "vintage_5s", "ccd_snap", "live_stream", "anime", "eri_silhouette"]:
+    if style_id in ["real", "vintage_5s", "ccd_snap", "live_stream", "eri_silhouette"]:
         portrait_fusion = " (画面要求：整体光影必须统一，主体与环境之间有自然的阴影遮蔽和反光交互，严禁背景突兀，确保主体与背景深度融合。) "
     
     # 人像真实度与灵动构图补丁 (Diverse Poses & Face Preservation)
