@@ -61,6 +61,13 @@ const MobileProfilePage = ({ isMobile }) => {
   }, [countdown]);
 
   const fetchData = async () => {
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+    const hasToken = !!localStorage.getItem('token');
+    if (isGuest && hasToken) localStorage.removeItem('isGuest');
+    if (isGuest && !hasToken) {
+      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+      return;
+    }
     try {
       const user = await request.get('/auth/me');
       setUserInfo(user);
