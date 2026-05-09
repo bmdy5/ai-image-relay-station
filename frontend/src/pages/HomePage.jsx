@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import Showcase from '../components/Showcase';
 import { downloadWithName, defaultImageName } from '../utils/download';
+import SharePosterModal from '../components/SharePosterModal';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -60,6 +61,8 @@ const HomePage = () => {
   const [result, setResult] = useState(null);
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [refImageUrl, setRefImageUrl] = useState('');
+  const [showSharePoster, setShowSharePoster] = useState(false);
+  const [shareJob, setShareJob] = useState(null);
   const [numImages, setNumImages] = useState(1);
   const [previewImage, setPreviewImage] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -912,6 +915,9 @@ const HomePage = () => {
                         >
                           <Wand2 size={18} /> 迭代精修
                         </button>
+                        <button onClick={() => { setShareJob(currentJob); setShowSharePoster(true); }} className="btn-primary" style={{ flex: 1, background: '#FF9500', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}>
+                          <Share2 size={18} /> 分享海报
+                        </button>
                         <button onClick={() => downloadWithName(currentJob.result, defaultImageName())} className="btn-primary" style={{ flex: 1, background: '#f5f5f7', color: '#1d1d1f', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}>
                           <Download size={18} /> 高清保存
                         </button>
@@ -1397,6 +1403,14 @@ const HomePage = () => {
           to { transform: translate(-50%, 0); opacity: 1; }
         }
       `}</style>
+
+      {showSharePoster && shareJob && (
+        <SharePosterModal
+          imageLog={{ id: shareJob.id, image_url: shareJob.result, prompt: shareJob.prompt, style: shareJob.style }}
+          userInfo={userInfo}
+          onClose={() => { setShowSharePoster(false); setShareJob(null); }}
+        />
+      )}
     </>
   );
 };

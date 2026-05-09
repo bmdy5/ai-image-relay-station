@@ -21,18 +21,16 @@ const SharePosterModal = ({ imageLog, userInfo, onClose }) => {
   const [localImageUrl, setLocalImageUrl] = useState(null);
   const [loadingImage, setLoadingImage] = useState(false);
 
-  // 加载并转换图片为 Base64 以彻底解决 html2canvas 跨域和渲染问题
+  // 加载并转换图片为 Base64，使用 request 实例自动带 token
   useEffect(() => {
     const loadImage = async () => {
       if (!imageLog?.image_url) return;
       setLoadingImage(true);
       try {
-        // 使用后端代理获取图片，彻底绕过 COS 的 CORS 限制
-        const proxyUrl = `/api/image/proxy?url=${encodeURIComponent(imageLog.image_url)}`;
-        const response = await fetch(proxyUrl);
-        const blob = await response.blob();
-        
-        // 将 Blob 转换为 Base64
+        const proxyUrl = `/image/proxy?url=${encodeURIComponent(imageLog.image_url)}`;
+        const response = await request.get(proxyUrl, { responseType: 'blob' });
+        const blob = response.data || response;
+
         const reader = new FileReader();
         reader.onloadend = () => {
           setLocalImageUrl(reader.result);
@@ -204,16 +202,16 @@ const SharePosterModal = ({ imageLog, userInfo, onClose }) => {
           {activeTemplate === 'vintage' && <VintageOverlay />}
         </div>
 
-        {/* 覆盖层：合成后的图片 (供用户长按) */}
+        {/* 覆盖层：合成后的图片 (供用户长按保存) */}
         {posterImage && !generating && (
-          <img 
-            src={posterImage} 
-            onLoad={() => console.log('Final poster rendered')}
-            style={{ 
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+          <img
+            src={posterImage}
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
               zIndex: 10, borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
-              background: 'white' 
-            }} 
+              background: 'white'
+            }}
             alt="Final Poster"
           />
         )}
