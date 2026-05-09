@@ -15,6 +15,7 @@ const RegisterPage = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
 
+  const [verifyEmail, setVerifyEmail] = useState(''); // 手机注册时用于验证的邮箱
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -38,16 +39,16 @@ const RegisterPage = () => {
   }, [countdown]);
 
   const handleSendCode = async () => {
-    if (!email || !email.includes('@')) {
+    const targetEmail = regMode === 'email' ? email : verifyEmail;
+    if (!targetEmail || !targetEmail.includes('@')) {
       setError('请输入有效的邮箱地址');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await request.post('/auth/send-code', { email });
+      await request.post('/auth/send-code', { email: targetEmail });
       setCountdown(60);
-      alert('验证码已发送，请检查您的邮箱');
     } catch (err) {
       setError(err.response?.data?.detail || '发送失败，请重试');
     }
@@ -80,6 +81,16 @@ const RegisterPage = () => {
           setLoading(false);
           return;
         }
+        if (regMode === 'phone' && (!code || code.trim() === '')) {
+          setError('请输入验证码');
+          setLoading(false);
+          return;
+        }
+        if (regMode === 'phone' && (!verifyEmail || !verifyEmail.includes('@'))) {
+          setError('请输入验证邮箱');
+          setLoading(false);
+          return;
+        }
         if (!password || password.length < 6) {
           setError('密码长度不能少于6位');
           setLoading(false);
@@ -88,12 +99,12 @@ const RegisterPage = () => {
 
         let resp;
         if (regMode === 'email') {
-          resp = await request.post('/auth/register', { 
+          resp = await request.post('/auth/register', {
             username, email, password, code, fingerprint, invite_code: inviteCode
           });
         } else {
-          resp = await request.post('/auth/register-phone', { 
-            username, phone, password, captcha_code: 'bypass', fingerprint, invite_code: inviteCode
+          resp = await request.post('/auth/register-phone', {
+            username, phone, password, captcha_code: code, fingerprint, invite_code: inviteCode
           });
         }
         
@@ -204,7 +215,39 @@ const RegisterPage = () => {
                 required
                 style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
               />
-
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="email"
+                  placeholder="验证邮箱（用于接收验证码）"
+                  value={verifyEmail}
+                  onChange={(e) => setVerifyEmail(e.target.value)}
+                  required
+                  style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+                />
+                <button
+                  type="button"
+                  disabled={countdown > 0 || loading}
+                  onClick={handleSendCode}
+                  style={{
+                    width: '100px', padding: '10px',
+                    background: countdown > 0 ? '#ccc' : '#fcfcfc',
+                    border: '1px solid #e66b33', color: '#e66b33',
+                    borderRadius: '8px', fontSize: '12px',
+                    cursor: countdown > 0 ? 'not-allowed' : 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  {countdown > 0 ? `${countdown}s` : '获取验证码'}
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="邮箱验证码"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+                style={{ padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+              />
             </>
           )}
 

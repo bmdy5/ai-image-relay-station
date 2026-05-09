@@ -76,7 +76,7 @@
 | `hd` | **10 积分** | 最多 2 次变体 | 提示词追加 `high quality, 4k, sharp focus` |
 | `master` | **15 积分** | 最多 3 次变体 | 提示词追加 `masterpiece, ultra-high definition, 8k, unreal engine 5 render, cinematic lighting` |
 
-> **分辨率**：由 `aspect_ratio` 参数决定（`1:1`→1024x1024, `9:16`→1024x1536, `16:9`→1536x1024），**与档位无关**。所有档位统一使用 `quality: "low"` 以控制 API 成本。
+> **分辨率**：由 `aspect_ratio` 参数决定（`1:1`→1024x1024, `9:16`→1024x1536, `16:9`→1536x1024），**与档位无关**。所有档位统一使用 `quality: "low"` 以控制成本，画质差异通过提示词增强和迭代次数体现。
 
 ### 2.3 迭代限制（代码实测）
 

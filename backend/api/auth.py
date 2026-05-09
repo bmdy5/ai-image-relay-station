@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import random
+import time
 import logging
 from datetime import datetime, timedelta
 
@@ -20,6 +21,23 @@ from ..services.auth_service import AuthService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# 登录失败计数: {(ip, username): [attempt_count, lock_until_timestamp]}
+_login_failures = {}
+_LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_LOCK_SECONDS = 900  # 15 分钟
+_LOGIN_FAILURE_TTL = 3600  # 未达阈值的记录 1 小时后自动清理
+
+
+def _cleanup_expired_failures():
+    """清理过期和已解锁的失败记录，防止内存泄漏"""
+    now = time.time()
+    expired = [
+        k for k, (count, lock_until) in _login_failures.items()
+        if (lock_until and now >= lock_until) or (not lock_until and now - _LOGIN_FAILURE_TTL > 0)
+    ]
+    for k in expired:
+        del _login_failures[k]
 
 
 def _send_code_with_lock(db: Session, email: str, purpose: str = "register") -> dict:
@@ -97,18 +115,47 @@ def register_phone(user: user_schema.UserCreatePhone, request: Request, db: Sess
     return AuthService.register_user_by_phone(db, user, client_ip)
 
 @router.post("/login", response_model=user_schema.Token)
-def login(user: user_schema.UserCreate, db: Session = Depends(get_db)):
+def login(user: user_schema.UserCreate, request: Request, db: Session = Depends(get_db)):
+    client_ip = request.client.host if request.client else "unknown"
+    login_key = (client_ip, user.username)
+
+    _cleanup_expired_failures()
+
+    # 检查是否被锁定
+    if login_key in _login_failures:
+        count, lock_until = _login_failures[login_key]
+        if lock_until and time.time() < lock_until:
+            remaining = int(lock_until - time.time())
+            raise HTTPException(
+                status_code=429,
+                detail=f"登录尝试过于频繁，请 {remaining} 秒后重试"
+            )
+        # 锁已过期，清除记录
+        if lock_until and time.time() >= lock_until:
+            del _login_failures[login_key]
+
     db_user = user_crud.get_user_by_email(db, email=user.username) or \
               user_crud.get_user_by_username(db, username=user.username) or \
               db.query(models.User).filter(models.User.phone == user.username).first()
-    
+
     if not db_user or not security.verify_password(user.password, db_user.password_hash):
+        # 记录失败
+        count, _ = _login_failures.get(login_key, (0, None))
+        count += 1
+        if count >= _LOGIN_MAX_ATTEMPTS:
+            _login_failures[login_key] = (count, time.time() + _LOGIN_LOCK_SECONDS)
+        else:
+            _login_failures[login_key] = (count, None)
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名/邮箱或密码错误",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+    # 登录成功，清除失败记录
+    _login_failures.pop(login_key, None)
+
     sub_val = db_user.username if db_user.username else db_user.email
     access_token = security.create_access_token(data={"sub": sub_val})
     return {"access_token": access_token, "token_type": "bearer"}

@@ -160,7 +160,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                 # 6. 邀请奖励触发：MySQL 分布式锁 + is_invitee_rewarded 防并发
                 if user.invited_by_id:
                     from sqlalchemy import text
-                    lock_name = f"invite_reward:{user.id}"
+                    lock_name = f"invite_reward:{user.invited_by_id}"
                     result = db.execute(text("SELECT GET_LOCK(:lock_name, 0)"), {"lock_name": lock_name})
                     if not result.scalar():
                         print(f"--- [Invite Lock] Skipped: could not acquire lock for user {user.id}")
