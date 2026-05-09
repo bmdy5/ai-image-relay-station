@@ -61,6 +61,7 @@ const HomePage = () => {
   const [result, setResult] = useState(null);
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [refImageUrl, setRefImageUrl] = useState('');
+  const [refImageUrl2, setRefImageUrl2] = useState('');
   const [showSharePoster, setShowSharePoster] = useState(false);
   const [shareJob, setShareJob] = useState(null);
   const [numImages, setNumImages] = useState(1);
@@ -100,8 +101,16 @@ const HomePage = () => {
         if (file) {
           const reader = new FileReader();
           reader.onload = (ev) => {
-            setRefImageUrl(ev.target.result);
-            showToast('📸 图片已自动设置为参考图', 'success');
+            if (!refImageUrl) {
+              setRefImageUrl(ev.target.result);
+              showToast('📸 人像已设置', 'success');
+            } else if (!refImageUrl2) {
+              setRefImageUrl2(ev.target.result);
+              showToast('👗 服饰已设置', 'success');
+            } else {
+              setRefImageUrl(ev.target.result);
+              showToast('📸 人像已替换', 'success');
+            }
           };
           reader.readAsDataURL(file);
         }
@@ -152,7 +161,8 @@ const HomePage = () => {
     { id: 'knowledge_card', name: '知识图卡', desc: '现代百科科普图鉴', icon: <CreditCard size={24} />, pts: 'Master', hint: '如：黑洞的形成、咖啡品种', placeholder: '百科主题：【在此输入】', recommendedRatio: '9:16' },
     { id: 'ui_upgrade', name: 'UI 视觉进化', desc: '草图/截图一键转高保真大厂设计', icon: <Box size={24} />, pts: 'Master', hint: '上传截图后直接生成，无需输入文字', placeholder: '💡 UI 进化模式：无需输入文字。请直接上传您的 UI 截图或草图，点击”开始创作”，系统将自动分析并重构。', requiresImage: true, recommendedRatio: '9:16' },
     { id: 'app_ui_design', name: 'APP UI 设计', desc: 'iOS 原生视觉全案', icon: <Smartphone size={24} />, pts: 'Master', hint: '如：健身社交、咖啡电商', placeholder: 'APP 主题：【在此输入】', recommendedRatio: '9:16' },
-    { id: 'campaign_poster', name: '运营活动页', desc: '移动端运营海报', icon: <Flag size={24} />, pts: 'Master', hint: '如：618年中大促、新品首发', placeholder: '活动主题：【在此输入】', recommendedRatio: '9:16', img: '/showcase/master_commercial_equestrian.png' }
+    { id: 'campaign_poster', name: '运营活动页', desc: '移动端运营海报', icon: <Flag size={24} />, pts: 'Master', hint: '如：618年中大促、新品首发', placeholder: '活动主题：【在此输入】', recommendedRatio: '9:16', img: '/showcase/master_commercial_equestrian.png' },
+    { id: 'virtual_tryon', name: 'AI 试衣', desc: '人像+服饰→模特宣传照', icon: <User size={24} />, pts: 'Master', hint: '上传人像和服饰，AI自动合成为模特照', placeholder: 'AI试衣模式：请上传人像和服饰照片', requiresImage: true, recommendedRatio: '9:16' }
   ];
 
   // AI 润色白名单 (Task: Strict Whitelist)
@@ -465,6 +475,7 @@ const HomePage = () => {
         style: selectedStyle.id,
         aspect_ratio: aspectRatio,
         ref_image_url: refImageUrl,
+        ref_image_url_2: refImageUrl2,
         parent_id: refineParentId,
         root_id: refineRootId,
         iteration: iterationInfo.current
@@ -713,55 +724,33 @@ const HomePage = () => {
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* 图生图上传器 */}
-              <div 
-                className="glass-card"
-                style={{ 
-                  padding: '12px', border: selectedStyle.requiresImage && !refImageUrl ? '1px dashed var(--primary)' : '1px solid var(--border)',
-                  borderRadius: '16px', background: 'white', display: 'flex', alignItems: 'center', gap: '12px'
-                }}
-              >
-                <div 
-                  onClick={() => document.getElementById('ref-upload').click()}
-                  style={{ 
-                    width: '48px', height: '48px', borderRadius: '12px', background: '#f2f2f7', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                    overflow: 'hidden', border: '1px solid var(--border)'
-                  }}
-                >
-                  {refImageUrl ? (
-                    <img src={refImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <Images size={20} color="var(--text-secondary)" />
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700' }}>参考图片</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                    {selectedStyle.requiresImage ? (
-                      <span style={{ color: refImageUrl ? 'var(--text-secondary)' : 'var(--primary)' }}>
-                        {refImageUrl ? '已上传参考图' : '⚠️ 此风格必须上传图片'}
-                      </span>
-                    ) : '可选，支持参考生图'}
+              {/* 双槽位上传器 */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {/* 人像槽 */}
+                <div style={{ flex: 1, padding: '10px', borderRadius: '14px', background: 'white', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div onClick={() => document.getElementById('ref-upload').click()} style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#f2f2f7', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
+                    {refImageUrl ? <img src={refImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Images size={16} color="var(--text-secondary)" />}
                   </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700' }}>人像</div>
+                    <div style={{ fontSize: '10px', color: refImageUrl ? '#34c759' : '#999' }}>{refImageUrl ? '已上传' : '粘贴或点击'}</div>
+                  </div>
+                  {refImageUrl && <button onClick={() => setRefImageUrl('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#ff4d4f', padding: 0 }}><X size={12} /></button>}
                 </div>
-                {refImageUrl && (
-                  <button onClick={() => setRefImageUrl('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#ff4d4f' }}>
-                    <X size={14} />
-                  </button>
-                )}
-                <input 
-                  id="ref-upload" type="file" accept="image/*" hidden 
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setRefImageUrl(ev.target.result);
-                      reader.readAsDataURL(file);
-                    }
-                  }} 
-                />
+                {/* 服饰槽 */}
+                <div style={{ flex: 1, padding: '10px', borderRadius: '14px', background: 'white', border: selectedStyle === 'virtual_tryon' && !refImageUrl2 ? '1px dashed var(--primary)' : '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div onClick={() => document.getElementById('ref-upload-2').click()} style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#f2f2f7', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
+                    {refImageUrl2 ? <img src={refImageUrl2} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Images size={16} color="var(--text-secondary)" />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700' }}>服饰</div>
+                    <div style={{ fontSize: '10px', color: refImageUrl2 ? '#34c759' : '#999' }}>{refImageUrl2 ? '已上传' : '粘贴或点击'}</div>
+                  </div>
+                  {refImageUrl2 && <button onClick={() => setRefImageUrl2('')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#ff4d4f', padding: 0 }}><X size={12} /></button>}
+                </div>
               </div>
+              <input id="ref-upload" type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = ev => setRefImageUrl(ev.target.result); r.readAsDataURL(f); } }} />
+              <input id="ref-upload-2" type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files[0]; if (f) { const r = new FileReader(); r.onload = ev => setRefImageUrl2(ev.target.result); r.readAsDataURL(f); } }} />
 
               {/* 比例选择器 */}
               <div style={{ display: 'flex', background: '#f2f2f7', padding: '4px', borderRadius: '14px' }}>

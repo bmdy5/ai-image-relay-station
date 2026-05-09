@@ -185,7 +185,7 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
         iteration=payload.iteration
     )
     db.commit()
-    background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time(), payload.ref_image_url, payload.aspect_ratio)
+    background_tasks.add_task(process_image_task, pending_log.id, payload.prompt, payload.quality, payload.style, cost, current_user.id, time.time(), payload.ref_image_url, payload.aspect_ratio, payload.ref_image_url_2)
     return {"id": pending_log.id, "status": "pending", "remaining_points": current_user.points, "iteration": payload.iteration}
 
 @router.get("/status/{id}")

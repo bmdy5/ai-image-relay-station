@@ -9,9 +9,10 @@ from backend.crud import recharge as recharge_crud
 from backend.core.config import get_config
 from backend.core.cos import upload_url_to_cos, upload_base64_to_cos
 from backend.core.prompt import wrap_prompt, TIER_CONFIG, COST_RMB
+from backend.core.clothing_analyzer import analyze_clothing, clothing_to_prompt
 from starlette.concurrency import run_in_threadpool
 
-async def process_image_task(log_id: int, prompt: str, quality: str, style: str, cost: int, user_id: int, request_start_time: float, ref_image_url: str = None, aspect_ratio: str = "1:1"):
+async def process_image_task(log_id: int, prompt: str, quality: str, style: str, cost: int, user_id: int, request_start_time: float, ref_image_url: str = None, aspect_ratio: str = "1:1", ref_image_url_2: str = None):
     """后台生图核心逻辑 (从 api/image.py 解耦)"""
     task_start_time = time.time()
     api_key = get_config("OPENAI_API_KEY")
@@ -37,8 +38,22 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
             except Exception as e:
                 raise Exception(f"参考图上传失败: {str(e)}")
 
-        # 2. 提示词包装与注入
-        prompt_to_send = wrap_prompt(style, prompt, quality)
+        # 2. 服饰分析（virtual_tryon 风格 + 双图模式）
+        clothing_desc = ""
+        if style == "virtual_tryon" and ref_image_url_2:
+            try:
+                analysis = await analyze_clothing(ref_image_url_2)
+                clothing_desc = clothing_to_prompt(analysis)
+                print(f"--- [TryOn] Clothing: {clothing_desc} ---")
+            except Exception as e:
+                print(f"--- [TryOn] Clothing analysis failed: {e} ---")
+
+        # 3. 提示词包装与注入
+        if clothing_desc:
+            # virtual_tryon 模式：用分析出的服饰描述替换用户 prompt
+            prompt_to_send = wrap_prompt(style, clothing_desc, quality)
+        else:
+            prompt_to_send = wrap_prompt(style, prompt, quality)
         final_api_prompt = prompt_to_send
 
         with session_scope() as db:
