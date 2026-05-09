@@ -28,15 +28,85 @@ from backend.services.image_service import process_image_task
 router = APIRouter(prefix="/image", tags=["image"])
 
 @router.get("/proxy")
-async def proxy_image(url: str):
-    """代理获取图片以绕过前端 CORS 限制"""
+async def proxy_image(url: str, current_user: models.User = Depends(get_current_user)):
+    """代理获取图片以绕过前端 CORS 限制，需认证 + 白名单 + 内网防护"""
     from fastapi.responses import Response
-    async with httpx.AsyncClient() as client:
+    from urllib.parse import urlparse
+    import ipaddress
+    import socket
+
+    MAX_RESPONSE_SIZE = 20 * 1024 * 1024  # 20MB
+    ALLOWED_CONTENT_TYPES = {
+        "image/png", "image/jpeg", "image/jpg", "image/webp",
+        "image/gif", "image/avif", "image/svg+xml", "image/bmp"
+    }
+
+    parsed = urlparse(url)
+
+    # 强制 HTTPS
+    if parsed.scheme != "https":
+        raise HTTPException(status_code=400, detail="仅支持 HTTPS 协议")
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise HTTPException(status_code=400, detail="无效的 URL")
+
+    def _is_internal_ip(ip_str: str) -> bool:
         try:
-            resp = await client.get(url, timeout=10.0)
-            return Response(content=resp.content, media_type=resp.headers.get("content-type"))
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+            ip = ipaddress.ip_address(ip_str)
+            return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved
+        except ValueError:
+            return False
+
+    if _is_internal_ip(hostname):
+        raise HTTPException(status_code=403, detail="不允许访问内网地址")
+
+    # DNS 解析后再次检查（异步执行以避免阻塞事件循环）
+    try:
+        loop = asyncio.get_event_loop()
+        resolved_ip = await loop.run_in_executor(None, socket.gethostbyname, hostname)
+        if _is_internal_ip(resolved_ip):
+            raise HTTPException(status_code=403, detail="不允许访问内网地址")
+    except socket.gaierror:
+        raise HTTPException(status_code=400, detail="无法解析域名")
+
+    # 白名单域名
+    allowed_domains = [".myqcloud.com", ".openai.com", ".oaistatic.com"]
+    if not any(hostname == d.lstrip(".") or hostname.endswith(d) for d in allowed_domains):
+        raise HTTPException(status_code=403, detail="不允许代理该域名")
+
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
+        try:
+            resp = await client.get(url)
+        except httpx.HTTPStatusError:
+            raise HTTPException(status_code=502, detail="上游图片服务返回错误")
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="上游图片服务超时")
+        except Exception:
+            raise HTTPException(status_code=500, detail="图片代理请求失败")
+
+    # 禁止重定向
+    if resp.status_code in (301, 302, 303, 307, 308):
+        raise HTTPException(status_code=403, detail="不允许重定向")
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"上游返回状态码 {resp.status_code}")
+
+    # Content-Type 白名单
+    content_type = resp.headers.get("content-type", "").split(";")[0].strip().lower()
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=403, detail=f"不支持的内容类型: {content_type}")
+
+    # 响应大小限制
+    content_length = resp.headers.get("content-length")
+    if content_length and int(content_length) > MAX_RESPONSE_SIZE:
+        raise HTTPException(status_code=413, detail="响应内容过大")
+
+    content = resp.content
+    if len(content) > MAX_RESPONSE_SIZE:
+        raise HTTPException(status_code=413, detail="响应内容过大")
+
+    return Response(content=content, media_type=content_type)
 
 @router.get("/config")
 async def get_config_info():

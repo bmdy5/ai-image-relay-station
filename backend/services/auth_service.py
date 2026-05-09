@@ -88,11 +88,27 @@ class AuthService:
         user_count = db.query(models.User).count()
         if user_count >= 100:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="内测名额已满")
-        
+
         if not user_data.phone.isdigit() or len(user_data.phone) != 11:
             raise HTTPException(status_code=400, detail="请输入正确的手机号")
         if db.query(models.User).filter(models.User.phone == user_data.phone).first():
             raise HTTPException(status_code=400, detail="该手机号已注册")
+
+        # 验证 captcha_code 必须有效（与邮箱验证码表交叉校验）
+        if not user_data.captcha_code or user_data.captcha_code == 'bypass':
+            raise HTTPException(status_code=400, detail="请输入有效的验证码")
+        valid_code = db.query(models.VerificationCode).filter(
+            models.VerificationCode.code == user_data.captcha_code,
+            models.VerificationCode.is_used == False
+        ).with_for_update().order_by(models.VerificationCode.created_at.desc()).first()
+        if not valid_code:
+            raise HTTPException(status_code=400, detail="验证码无效或已过期")
+        now = get_beijing_time()
+        expiry = valid_code.expires_at.replace(tzinfo=None) if valid_code.expires_at.tzinfo else valid_code.expires_at
+        if expiry < now:
+            raise HTTPException(status_code=400, detail="验证码已过期")
+        valid_code.is_used = True
+        db.commit()
             
         if user_data.username:
             if user_crud.get_user_by_username(db, username=user_data.username):
