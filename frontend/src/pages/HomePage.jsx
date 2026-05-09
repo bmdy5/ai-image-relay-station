@@ -927,7 +927,7 @@ const HomePage = () => {
                       <div style={{ color: '#ff4d4f', marginBottom: '16px' }}><X size={48} /></div>
                       <div style={{ fontSize: '18px', fontWeight: '700' }}>生成失败</div>
                       <p style={{ color: '#999', marginTop: '8px' }}>{currentJob.error || '未知错误'}</p>
-                      <button onClick={() => setActiveJobs(prev => prev.filter(j => j.id !== currentJobId))} className="btn-secondary" style={{ marginTop: '20px' }}>清除此任务</button>
+                      <button onClick={() => { setActiveJobs(prev => prev.filter(j => j.id !== currentJobId)); setCurrentJobId(null); }} className="btn-secondary" style={{ marginTop: '20px' }}>清除此任务</button>
                     </div>
                   );
                 }
