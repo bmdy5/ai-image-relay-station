@@ -12,7 +12,6 @@ dist/
 
 # Logs
 *.log
-image
 # public (removed to allow static assets)
 docs/superpowers/specs
 docs/superpowers/plans
