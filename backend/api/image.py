@@ -113,8 +113,10 @@ async def get_config_info():
     return {"pricing": PRICING, "tiers": TIER_CONFIG}
 
 @router.get("/download")
-async def download_image(id: int, db: Session = Depends(get_db)):
-    log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
+async def download_image(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    log = db.query(models.ImageLog).filter(
+        models.ImageLog.id == id, models.ImageLog.user_id == current_user.id
+    ).first()
     if not log or not log.image_url: raise HTTPException(status_code=404, detail="图片不存在")
     return RedirectResponse(url=log.image_url)
 
@@ -185,8 +187,10 @@ async def generate_image(payload: image_schema.ImageCreate, background_tasks: Ba
     return {"id": pending_log.id, "status": "pending", "remaining_points": current_user.points, "iteration": payload.iteration}
 
 @router.get("/status/{id}")
-async def get_task_status(id: int, db: Session = Depends(get_db)):
-    log = db.query(models.ImageLog).filter(models.ImageLog.id == id).first()
+async def get_task_status(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    log = db.query(models.ImageLog).filter(
+        models.ImageLog.id == id, models.ImageLog.user_id == current_user.id
+    ).first()
     if not log:
         return {"id": id, "status": "failed", "image_url": None, "final_prompt": None, "iteration": 0, "parent_id": None, "error": "任务不存在或已过期"}
     return {
