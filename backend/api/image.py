@@ -58,22 +58,24 @@ async def proxy_image(url: str, current_user: models.User = Depends(get_current_
         except ValueError:
             return False
 
+    # 白名单域名优先检查
+    allowed_domains = [".myqcloud.com", ".openai.com", ".oaistatic.com"]
+    is_whitelisted = any(hostname == d.lstrip(".") or hostname.endswith(d) for d in allowed_domains)
+    if not is_whitelisted:
+        raise HTTPException(status_code=403, detail="不允许代理该域名")
+
     if _is_internal_ip(hostname):
         raise HTTPException(status_code=403, detail="不允许访问内网地址")
 
-    # DNS 解析后再次检查（异步执行以避免阻塞事件循环）
-    try:
-        loop = asyncio.get_event_loop()
-        resolved_ip = await loop.run_in_executor(None, socket.gethostbyname, hostname)
-        if _is_internal_ip(resolved_ip):
-            raise HTTPException(status_code=403, detail="不允许访问内网地址")
-    except socket.gaierror:
-        raise HTTPException(status_code=400, detail="无法解析域名")
-
-    # 白名单域名
-    allowed_domains = [".myqcloud.com", ".openai.com", ".oaistatic.com"]
-    if not any(hostname == d.lstrip(".") or hostname.endswith(d) for d in allowed_domains):
-        raise HTTPException(status_code=403, detail="不允许代理该域名")
+    # DNS 解析后检查内网 IP（白名单域名跳过，COS 等可能解析到云内网 IP）
+    if not is_whitelisted:
+        try:
+            loop = asyncio.get_event_loop()
+            resolved_ip = await loop.run_in_executor(None, socket.gethostbyname, hostname)
+            if _is_internal_ip(resolved_ip):
+                raise HTTPException(status_code=403, detail="不允许访问内网地址")
+        except socket.gaierror:
+            raise HTTPException(status_code=400, detail="无法解析域名")
 
     async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
         try:
