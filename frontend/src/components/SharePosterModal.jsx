@@ -21,15 +21,19 @@ const SharePosterModal = ({ imageLog, userInfo, onClose }) => {
   const [localImageUrl, setLocalImageUrl] = useState(null);
   const [loadingImage, setLoadingImage] = useState(false);
 
-  // 加载并转换图片为 Base64，使用 request 实例自动带 token
+  // 加载图片为 Base64，通过代理绕过 CORS，手动带 token
   useEffect(() => {
     const loadImage = async () => {
       if (!imageLog?.image_url) return;
       setLoadingImage(true);
       try {
-        const proxyUrl = `/image/proxy?url=${encodeURIComponent(imageLog.image_url)}`;
-        const response = await request.get(proxyUrl, { responseType: 'blob' });
-        const blob = response.data || response;
+        const token = localStorage.getItem('token');
+        const proxyUrl = `/api/image/proxy?url=${encodeURIComponent(imageLog.image_url)}`;
+        const resp = await fetch(proxyUrl, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (!resp.ok) throw new Error(`代理请求失败: ${resp.status}`);
+        const blob = await resp.blob();
 
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -37,7 +41,8 @@ const SharePosterModal = ({ imageLog, userInfo, onClose }) => {
           setLoadingImage(false);
         };
         reader.onerror = () => {
-          throw new Error('FileReader failed');
+          setLocalImageUrl(imageLog.image_url);
+          setLoadingImage(false);
         };
         reader.readAsDataURL(blob);
       } catch (err) {
