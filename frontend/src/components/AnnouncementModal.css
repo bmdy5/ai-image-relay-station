@@ -105,6 +105,12 @@
 .item-icon-box.ui { background: rgba(0, 122, 255, 0.1); color: #007aff; }
 .item-icon-box.logic { background: rgba(52, 199, 89, 0.1); color: #34c759; }
 .item-icon-box.atmosphere { background: rgba(124, 77, 255, 0.1); color: var(--master); }
+.item-icon-box.security { background: rgba(52, 199, 89, 0.1); color: #34c759; }
+.item-icon-box.feature { background: rgba(230, 107, 51, 0.1); color: var(--primary); }
+.item-icon-box.bug { background: rgba(255, 59, 48, 0.1); color: #ff3b30; }
+.item-icon-box.payment { background: rgba(0, 122, 255, 0.1); color: #007aff; }
+.item-icon-box.performance { background: rgba(124, 77, 255, 0.1); color: var(--master); }
+.item-icon-box.other { background: rgba(142, 142, 147, 0.1); color: #8e8e93; }
 
 .item-text h4 {
   font-size: 15px;
