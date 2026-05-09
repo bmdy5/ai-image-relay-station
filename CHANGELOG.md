@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026.05.09
+
+### 问题修复
+- PWA 安装弹窗在 HTTP 环境下点击无反应：Android HTTP 环境下 `isInstallable` 为 false，安装按钮不渲染导致弹窗无交互
+
+### 文档修正
+- README：修正宽高比描述、删除不存在的功能声明、修正部署架构和技术栈版本
+- API 手册：补充 `/auth/daily-reward` 端点、修正 master 档位增强词描述
+- 数据库文档：补充 `last_daily_reward`、`generation_duration` 字段，修正 `style` 默认值
+- PRD：修正 master 增强词、风格数量
+- 架构概览：升级技术栈版本号、补充 `services/` 目录结构
+
 ## 2026.05.08
 
 ### 新增功能
