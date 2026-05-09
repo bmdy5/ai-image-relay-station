@@ -1,7 +1,7 @@
 # GPT-Image2 Relay Station
 
 [![License MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0.0-orange.svg)](https://github.com/bmdy5/ai-image-relay-station)
+[![Version](https://img.shields.io/badge/version-2.2.0-orange.svg)](https://github.com/bmdy5/ai-image-relay-station)
 
 GPT-Image2 Relay Station 是一个基于 FastAPI 与 React 构建的高性能 AI 生图中转系统。它通过优化的异步架构，为开发者和最终用户提供稳定、极简的 DALL-E 3 (GPT-Image 2) 生图体验。
 
@@ -10,7 +10,7 @@ GPT-Image2 Relay Station 是一个基于 FastAPI 与 React 构建的高性能 AI
 ## 核心特性
 
 ### 1. 极致生图体验
-*   **专业交互界面**：采用亮橙色极简风格设计，支持 1:1, 4:3, 16:9 等多种比例切换，支持多图同步生成预览。
+*   **专业交互界面**：采用亮橙色极简风格设计，支持 1:1, 9:16, 16:9 等多种比例切换，支持多图同步生成预览。
 *   **异步反馈系统**：后端任务队列分发，前端实时显示生成进度，告别长时间空白等待。
 
 ### 2. 商业化运营能力
@@ -18,9 +18,8 @@ GPT-Image2 Relay Station 是一个基于 FastAPI 与 React 构建的高性能 AI
 *   **完善的生图历史**：用户可随时追溯、搜索和重新下载历史生成的艺术作品。
 
 ### 3. 企业级安全防护
-*   **全站熔断机制**：支持设置单日消费上限，防止 API 额度被意外或恶意耗尽。
-*   **内容安全过滤**：集成敏感词检测与内容安全审核。
 *   **多维身份校验**：基于 JWT 的认证体系，辅以浏览器指纹校验，提升账户安全性。
+*   **并发控制**：每用户最多 3 个并发生图任务，超时自动释放冻结积分。
 
 ---
 
@@ -31,7 +30,7 @@ GPT-Image2 Relay Station 是一个基于 FastAPI 与 React 构建的高性能 AI
 | **前端** | React 18, Vite, Axios, React Router, Lucide Icons, Vanilla CSS |
 | **后端** | FastAPI (Python 3.10+), SQLAlchemy, Pydantic, Bcrypt, PyJWT |
 | **数据库** | MySQL 5.7+ / MariaDB |
-| **部署** | Vercel (Frontend & API), Tencent Cloud (Database) |
+| **部署** | Vercel (Frontend), Tencent Cloud (API & Database) |
 
 ---
 
@@ -76,7 +75,7 @@ chmod +x start.sh
 本项目目前已部署于腾讯云环境，方便团队协作与线上测试。
 
 *   **服务器 IP**: `119.29.232.114`
-*   **数据库配置**: 已放行远程连接权限，本地开发环境通过 `.env` 直连云端 MySQL。
+*   **数据库配置**: 本地开发通过 SSH 隧道（端口 3307→3306）连接云端 MySQL。
 *   **管理建议**: 生产环境下，请通过宝塔面板监控 `backend.log` 与 `frontend.log` 实时日志。
 
 ---

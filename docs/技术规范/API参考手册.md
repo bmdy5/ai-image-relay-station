@@ -22,6 +22,7 @@
 | POST | `/auth/forgot-password/send-code` | 否 | 发送找回密码验证码（邮箱必须已注册） |
 | POST | `/auth/forgot-password/reset` | 否 | 重置密码并自动登录 |
 | POST | `/auth/claim-install-reward` | 是 | 领取 PWA 安装奖励 **+10 积分**（每人仅限一次） |
+| POST | `/auth/daily-reward` | 是 | 每日签到领积分 **+5 积分**（MySQL GET_LOCK 防并发，同日不可重复） |
 | GET | `/auth/invitation-stats` | 是 | 查看邀请统计（邀请人数、今日奖励次数、邀请链接） |
 
 ---
@@ -73,7 +74,7 @@
 | :--- | :--- | :--- | :--- |
 | `standard` | **5 积分** | 不支持迭代 | 基础提示词 |
 | `hd` | **10 积分** | 最多 2 次变体 | 提示词追加 `high quality, 4k, sharp focus` |
-| `master` | **15 积分** | 最多 3 次变体 | 提示词追加 `masterpiece, 8k, cinematic lighting` |
+| `master` | **15 积分** | 最多 3 次变体 | 提示词追加 `masterpiece, ultra-high definition, 8k, unreal engine 5 render, cinematic lighting` |
 
 > **分辨率**：由 `aspect_ratio` 参数决定（`1:1`→1024x1024, `9:16`→1024x1536, `16:9`→1536x1024），**与档位无关**。所有档位统一使用 `quality: "low"` 以控制 API 成本。
 
