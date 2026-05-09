@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
-import { 
-  CheckCircle2, XCircle, ShieldCheck, UserPlus, ListChecks, 
-  BookOpen, ArrowLeft, LayoutDashboard, BarChart3, 
+import {
+  CheckCircle2, XCircle, ShieldCheck, UserPlus, ListChecks,
+  BookOpen, ArrowLeft, LayoutDashboard, BarChart3,
   Users, Image as ImageIcon, Zap, Trash2, Search,
-  RefreshCw, DollarSign, TrendingUp, AlertCircle
+  RefreshCw, DollarSign, TrendingUp, AlertCircle, Megaphone, Plus, X
 } from 'lucide-react';
 
 const AdminPage = () => {
@@ -31,6 +31,10 @@ const AdminPage = () => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [inviteLogs, setInviteLogs] = useState([]);
 
+  // Announcement State
+  const [announcement, setAnnouncement] = useState({ version: '', title: '', items: [] });
+  const [announceMsg, setAnnounceMsg] = useState('');
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);
@@ -50,6 +54,10 @@ const AdminPage = () => {
       } else if (activeTab === 'invitation') {
         const data = await request.get('/admin/invitation/logs');
         setInviteLogs(data);
+      } else if (activeTab === 'announcement') {
+        const data = await request.get('/announcement');
+        const ann = data.data || data;
+        if (ann && ann.version) setAnnouncement(ann);
       }
     } catch (err) {
       console.error(err);
@@ -131,6 +139,7 @@ const AdminPage = () => {
           { id: 'invitation', label: '邀请审计', icon: UserPlus },
           { id: 'recharge', label: '手动充值', icon: UserPlus },
           { id: 'feedback', label: '意见反馈', icon: BookOpen, count: feedbacks.length },
+          { id: 'announcement', label: '公告管理', icon: Megaphone },
         ].map(tab => (
           <div 
             key={tab.id}
@@ -486,6 +495,136 @@ const AdminPage = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+      {activeTab === 'announcement' && (
+        <div className="card" style={{ padding: '24px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>📢 公告管理</h2>
+
+          {/* 版本号 + 标题 */}
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <input
+              placeholder="版本号 (如 2026.05.09)"
+              value={announcement.version}
+              onChange={e => setAnnouncement({ ...announcement, version: e.target.value })}
+              style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }}
+            />
+            <input
+              placeholder="公告标题"
+              value={announcement.title}
+              onChange={e => setAnnouncement({ ...announcement, title: e.target.value })}
+              style={{ flex: 2, padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }}
+            />
+          </div>
+
+          {/* 更新条目 */}
+          {(announcement.items || []).map((item, i) => (
+            <div key={i} style={{
+              background: '#f9f9fb', borderRadius: '10px', padding: '16px',
+              marginBottom: '12px', border: '1px solid #eee'
+            }}>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
+                <select
+                  value={item.icon || 'other'}
+                  onChange={e => {
+                    const next = [...announcement.items];
+                    next[i] = { ...next[i], icon: e.target.value };
+                    setAnnouncement({ ...announcement, items: next });
+                  }}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}
+                >
+                  <option value="security">🔒 安全</option>
+                  <option value="feature">⚡ 新功能</option>
+                  <option value="bug">🐛 修复</option>
+                  <option value="ui">🎨 UI</option>
+                  <option value="payment">💳 支付</option>
+                  <option value="performance">🚀 性能</option>
+                  <option value="other">📌 其他</option>
+                </select>
+                <input
+                  placeholder="条目标题"
+                  value={item.title}
+                  onChange={e => {
+                    const next = [...announcement.items];
+                    next[i] = { ...next[i], title: e.target.value };
+                    setAnnouncement({ ...announcement, items: next });
+                  }}
+                  style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}
+                />
+                <button
+                  onClick={() => {
+                    const next = announcement.items.filter((_, j) => j !== i);
+                    setAnnouncement({ ...announcement, items: next });
+                  }}
+                  style={{
+                    width: '32px', height: '32px', borderRadius: '6px',
+                    border: 'none', background: '#ffebeb', color: '#ff4d4f',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <textarea
+                placeholder="条目内容"
+                value={item.content}
+                onChange={e => {
+                  const next = [...announcement.items];
+                  next[i] = { ...next[i], content: e.target.value };
+                  setAnnouncement({ ...announcement, items: next });
+                }}
+                style={{
+                  width: '100%', padding: '10px', borderRadius: '6px',
+                  border: '1px solid #ddd', fontSize: '13px', minHeight: '60px',
+                  resize: 'vertical', boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          ))}
+
+          <button
+            onClick={() => {
+              setAnnouncement({
+                ...announcement,
+                items: [...(announcement.items || []), { icon: 'feature', title: '', content: '' }]
+              });
+            }}
+            style={{
+              width: '100%', padding: '10px', borderRadius: '8px',
+              border: '2px dashed #ddd', background: 'transparent',
+              color: '#999', fontSize: '13px', cursor: 'pointer',
+              marginBottom: '20px'
+            }}
+          >
+            <Plus size={16} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+            添加条目
+          </button>
+
+          <button
+            className="btn-primary"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await request.post('/admin/announcement', announcement);
+                setAnnounceMsg('公告已保存，60秒内全站生效');
+              } catch (err) {
+                setAnnounceMsg('保存失败: ' + (err.response?.data?.detail || err.message));
+              }
+              setLoading(false);
+            }}
+            style={{ width: '100%', padding: '14px', fontSize: '16px' }}
+          >
+            保存并发布公告
+          </button>
+          {announceMsg && (
+            <p style={{
+              textAlign: 'center', marginTop: '12px', fontSize: '13px',
+              color: announceMsg.includes('失败') ? '#ff4d4f' : '#34c759'
+            }}>
+              {announceMsg}
+            </p>
+          )}
         </div>
       )}
     </div>

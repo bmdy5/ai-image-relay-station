@@ -70,6 +70,19 @@ from sqlalchemy.orm import Session
 
 @app.get("/api/health")
 async def health_check(db: Session = Depends(get_db)):
-    # 尝试执行一个最简单的查询来验证数据库连接
     db.execute(text("SELECT 1"))
     return {"status": "ok", "message": "GPT-Image2 Relay Station API and Database are healthy"}
+
+import json
+from backend.core.config import get_config
+
+@app.get("/api/announcement")
+async def get_announcement():
+    """公开接口，返回系统公告"""
+    raw = get_config("ANNOUNCEMENT", "")
+    if not raw:
+        return {"version": "", "title": "", "items": []}
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {"version": "", "title": "", "items": []}

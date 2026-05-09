@@ -159,3 +159,27 @@ def list_invitation_logs(
             "fingerprint": l[1].fingerprint
         } for l in logs
     ]
+
+import json
+from ..core.config import get_config
+
+@router.post("/announcement")
+def save_announcement(
+    data: dict,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(admin_required)
+):
+    """管理员保存系统公告"""
+    raw = json.dumps(data, ensure_ascii=False)
+    existing = db.query(models.SystemConfig).filter(
+        models.SystemConfig.config_key == "ANNOUNCEMENT"
+    ).first()
+    if existing:
+        existing.config_value = raw
+    else:
+        db.add(models.SystemConfig(config_key="ANNOUNCEMENT", config_value=raw, description="系统公告"))
+    db.commit()
+    # 清除 config 缓存让修改立即生效
+    from ..core import config as config_module
+    config_module._last_fetch = 0
+    return {"message": "公告已更新"}
