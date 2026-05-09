@@ -139,9 +139,12 @@ const SharePosterModal = ({ imageLog, userInfo, onClose }) => {
       </div>
 
       {/* 海报预览/合成容器 */}
-      <div 
+      <div
         onClick={e => e.stopPropagation()}
-        style={{ position: 'relative', width: '320px', height: '540px', marginBottom: '30px' }}
+        style={{
+          position: 'relative', width: '320px', height: '540px', marginBottom: '30px',
+          flexShrink: 0, minWidth: '320px', minHeight: '540px'
+        }}
       >
         {/* 隐藏的合成源 (实际渲染区域) */}
         <div 
@@ -213,7 +216,7 @@ const SharePosterModal = ({ imageLog, userInfo, onClose }) => {
             src={posterImage}
             onClick={e => e.stopPropagation()}
             style={{
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+              position: 'absolute', top: 0, left: 0, width: '320px', height: '540px',
               zIndex: 10, borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
               background: 'white'
             }}
