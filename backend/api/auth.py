@@ -45,6 +45,7 @@ def _send_code_with_lock(db: Session, email: str, purpose: str = "register") -> 
     使用 MySQL GET_LOCK 实现数据库级分布式锁，防止并发重复发送验证码。
     流程：获取锁(非阻塞) -> 检查60s冷却 -> 先写库 -> 再发邮件
     """
+    expiry_minutes = 10 if purpose == "login" else 5
     lock_name = f"send_code:{purpose}:{email}"
 
     # 1. 尝试获取 MySQL 分布式锁（超时=0，非阻塞：拿不到立即失败）
@@ -73,7 +74,7 @@ def _send_code_with_lock(db: Session, email: str, purpose: str = "register") -> 
         code = f"{random.randint(100000, 999999)}"
         vc = models.VerificationCode(
             email=email, code=code,
-            expires_at=now + timedelta(minutes=5)
+            expires_at=now + timedelta(minutes=expiry_minutes)
         )
         db.add(vc)
         db.commit()
@@ -101,6 +102,27 @@ def send_code(data: user_schema.EmailSendCode, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="该邮箱已注册，请直接登录")
 
     return _send_code_with_lock(db, email, purpose="register")
+
+@router.post("/send-login-code")
+def send_login_code(data: user_schema.EmailSendCode, db: Session = Depends(get_db)):
+    """发送登录验证码（需邮箱已注册）"""
+    email = data.email
+    db_user = user_crud.get_user_by_email(db, email=email)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="该邮箱未注册，请先注册")
+    return _send_code_with_lock(db, email, purpose="login")
+
+@router.post("/login-by-code", response_model=user_schema.Token)
+def login_by_code(data: user_schema.LoginByCode, db: Session = Depends(get_db)):
+    """验证码登录：验证通过后返回 JWT token"""
+    if not AuthService.verify_verification_code(db, data.email, data.code):
+        raise HTTPException(status_code=400, detail="验证码错误或已过期")
+    db_user = user_crud.get_user_by_email(db, email=data.email)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="该邮箱未注册")
+    sub_val = db_user.username if db_user.username else db_user.email
+    access_token = security.create_access_token(data={"sub": sub_val})
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/register", response_model=user_schema.UserRegisterResponse)
 def register(user: user_schema.UserCreateEmail, request: Request, db: Session = Depends(get_db)):
