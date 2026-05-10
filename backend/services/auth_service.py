@@ -251,20 +251,26 @@ class AuthService:
     def claim_daily_reward(db: Session, current_user):
         """发放每日签到奖励（带 MySQL 分布式锁防并发）"""
         from sqlalchemy import text
-        lock_name = f"daily_reward:{current_user.id}"
 
-        # 获取锁（非阻塞：拿不到说明并发请求，直接提示已签到）
-        result = db.execute(text("SELECT GET_LOCK(:lock_name, 0)"), {"lock_name": lock_name})
+        now = get_beijing_time()
+        today = now.date()
+
+        # 快速路径：先刷新用户数据，已签到直接返回（无需争锁）
+        db.refresh(current_user)
+        if current_user.last_daily_reward:
+            last_date = current_user.last_daily_reward.date() if hasattr(current_user.last_daily_reward, 'date') else current_user.last_daily_reward
+            if last_date == today:
+                raise HTTPException(status_code=400, detail="今日已签到，明天再来吧")
+
+        lock_name = f"daily_reward:{current_user.id}"
+        result = db.execute(text("SELECT GET_LOCK(:lock_name, 3)"), {"lock_name": lock_name})
         got_lock = result.scalar()
         if not got_lock:
             raise HTTPException(status_code=400, detail="签到处理中，请稍后")
 
         try:
-            # 锁内重新加载用户数据，确保读取最新状态
+            # 锁内二次校验，防止并发幻读
             db.refresh(current_user)
-            now = get_beijing_time()
-            today = now.date()
-
             if current_user.last_daily_reward:
                 last_date = current_user.last_daily_reward.date() if hasattr(current_user.last_daily_reward, 'date') else current_user.last_daily_reward
                 if last_date == today:

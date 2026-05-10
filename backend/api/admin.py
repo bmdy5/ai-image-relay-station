@@ -26,8 +26,10 @@ def recharge_points(
     db: Session = Depends(get_db),
     admin: models.User = Depends(admin_required)
 ):
-    # 1. 查找目标用户
+    # 1. 查找目标用户（先按 username，再按 uid fallback）
     user = user_crud.get_user_by_username(db, username=target_username)
+    if not user:
+        user = db.query(models.User).filter(models.User.uid == target_username).first()
     if not user:
         raise HTTPException(status_code=404, detail="目标用户不存在")
     

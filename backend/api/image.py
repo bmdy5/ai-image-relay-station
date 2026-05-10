@@ -155,8 +155,6 @@ async def enhance_prompt_endpoint(
 async def generate_image(payload: image_schema.ImageCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     active_count = image_crud.count_active_tasks(db, current_user.id)
     if active_count >= 3: raise HTTPException(status_code=429, detail="任务过多")
-    if len(payload.prompt) > 1000: raise HTTPException(status_code=400, detail="提示词过长")
-    
     cost = PRICING.get(payload.quality, 5)
     # 静默预占
     result = db.query(models.User).filter(
