@@ -66,6 +66,10 @@ class ForgotPasswordReset(BaseModel):
     code: str
     new_password: str
 
+class LoginByCode(BaseModel):
+    email: str
+    code: str
+
 class RechargeApply(BaseModel):
     money_amount: float
     screenshot_url: Optional[str] = None

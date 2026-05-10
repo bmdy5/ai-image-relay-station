@@ -16,6 +16,9 @@ def send_verification_email(to_email: str, code: str, purpose: str = "register")
     if purpose == "reset_password":
         subject = "找回密码验证码 - Visionary AI"
         body = f"您正在找回密码，验证码为：{code}\n\n该验证码有效期为 5 分钟。请勿将验证码泄露给他人。\n\n如非本人操作，请忽略此邮件。"
+    elif purpose == "login":
+        subject = "登录验证码 - Visionary AI"
+        body = f"您的登录验证码为：{code}\n\n该验证码有效期为 10 分钟。请勿将验证码泄露给他人。\n\n如非本人操作，请忽略此邮件。"
     else:
         subject = "注册验证码 - Visionary AI"
         body = f"您的注册验证码为：{code}\n\n该验证码有效期为 5 分钟。请勿将验证码泄露给他人。\n\n如非本人操作，请忽略此邮件。"
