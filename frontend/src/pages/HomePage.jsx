@@ -1,33 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import request, { logout } from '../api/request';
+import request from '../api/request';
 import { 
   Images, 
   Coins, 
-  ShieldCheck, 
-  BookOpen, 
-  LogOut, 
   User, 
   Sparkles, 
   Zap, 
-  Palette,
   Layout,
   Diamond,
-  Crown,
-  Globe,
-  Infinity,
   CheckCircle,
   X,
-  Maximize2,
   FlaskConical,
-  Video,
   ShoppingBag,
   Wand2,
   Layers,
-  Monitor,
   Download,
-  Edit3,
   RotateCcw,
   Camera,
   Compass,
@@ -58,13 +47,11 @@ const HomePage = () => {
   const [activeJobs, setActiveJobs] = useState([]); 
   const [currentJobId, setCurrentJobId] = useState(null); 
   const [showConfirmModal, setShowConfirmModal] = useState(false); 
-  const [result, setResult] = useState(null);
   const [aspectRatio, setAspectRatio] = useState('1:1');
   const [refImageUrl, setRefImageUrl] = useState('');
   const [refImageUrl2, setRefImageUrl2] = useState('');
   const [showSharePoster, setShowSharePoster] = useState(false);
   const [shareJob, setShareJob] = useState(null);
-  const [numImages, setNumImages] = useState(1);
   const [previewImage, setPreviewImage] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showLab, setShowLab] = useState(false);
@@ -73,8 +60,6 @@ const HomePage = () => {
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [selectedStyle, setSelectedStyle] = useState({ id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: <Sparkles size={24} />, hint: '描述你想生成的画面', placeholder: '主题：【在此输入你想生成的画面】' });
   const [particles, setParticles] = useState([]);
-  const [showNotes, setShowNotes] = useState(false);
-  const [finalPrompt, setFinalPrompt] = useState('');
   const [isGuest, setIsGuest] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
@@ -118,8 +103,6 @@ const HomePage = () => {
     }
   };
   
-  // 用于实时日志记录的状态追踪
-  const lastStatus = React.useRef(null);
 
   // 消息提示逻辑
   const showToast = (message, type = 'success') => {
@@ -219,7 +202,7 @@ const HomePage = () => {
     fetchConfig();
     checkPendingPrompt();
     loadActiveJobs(); // 加载持久化任务
-  }, []);
+  }, [fetchConfig, checkPendingPrompt, loadActiveJobs, fetchUserInfo]);
 
   // 持久化：保存任务
   useEffect(() => {
@@ -233,7 +216,7 @@ const HomePage = () => {
     }
   }, [activeJobs]);
 
-  const loadActiveJobs = () => {
+  const loadActiveJobs = useCallback(() => {
     const saved = localStorage.getItem('visionary_active_jobs');
     if (saved) {
       const { timestamp, jobs } = JSON.parse(saved);
@@ -258,9 +241,9 @@ const HomePage = () => {
         localStorage.removeItem('visionary_active_jobs');
       }
     }
-  };
+  }, [startPolling]);
 
-  const startPolling = (jobId, taskId) => {
+  const startPolling = useCallback((jobId, taskId) => {
     if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
 
     let pollCount = 0;
@@ -290,7 +273,7 @@ const HomePage = () => {
 
         internalProgress = targetProgress;
         setActiveJobs(prev => prev.map(j => j.id === jobId ? { ...j, progress: Math.floor(internalProgress), status: statusRes.status } : j));
-      } catch (err) {
+      } catch {
         errors++;
         if (errors >= 3) {
           clearInterval(timer);
@@ -307,16 +290,18 @@ const HomePage = () => {
     }, 3000);
 
     pollTimers.current[jobId] = timer;
-  };
+  }, []);
 
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     try {
       const data = await request.get('/image/config');
       if (data.pricing) setPricingMap(data.pricing);
-    } catch (err) {}
-  };
+    } catch {
+      // 忽略错误
+    }
+  }, []);
 
-  const checkPendingPrompt = () => {
+  const checkPendingPrompt = useCallback(() => {
     const pending = sessionStorage.getItem('pending_prompt');
     const reuseData = sessionStorage.getItem('pending_reuse');
     
@@ -347,7 +332,7 @@ const HomePage = () => {
       sessionStorage.removeItem('pending_prompt');
       focusInput();
     }
-  };
+  }, [styles, showToast]);
 
   const focusInput = () => {
     setTimeout(() => {
@@ -376,7 +361,7 @@ const HomePage = () => {
         setPrompt(res.enhanced);
         showToast('✨ 提示词已智能润色', 'success');
       }
-    } catch (err) {
+    } catch {
       showToast(err.response?.data?.detail || 'AI 优化失败，请稍后重试', 'error');
     } finally {
       setEnhancing(false);
@@ -392,12 +377,14 @@ const HomePage = () => {
   };
 
 
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = useCallback(async () => {
     try {
       const data = await request.get('/auth/me');
       setUserInfo(data);
-    } catch (err) {}
-  };
+    } catch {
+      // 忽略错误
+    }
+  }, []);
 
   const handleGenerate = async (forceNew = false) => {
     if (isGuest) {
@@ -500,7 +487,7 @@ const HomePage = () => {
 
       startPolling(newJobId, taskId);
 
-    } catch (err) {
+    } catch {
       if (particleInterval) clearInterval(particleInterval);
       setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, status: 'failed', error: err.response?.data?.detail || '提交失败' } : j));
       setParticles([]);
@@ -515,7 +502,7 @@ const HomePage = () => {
       setShowFeedback(false);
       setFeedbackContent('');
       setFeedbackContact('');
-    } catch (err) {
+    } catch {
       showToast('反馈提交失败，请稍后重试', 'error');
     }
   };
@@ -623,10 +610,10 @@ const HomePage = () => {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onPaste={handlePaste}
-                disabled={loading || enhancing || !!currentJobId}
+                disabled={loading || enhancing || currentJobId}
                 style={{
                   width: '100%', height: '120px', border: enhancing ? 'none' : '1px solid var(--border)', borderRadius: '12px', padding: '12px',
-                  fontSize: '13px', lineHeight: '1.6', resize: 'none', background: !!currentJobId ? '#f5f5f7' : '#fafafa', transition: 'all 0.3s',
+                  fontSize: '13px', lineHeight: '1.6', resize: 'none', background: currentJobId ? '#f5f5f7' : '#fafafa', transition: 'all 0.3s',
                   outline: 'none', marginBottom: '0'
                 }}
                 onFocus={(e) => { if(!enhancing) { e.target.style.borderColor = 'var(--primary)'; e.target.style.background = 'white'; e.target.style.boxShadow = '0 0 0 4px var(--primary-glow)'; } }}

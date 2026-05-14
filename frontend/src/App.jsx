@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import request from './api/request';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
@@ -35,13 +35,13 @@ function App() {
     const checkHealth = async () => {
       try {
         await request.get('/health');
-      } catch (err) {
+      } catch {
         // 如果报错（拦截器会自动发出系统维护事件，这里只需捕获防止未处理异常）
       }
     };
     checkHealth();
     
-    const handlePwaReward = (e) => {
+    const handlePwaReward = () => {
       alert(`🎉 恭喜！您已成功安装桌面版，获赠 10 积分！`);
     };
     window.addEventListener('pwa-reward-success', handlePwaReward);

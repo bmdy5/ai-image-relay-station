@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import request, { logout } from '../api/request';
 import { 
@@ -8,7 +8,6 @@ import {
   User, 
   X,
   CheckCircle,
-  ChevronLeft,
   Download
 } from 'lucide-react';
 import NeuralPlexus from './NeuralPlexus';
@@ -18,21 +17,11 @@ import { loadUserCache, saveUserCache } from '../utils/userCache';
 const PCLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isInstallable, isStandalone, isInstalled, promptInstall } = usePWA();
+  const { isInstallable, isStandalone, promptInstall } = usePWA();
   const [userInfo, setUserInfo] = useState(() => loadUserCache());
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
-  useEffect(() => {
-    fetchUserInfo();
-
-    const handlePointsUpdated = () => fetchUserInfo();
-    window.addEventListener('points-updated', handlePointsUpdated);
-    return () => {
-      window.removeEventListener('points-updated', handlePointsUpdated);
-    };
-  }, [location.pathname]);
-
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = useCallback(async () => {
     const isGuest = localStorage.getItem('isGuest') === 'true';
     const hasToken = !!localStorage.getItem('token');
     if (isGuest && hasToken) {
@@ -46,15 +35,20 @@ const PCLayout = ({ children }) => {
       const data = await request.get('/auth/me');
       setUserInfo(data);
       saveUserCache(data);
-    } catch (err) {}
-  };
+    } catch {
+      // 忽略错误
+    }
+  }, []);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ visible: true, message, type });
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, visible: false }));
-    }, 3000);
-  };
+  useEffect(() => {
+    fetchUserInfo();
+
+    const handlePointsUpdated = () => fetchUserInfo();
+    window.addEventListener('points-updated', handlePointsUpdated);
+    return () => {
+      window.removeEventListener('points-updated', handlePointsUpdated);
+    };
+  }, [location.pathname, fetchUserInfo]);
 
   const isActive = (path) => location.pathname === path;
 

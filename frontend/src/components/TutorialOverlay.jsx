@@ -1,12 +1,12 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { X, ChevronRight, Sparkles } from 'lucide-react';
 import './TutorialOverlay.css';
 
 const TutorialOverlay = ({ rect, content, onNext, onSkip, isLastStep, currentStep, totalSteps }) => {
-  if (!rect) return null;
-
   const tooltipPosition = useMemo(() => {
+    if (!rect) return { top: 0, left: 0, arrowClass: 'arrow-top' };
+    
     const margin = 16;
     const tooltipWidth = 320;
     const tooltipHeight = 180; // Estimated
@@ -30,6 +30,8 @@ const TutorialOverlay = ({ rect, content, onNext, onSkip, isLastStep, currentSte
 
     return { top, left, arrowClass };
   }, [rect]);
+
+  if (!rect) return null;
 
   return ReactDOM.createPortal(
     <div className="tutorial-container">
