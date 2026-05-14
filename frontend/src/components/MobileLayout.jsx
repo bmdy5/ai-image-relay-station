@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, LayoutGrid, Gem, User, Download } from 'lucide-react';
 import request from '../api/request';
@@ -11,10 +11,10 @@ const MobileLayout = ({ children }) => {
   const location = useLocation();
   const [userInfo, setUserInfo] = useState(() => loadUserCache());
   const [showPwaModal, setShowPwaModal] = useState(false);
-  const { isInstallable, isStandalone, isInstalled, isIOS, isAndroid, isInWechat, promptInstall } = usePWA();
+  const { isInstallable, isStandalone, isIOS, isAndroid, isInWechat, promptInstall } = usePWA();
   const pwaPlatform = isIOS ? 'ios' : isAndroid ? 'android' : isInWechat ? 'wechat' : null;
   // Android 必须在 HTTPS 下才能触发 beforeinstallprompt，HTTP 下 isInstallable 为 false
-  const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true' && (isInstallable || isIOS || isWechat);
+  const showInstallEntry = pwaPlatform && !isStandalone && localStorage.getItem('isGuest') !== 'true' && (isInstallable || isIOS || isInWechat);
 
   // 微信环境顶部提示（当日关闭后不再显示）
   const wechatTipKey = `wechat_tip_${new Date().toDateString()}`;
@@ -39,7 +39,7 @@ const MobileLayout = ({ children }) => {
     const delay = isAndroid ? 1500 : 3000;
     const timer = setTimeout(() => setShowPwaModal(true), delay);
     return () => clearTimeout(timer);
-  }, [showInstallEntry]);
+  }, [showInstallEntry, isAndroid]);
 
   const handlePwaClose = () => {
     localStorage.setItem('pwa_modal_dismissed', String(Date.now()));
@@ -66,7 +66,7 @@ const MobileLayout = ({ children }) => {
       const user = await request.get('/auth/me');
       setUserInfo(user);
       saveUserCache(user);
-    } catch (err) {
+    } catch {
       console.error('Failed to fetch userInfo');
     }
   };
