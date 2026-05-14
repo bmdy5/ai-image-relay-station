@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, LayoutGrid, Gem, User, Download } from 'lucide-react';
 import request from '../api/request';
@@ -52,7 +52,7 @@ const MobileLayout = ({ children }) => {
   };
 
   // 获取用户信息
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = useCallback(async () => {
     const isGuest = localStorage.getItem('isGuest') === 'true';
     const hasToken = !!localStorage.getItem('token');
     if (isGuest && hasToken) {
@@ -69,7 +69,7 @@ const MobileLayout = ({ children }) => {
     } catch {
       console.error('Failed to fetch userInfo');
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUserInfo();
@@ -82,7 +82,7 @@ const MobileLayout = ({ children }) => {
       clearInterval(interval);
       window.removeEventListener('points-updated', handlePointsUpdated);
     };
-  }, [location.pathname]);
+  }, [location.pathname, fetchUserInfo]);
 
   const getActiveTab = () => {
     const path = location.pathname;
