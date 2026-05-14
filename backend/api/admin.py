@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from typing import List
 from ..models.database import get_db
 from ..models import models
 from ..crud import user as user_crud, recharge as recharge_crud
@@ -185,3 +186,36 @@ def save_announcement(
     from ..core import config as config_module
     config_module._last_fetch = 0
     return {"message": "公告已更新"}
+
+@router.post("/redemption-codes", response_model=user_schema.RedemptionCodeInfo)
+def create_redemption_code(
+    data: user_schema.RedemptionCodeCreate,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(admin_required)
+):
+    db_code = models.RedemptionCode(**data.model_dump())
+    db.add(db_code)
+    db.commit()
+    db.refresh(db_code)
+    return db_code
+
+@router.get("/redemption-codes", response_model=List[user_schema.RedemptionCodeInfo])
+def list_redemption_codes(
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(admin_required)
+):
+    return db.query(models.RedemptionCode).order_by(models.RedemptionCode.created_at.desc()).all()
+
+@router.patch("/redemption-codes/{code_id}")
+def toggle_redemption_code(
+    code_id: int,
+    is_active: bool,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(admin_required)
+):
+    code = db.query(models.RedemptionCode).filter(models.RedemptionCode.id == code_id).first()
+    if not code:
+        raise HTTPException(status_code=404, detail="兑换码不存在")
+    code.is_active = is_active
+    db.commit()
+    return {"message": "状态已更新"}
