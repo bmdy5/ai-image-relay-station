@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import TutorialOverlay from '../components/TutorialOverlay';
 
 const TutorialContext = createContext();
@@ -10,7 +10,7 @@ export const TutorialProvider = ({ children }) => {
   const [isActive, setIsActive] = useState(false);
   const [rect, setRect] = useState(null);
   
-  const steps = [
+  const steps = useMemo(() => [
     { 
       id: 'guide-input', 
       content: "在这里输入你的创意灵感。✨ 使用【智能润色】能让想法瞬间变得丰富高级！如果不满意，点击【撤销】即可找回原稿。" 
@@ -19,7 +19,7 @@ export const TutorialProvider = ({ children }) => {
     { id: 'guide-generate-btn', content: "万事俱备！点击开启你的 AI 艺术创作之旅。" },
     { id: 'guide-history-tab', content: "出图过程中，可以在【我的创作】里查看进度或回顾作品。" },
     { id: 'guide-points', content: "太棒了！每日记得签到领取积分，保持创作动力！" },
-  ];
+  ], []);
 
   const updateRect = useCallback((shouldScroll = false) => {
     if (!isActive) return;
@@ -61,7 +61,11 @@ export const TutorialProvider = ({ children }) => {
   useEffect(() => {
     if (!isActive) return;
     
-    updateRect(true);
+    // 异步调用，彻底避免级联渲染警告
+    Promise.resolve().then(() => {
+      if (!isActive) return;
+      updateRect(true);
+    });
     
     const handleUpdate = () => updateRect(false);
     window.addEventListener('resize', handleUpdate);
@@ -89,7 +93,7 @@ export const TutorialProvider = ({ children }) => {
     localStorage.setItem('visionary_guide_v1', 'finished');
   };
 
-  const value = {
+  const value = useMemo(() => ({
     currentStep,
     setCurrentStep,
     isActive,
@@ -97,7 +101,7 @@ export const TutorialProvider = ({ children }) => {
     steps,
     nextStep,
     finishTutorial,
-  };
+  }), [currentStep, isActive, steps]);
 
   return (
     <TutorialContext.Provider value={value}>
