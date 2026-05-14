@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, ShieldCheck, UserPlus, ListChecks,
   BookOpen, ArrowLeft, LayoutDashboard, BarChart3,
   Users, Image as ImageIcon, Zap, Trash2, Search,
-  RefreshCw, DollarSign, TrendingUp, AlertCircle, Megaphone, Plus, X
+  RefreshCw, DollarSign, TrendingUp, AlertCircle, Megaphone, Plus, X, Gift
 } from 'lucide-react';
 
 const AdminPage = () => {
@@ -35,6 +35,10 @@ const AdminPage = () => {
   const [announcement, setAnnouncement] = useState({ version: '', title: '', items: [] });
   const [announceMsg, setAnnounceMsg] = useState('');
 
+  // Redemption State
+  const [redemptionCodes, setRedemptionCodes] = useState([]);
+  const [newCode, setNewCode] = useState({ code: '', points: 50, max_uses: 100 });
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);
@@ -58,6 +62,9 @@ const AdminPage = () => {
         const data = await request.get('/announcement');
         const ann = data.data || data;
         if (ann && ann.version) setAnnouncement(ann);
+      } else if (activeTab === 'redemption') {
+        const data = await request.get('/admin/redemption-codes');
+        setRedemptionCodes(data);
       }
     } catch (err) {
       console.error(err);
@@ -107,6 +114,27 @@ const AdminPage = () => {
     }
   };
 
+  const handleCreateCode = async (e) => {
+    e.preventDefault();
+    try {
+      await request.post('/admin/redemption-codes', newCode);
+      setNewCode({ code: '', points: 50, max_uses: 100 });
+      fetchData();
+      alert('创建成功');
+    } catch (err) {
+      alert('创建失败: ' + (err.response?.data?.detail || err.message));
+    }
+  };
+
+  const handleToggleCode = async (id, currentStatus) => {
+    try {
+      await request.patch(`/admin/redemption-codes/${id}?is_active=${!currentStatus}`);
+      fetchData();
+    } catch (err) {
+      alert('操作失败');
+    }
+  };
+
   // UI Components
   const StatCard = ({ title, value, icon: Icon, color }) => (
     <div className="card" style={{ 
@@ -137,6 +165,7 @@ const AdminPage = () => {
           { id: 'dashboard', label: '仪表盘', icon: LayoutDashboard },
           { id: 'audit', label: '充值审核', icon: ListChecks, count: pendingLogs.length },
           { id: 'invitation', label: '邀请审计', icon: UserPlus },
+          { id: 'redemption', label: '兑换码管理', icon: Gift },
           { id: 'recharge', label: '手动充值', icon: UserPlus },
           { id: 'feedback', label: '意见反馈', icon: BookOpen, count: feedbacks.length },
           { id: 'announcement', label: '公告管理', icon: Megaphone },
@@ -625,6 +654,111 @@ const AdminPage = () => {
               {announceMsg}
             </p>
           )}
+        </div>
+      )}
+
+      {activeTab === 'redemption' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+          <div className="card" style={{ padding: '24px' }}>
+            <h3>创建新兑换码</h3>
+            <form onSubmit={handleCreateCode} style={{ display: 'flex', gap: '12px', marginTop: '16px', alignItems: 'flex-end' }}>
+              <div style={{ flex: 2 }}>
+                <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '4px' }}>代码 (建议大写)</label>
+                <input
+                  type="text"
+                  placeholder="例如: WELCOME50"
+                  value={newCode.code}
+                  onChange={e => setNewCode({ ...newCode, code: e.target.value.toUpperCase() })}
+                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '4px' }}>积分面额</label>
+                <input
+                  type="number"
+                  value={newCode.points}
+                  onChange={e => setNewCode({ ...newCode, points: parseInt(e.target.value) })}
+                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '12px', color: '#888', display: 'block', marginBottom: '4px' }}>发行总量</label>
+                <input
+                  type="number"
+                  value={newCode.max_uses}
+                  onChange={e => setNewCode({ ...newCode, max_uses: parseInt(e.target.value) })}
+                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+              </div>
+              <button type="submit" className="btn-primary" style={{ padding: '10px 24px', borderRadius: '8px', height: '40px' }}>
+                创建代码
+              </button>
+            </form>
+          </div>
+
+          <div className="card" style={{ padding: '24px' }}>
+            <h3>兑换码列表</h3>
+            <div style={{ overflowX: 'auto', marginTop: '20px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #f5f5f5', textAlign: 'left' }}>
+                    <th style={{ padding: '12px 8px' }}>代码</th>
+                    <th style={{ padding: '12px 8px' }}>积分</th>
+                    <th style={{ padding: '12px 8px' }}>使用进度</th>
+                    <th style={{ padding: '12px 8px' }}>状态</th>
+                    <th style={{ padding: '12px 8px' }}>创建时间</th>
+                    <th style={{ padding: '12px 8px' }}>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {redemptionCodes.map(code => (
+                    <tr key={code.id} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                      <td style={{ padding: '12px 8px', fontWeight: 'bold' }}>{code.code}</td>
+                      <td style={{ padding: '12px 8px' }}>{code.points} P</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <div style={{ fontSize: '12px', marginBottom: '4px' }}>{code.used_count} / {code.max_uses}</div>
+                        <div style={{ width: '100px', height: '6px', background: '#f0f0f0', borderRadius: '3px' }}>
+                          <div style={{ 
+                            width: `${Math.min(100, (code.used_count / code.max_uses) * 100)}%`, 
+                            height: '100%', background: '#e66b33', borderRadius: '3px' 
+                          }} />
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span style={{ 
+                          padding: '2px 8px', borderRadius: '10px', fontSize: '11px',
+                          background: code.is_active ? '#e6f7ff' : '#f5f5f5',
+                          color: code.is_active ? '#1890ff' : '#999'
+                        }}>
+                          {code.is_active ? '进行中' : '已关闭'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 8px', color: '#888' }}>{new Date(code.created_at).toLocaleString()}</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <button 
+                          onClick={() => handleToggleCode(code.id, code.is_active)}
+                          style={{ 
+                            padding: '4px 12px', borderRadius: '4px', border: '1px solid #ddd', 
+                            background: '#fff', fontSize: '12px', cursor: 'pointer' 
+                          }}
+                        >
+                          {code.is_active ? '停用' : '启用'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {redemptionCodes.length === 0 && !loading && (
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#999' }}>暂无兑换码</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </div>
