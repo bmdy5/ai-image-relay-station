@@ -75,13 +75,24 @@ const MobileLayout = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    fetchUserInfo();
-    const interval = setInterval(fetchUserInfo, 30000); // 30秒轮询一次
+    let ignore = false;
 
-    // 监听积分变更事件（充值、生图后立即刷新）
+    // 延迟到下一个 Tick 执行，彻底避免 Effect 同步触发 setState 的警告
+    const timer = setTimeout(() => {
+      if (!ignore) fetchUserInfo();
+    }, 0);
+
+    const interval = setInterval(() => {
+      if (!ignore) fetchUserInfo();
+    }, 30000);
+
+    // 监听积分变更事件
     const handlePointsUpdated = () => fetchUserInfo();
     window.addEventListener('points-updated', handlePointsUpdated);
+
     return () => {
+      ignore = true;
+      clearTimeout(timer);
       clearInterval(interval);
       window.removeEventListener('points-updated', handlePointsUpdated);
     };
