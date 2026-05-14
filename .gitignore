@@ -13,9 +13,7 @@ dist/
 # Logs
 *.log
 # public (removed to allow static assets)
-docs/superpowers/specs
-docs/superpowers/plans
-.gitignore
+# public (removed to allow static assets)
 openspec/changes/archive
 # Database
 *.db
