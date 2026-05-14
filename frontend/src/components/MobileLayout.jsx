@@ -59,7 +59,10 @@ const MobileLayout = ({ children }) => {
       localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
     }
     if (isGuest && !hasToken) {
-      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+      // 异步更新状态，避免 Effect 同步调用产生的级联渲染警告
+      Promise.resolve().then(() => {
+        setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+      });
       return;
     }
     try {
