@@ -4,7 +4,7 @@ import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
 import { 
   ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock, 
-  RefreshCw, Copy, ExternalLink, MessageSquare, Download
+  RefreshCw, Copy, ExternalLink, MessageSquare, Download, Gift
 } from 'lucide-react';
 import { usePWA } from '../hooks/usePWA';
 import PWAIosGuideModal from '../components/PWAIosGuideModal';
@@ -46,6 +46,23 @@ const MobileProfilePage = ({ isMobile }) => {
   const [showIosGuide, setShowIosGuide] = useState(false);
   const [inviteStats, setInviteStats] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '' });
+  const [redeemCode, setRedeemCode] = useState('');
+
+  const handleRedeem = async () => {
+    if (!redeemCode) return;
+    setLoading(true);
+    try {
+      const res = await request.post('/user/redeem', { code: redeemCode });
+      alert(res.message);
+      setRedeemCode('');
+      setActiveDrawer(null);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || '兑换失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -338,6 +355,8 @@ const MobileProfilePage = ({ isMobile }) => {
         <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
           <SettingItem icon={<Wallet size={20} />} label="账单明细" sublabel="查看积分消费记录" onClick={() => navigate('/points-history')} />
           <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
+          <SettingItem icon={<Gift size={20} />} label="兑换中心" sublabel="输入兑换码领取奖励" onClick={() => setActiveDrawer('redeem')} color="#FF6B00" />
+          <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
           <SettingItem 
             icon={<Lock size={20} />} 
             label="修改密码" 
@@ -424,6 +443,40 @@ const MobileProfilePage = ({ isMobile }) => {
           <LogOut size={18} /> 退出当前账户
         </button>
       </div>
+
+      {/* 抽屉：兑换中心 */}
+      <MobileDrawer isOpen={activeDrawer === 'redeem'} onClose={() => setActiveDrawer(null)} title="兑换中心">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: '#8E8E93' }}>输入您的兑换码即可领取积分奖励</p>
+          <input 
+            type="text" 
+            placeholder="请输入兑换码 (例如: WELCOME50)" 
+            value={redeemCode} 
+            onChange={e => setRedeemCode(e.target.value)}
+            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid #E5E5EA', background: '#F2F2F7', outline: 'none', fontSize: '16px' }} 
+          />
+          <button 
+            onClick={handleRedeem} 
+            disabled={loading || !redeemCode}
+            style={{ 
+              width: '100%', padding: '16px', borderRadius: '16px', border: 'none', 
+              background: 'var(--primary)', color: '#fff', fontWeight: '800', fontSize: '16px',
+              opacity: loading || !redeemCode ? 0.6 : 1
+            }}
+          >
+            {loading ? '兑换中...' : '立即兑换'}
+          </button>
+          
+          <div style={{ marginTop: '12px', padding: '16px', background: '#FFF9F5', borderRadius: '16px', border: '1px solid #FFDEC9' }}>
+             <div style={{ fontSize: '13px', color: '#FF6B00', fontWeight: '700', marginBottom: '6px' }}>兑换须知：</div>
+             <div style={{ fontSize: '11px', color: '#A87B6D', lineHeight: '1.6' }}>
+               • 每个兑换码对于每个用户仅限领取一次。<br/>
+               • 兑换码区分大小写，请确保输入正确。<br/>
+               • 积分发放可能存在延迟，如未到账请刷新页面。
+             </div>
+          </div>
+        </div>
+      </MobileDrawer>
 
       {/* 抽屉：修改密码 */}
       <MobileDrawer isOpen={activeDrawer === 'password'} onClose={() => setActiveDrawer(null)} title="修改密码">
