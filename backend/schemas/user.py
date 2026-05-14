@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class UserBase(BaseModel):
@@ -88,5 +88,23 @@ class RechargeLogInfo(BaseModel):
     admin_note: Optional[str] = None
     created_at: datetime
 
+    class Config:
+        from_attributes = True
+
+class RedemptionRequest(BaseModel):
+    code: str
+
+class RedemptionCodeCreate(BaseModel):
+    code: str
+    points: int = 50
+    max_uses: int = 100
+    is_active: bool = True
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+
+class RedemptionCodeInfo(RedemptionCodeCreate):
+    id: int
+    used_count: int
+    created_at: datetime
     class Config:
         from_attributes = True
