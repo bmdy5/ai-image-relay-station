@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(osascript -e \"tell application \\\\\"Finder\\\\\" to delete POSIX file \\\\\"/Users/xiaofeng/Documents/个人博客/学习笔记/agent工程学习/Agent/多智能体设计/工作流模式/Anthropic-五大工作流模式.md\\\\\"\")",
+      "Bash(osascript -e \"tell application \\\\\"Finder\\\\\" to delete POSIX file \\\\\"/Users/xiaofeng/Documents/个人博客/学习笔记/后端/认证与授权体系/游客模式/Guest模式与Token状态一致性.md\\\\\"\")",
+      "Bash(mv \"/Users/xiaofeng/Documents/个人博客/学习笔记/需要分类的文件/实习的内容/2026-05-06-云真机平台设备调度与交互系统完善.md\" \"/Users/xiaofeng/Documents/个人博客/学习笔记/后端/设备与资源管理/2026-05-06-云真机平台设备调度与交互系统完善.md\")",
+      "Bash(mv \"/Users/xiaofeng/Documents/个人博客/学习笔记/需要分类的文件/云真机/多主体账户隔离与subject_id设计.md\" \"/Users/xiaofeng/Documents/个人博客/学习笔记/后端/认证与授权体系/账号治理/多主体账户隔离与subject_id设计.md\")",
+      "Bash(mv \"/Users/xiaofeng/Documents/个人博客/学习笔记/需要分类的文件/云真机/设备分组专有组访问控制代码审查.md\" \"/Users/xiaofeng/Documents/个人博客/学习笔记/后端/设备与资源管理/设备分组专有组访问控制代码审查.md\")",
+      "Bash(osascript -e \"tell application \\\\\"Finder\\\\\" to delete POSIX file \\\\\"/Users/xiaofeng/Documents/个人博客/学习笔记/运维/生产环境部署/宝塔环境升级与Vite6部署.md\\\\\"\")",
+      "Bash(chmod +x start.sh)",
+      "Bash(./start.sh)",
+      "Bash(curl -s http://127.0.0.1:8000/api/announcement)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://127.0.0.1:8000/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"user\",\"password\":\"admin123\"}')",
+      "Bash(mysql -h 127.0.0.1 -P 3307 -u gpt_image_relay -proot123 gpt_image_relay -e \"SELECT id, username, is_admin FROM users LIMIT 3;\")",
+      "Bash(python3 -c \"import requests; r=requests.get\\('http://127.0.0.1:8000/api/announcement'\\); print\\(r.json\\(\\)['title']\\); print\\(f'共 {len\\(r.json\\(\\)[\\\\\"items\\\\\"]\\)} 条更新'\\)\")",
+      "Bash(open http://localhost:5173)",
+      "Bash(nohup uvicorn api.index:app --host 0.0.0.0 --port 8000 --reload)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s http://localhost:8000/api/health)",
+      "Bash(curl -s -X POST http://localhost:8000/api/auth/send-login-code -H 'Content-Type: application/json' -d '{\"email\":\"nonexistent@test.com\"}')",
+      "Bash(mysql *)",
+      "Bash(ssh root@119.29.232.114 \"cd /www/wwwroot/gpt-image-api && git branch --show-current && git stash && git fetch --all && git checkout feature/main-xiaoliang && git pull origin feature/main-xiaoliang && cd frontend && npm install && npm run build && cd .. && ./server_start.sh\")"
+    ]
+  }
+}

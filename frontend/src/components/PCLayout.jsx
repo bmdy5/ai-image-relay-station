@@ -101,6 +101,7 @@ const PCLayout = ({ children }) => {
                 创作首页
               </span>
               <span 
+                id="guide-history-tab"
                 onClick={() => navigate('/history')}
                 style={{ 
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', 
@@ -161,7 +162,9 @@ const PCLayout = ({ children }) => {
               </button>
             )}
 
-            <div style={{ 
+            <div 
+              id="guide-points"
+              style={{ 
               background: 'white', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: '14px', 
               fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700', color: 'var(--primary)',
               boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
