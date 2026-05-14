@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
@@ -105,3 +105,29 @@ class VerificationCode(Base):
     expires_at = Column(DateTime)
     is_used = Column(Boolean, default=False)
     created_at = Column(DateTime, default=get_beijing_time)
+
+class RedemptionCode(Base):
+    __tablename__ = "redemption_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, index=True)
+    points = Column(Integer, default=50)
+    max_uses = Column(Integer, default=100)
+    used_count = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=get_beijing_time)
+
+class RedemptionRecord(Base):
+    __tablename__ = "redemption_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    code_id = Column(Integer, ForeignKey("redemption_codes.id"))
+    fingerprint = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=get_beijing_time)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "code_id", name="uix_user_code"),
+    )
