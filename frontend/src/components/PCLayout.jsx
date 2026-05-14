@@ -227,6 +227,35 @@ const PCLayout = ({ children }) => {
       >
         {children}
       </main>
+
+      {/* 页脚 - 备案信息 */}
+      <footer style={{
+        maxWidth: '1160px',
+        margin: '0 auto 40px auto',
+        padding: '20px',
+        textAlign: 'center',
+        fontSize: '13px',
+        color: 'var(--text-secondary)',
+        opacity: 0.8
+      }}>
+        <div style={{ marginBottom: '8px', fontWeight: '500' }}>
+          © {new Date().getFullYear()} Visionary AI. All rights reserved.
+        </div>
+        <a 
+          href="https://beian.miit.gov.cn/" 
+          target="_blank" 
+          rel="noreferrer"
+          style={{ 
+            color: 'inherit', 
+            textDecoration: 'none',
+            transition: 'var(--transition)'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary)'}
+          onMouseOut={(e) => e.currentTarget.style.color = 'inherit'}
+        >
+          苏ICP备2026029034号-1
+        </a>
+      </footer>
     </div>
   );
 };

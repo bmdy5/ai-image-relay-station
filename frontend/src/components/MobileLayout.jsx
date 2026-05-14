@@ -191,6 +191,25 @@ const MobileLayout = ({ children }) => {
         WebkitOverflowScrolling: 'touch'
       }}>
         {children}
+
+        {/* 移动端页脚 */}
+        <footer style={{
+          padding: '40px 20px',
+          textAlign: 'center',
+          fontSize: '11px',
+          color: 'var(--text-secondary)',
+          opacity: 0.6
+        }}>
+          <div style={{ marginBottom: '4px' }}>© {new Date().getFullYear()} Visionary AI</div>
+          <a 
+            href="https://beian.miit.gov.cn/" 
+            target="_blank" 
+            rel="noreferrer"
+            style={{ color: 'inherit', textDecoration: 'none' }}
+          >
+            苏ICP备2026029034号-1
+          </a>
+        </footer>
       </div>
 
       {/* 底部 Tab 导航栏 */}
