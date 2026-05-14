@@ -115,6 +115,7 @@
 | POST | `/user/recharge/apply` | 是 | 人工报备充值（上传截图，等待管理员审核） |
 | GET | `/user/consumption` | 是 | 获取全部生图消费记录 |
 | GET | `/user/recharge/history` | 是 | 获取充值成功记录 |
+| POST | `/user/redeem` | 是 | 使用兑换码领取积分（带防刷校验） |
 
 ---
 
@@ -128,6 +129,9 @@
 | GET | `/admin/dashboard/stats` | 仪表盘：用户数、总收入、积分消耗、风格排行、最近动态 |
 | DELETE | `/admin/image/{log_id}/wipe` | 彻底抹除违规图片（同步删除 COS 文件） |
 | GET | `/admin/invitation/logs` | 邀请奖励审计日志 |
+| GET | `/admin/redemption-codes` | 获取所有兑换码列表及使用情况 |
+| POST | `/admin/redemption-codes` | 创建新的兑换码 |
+| PATCH | `/admin/redemption-codes/{id}` | 切换兑换码状态（启用/停用） |
 
 ---
 
@@ -140,7 +144,4 @@
 | PATCH | `/feedback/{id}` | 是（管理员） | 更新反馈状态（`pending` → `resolved`）及处理备注 |
 
 ---
-*来源: backend/api/ 全量代码审计 | 2026-05-06*
-
----
-*来源: backend/api/ 全量代码审计 | 2026-05-06*
+*来源: backend/api/ 全量代码审计 | 2026-05-14*

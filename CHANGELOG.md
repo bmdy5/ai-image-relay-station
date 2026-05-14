@@ -11,6 +11,14 @@
     - 设备指纹追踪，限制单个设备最多领取 3 个账号。
 - **移动端适配**：个人中心新增兑换中心抽屉，UI 交互完全适配。
 
+### 问题修复
+- **MobileLayout 错误修正**：修复了 `isWechat` 未定义导致的 PWA 安装入口显示逻辑 Bug。
+- **Lint 规范化**：移除了多处未使用的导入（React）和变量（isInstalled, err）。
+
+### 代码优化
+- **Effect 性能优化**：对 `MobileLayout` 的 `fetchUserInfo` 进行了 `useCallback` 封装。
+- **并发与竞态保护**：在 `useEffect` 中引入 `ignore` 标记位和 `setTimeout` 延迟执行，彻底解决了级联渲染报错，并增强了组件卸载时的安全性。
+
 
 ## 2026.05.09
 
