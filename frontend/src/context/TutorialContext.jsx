@@ -11,11 +11,14 @@ export const TutorialProvider = ({ children }) => {
   const [rect, setRect] = useState(null);
   
   const steps = [
-    { id: 'guide-input', content: "欢迎！在这里输入你的创意灵感。点击【提示词润色】能让想法瞬间高级，还支持一键撤销哦！" },
-    { id: 'guide-style-list', content: "挑选一个你喜欢的艺术风格。" },
-    { id: 'guide-generate-btn', content: "准备好了吗？点击开启你的创作！" },
-    { id: 'guide-history-tab', content: "等待出图时，可以在这里查看进度或回顾以往作品。" },
-    { id: 'guide-points', content: "太棒了！别忘了每日签到领取积分。开始你的创作之旅吧！" },
+    { 
+      id: 'guide-input', 
+      content: "在这里输入你的创意灵感。✨ 使用【智能润色】能让想法瞬间变得丰富高级！如果不满意，点击【撤销】即可找回原稿。" 
+    },
+    { id: 'guide-style-list', content: "挑选一个你喜欢的艺术风格，让画面更具个性。" },
+    { id: 'guide-generate-btn', content: "万事俱备！点击开启你的 AI 艺术创作之旅。" },
+    { id: 'guide-history-tab', content: "出图过程中，可以在【我的创作】里查看进度或回顾作品。" },
+    { id: 'guide-points', content: "太棒了！每日记得签到领取积分，保持创作动力！" },
   ];
 
   const updateRect = useCallback((shouldScroll = false) => {
@@ -45,6 +48,7 @@ export const TutorialProvider = ({ children }) => {
     const status = localStorage.getItem('visionary_guide_v1');
     const isLoggedIn = !!localStorage.getItem('token') || !!localStorage.getItem('user_info');
     
+    // Auto-start for new users who are logged in
     if (status !== 'finished' && isLoggedIn) {
       const timer = setTimeout(() => {
         setIsActive(true);
@@ -57,7 +61,6 @@ export const TutorialProvider = ({ children }) => {
   useEffect(() => {
     if (!isActive) return;
     
-    // Initial rect update and scroll for current step
     updateRect(true);
     
     const handleUpdate = () => updateRect(false);
@@ -106,6 +109,8 @@ export const TutorialProvider = ({ children }) => {
           onNext={nextStep}
           onSkip={finishTutorial}
           isLastStep={currentStep === steps.length - 1}
+          currentStep={currentStep}
+          totalSteps={steps.length}
         />
       )}
     </TutorialContext.Provider>

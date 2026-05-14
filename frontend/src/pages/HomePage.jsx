@@ -583,7 +583,7 @@ const HomePage = () => {
           </div>
 
           {/* 2. 提示词输入 */}
-          <div>
+          <div id="guide-input">
             <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               灵感输入
               {isRefining ? (
@@ -691,7 +691,7 @@ const HomePage = () => {
           </div>
 
           {/* 3. 风格实验室入口 */}
-          <div>
+          <div id="guide-style-list">
             <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
               艺术风格
               <span style={{ fontSize: '11px', fontWeight: 'normal' }}>{quality === 'standard' ? '2 种可用' : '多种风格可选'}</span>
@@ -774,6 +774,7 @@ const HomePage = () => {
           </div>
 
           <button 
+            id="guide-generate-btn"
             className={`btn-primary ${loading ? 'loading-pulse' : ''}`} 
             onClick={handleGenerate} 
             disabled={loading || !prompt.trim() || (selectedStyle.requiresImage && !refImageUrl) || !!currentJobId}

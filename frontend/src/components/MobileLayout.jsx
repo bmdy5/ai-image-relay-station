@@ -167,7 +167,9 @@ const MobileLayout = ({ children }) => {
               游客模式
             </div>
           ) : (
-            <div style={{
+            <div 
+              id="guide-points"
+              style={{
               fontSize: '12px', fontWeight: '800', color: '#fff',
               background: 'linear-gradient(135deg, #C59C8F 0%, #A87B6D 100%)',
               padding: '6px 14px', borderRadius: '20px',
@@ -247,6 +249,7 @@ const MobileLayout = ({ children }) => {
         ].map(tab => (
           <div 
             key={tab.id}
+            id={tab.id === 'history' ? 'guide-history-tab' : undefined}
             onClick={() => tab.onClick ? tab.onClick() : handleTabClick(tab.id)}
             style={{ 
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
