@@ -4,7 +4,7 @@ import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
 import {
   ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock,
-  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2, Download
+  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2, Download, Gift
 } from 'lucide-react';
 import { usePWA } from '../hooks/usePWA';
 
@@ -22,6 +22,22 @@ const PCProfilePage = () => {
   const [countdown, setCountdown] = useState(0);
   const [activeSecuritySection, setActiveSecuritySection] = useState(null); // 'email', 'password', 'phone'
   const [inviteStats, setInviteStats] = useState(null);
+  const [redeemCode, setRedeemCode] = useState('');
+
+  const handleRedeem = async () => {
+    if (!redeemCode) return;
+    setLoading(true);
+    try {
+      const res = await request.post('/user/redeem', { code: redeemCode });
+      alert(res.message);
+      setRedeemCode('');
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || '兑换失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -208,6 +224,7 @@ const PCProfilePage = () => {
         </div>
 
         <SidebarItem id="account" icon={<Wallet size={20} />} label="账户概览" />
+        <SidebarItem id="redeem" icon={<Gift size={20} />} label="兑换中心" />
         <SidebarItem id="invite" icon={<Users size={20} />} label="邀请奖励" />
         <SidebarItem id="security" icon={<Lock size={20} />} label="安全设置" />
         <SidebarItem id="support" icon={<MessageSquare size={20} />} label="意见反馈" />
@@ -334,6 +351,41 @@ const PCProfilePage = () => {
                 <ChevronRight size={18} color="#ccc" />
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'redeem' && (
+          <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid var(--border)' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '8px' }}>兑换中心</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>输入您的兑换码即可领取积分奖励</p>
+            <div style={{ display: 'flex', gap: '12px', maxWidth: '500px' }}>
+              <input 
+                type="text" 
+                placeholder="请输入兑换码 (例如: WELCOME50)" 
+                value={redeemCode} 
+                onChange={e => setRedeemCode(e.target.value)}
+                style={{ flex: 1, padding: '14px 20px', borderRadius: '12px', border: '1px solid var(--border)', background: '#f9f9fb', outline: 'none' }} 
+              />
+              <button 
+                onClick={handleRedeem} 
+                disabled={loading || !redeemCode}
+                style={{ 
+                  padding: '0 32px', borderRadius: '12px', border: 'none', 
+                  background: 'var(--primary)', color: '#fff', fontWeight: '700', cursor: 'pointer',
+                  opacity: loading || !redeemCode ? 0.6 : 1
+                }}
+              >
+                {loading ? '兑换中...' : '立即兑换'}
+              </button>
+            </div>
+            <div style={{ marginTop: '24px', padding: '16px', background: 'var(--primary-glow)', borderRadius: '12px', border: '1px solid var(--primary-border)' }}>
+               <div style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: '600' }}>温馨提示：</div>
+               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.6' }}>
+                 • 每个兑换码对于每个用户仅限领取一次。<br/>
+                 • 兑换码区分大小写，请确保输入正确。<br/>
+                 • 如有任何疑问，请通过“意见反馈”联系我们。
+               </div>
+            </div>
           </div>
         )}
 
