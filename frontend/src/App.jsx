@@ -17,6 +17,7 @@ import MobileLayout from './components/MobileLayout';
 import PCLayout from './components/PCLayout';
 import MaintenanceModal from './components/MaintenanceModal';
 import AnnouncementModal from './components/AnnouncementModal';
+import { TutorialProvider } from './context/TutorialContext';
 import './App.css';
 
 function App() {
@@ -61,70 +62,72 @@ function App() {
   };
 
   return (
-    <Router>
-      <AnnouncementModal />
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route 
-          path="/admin" 
-          element={
-            <PrivateRoute>
-              {renderWithLayout(<AdminPage isMobile={isMobile} />)}
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/history" 
-          element={
-            <PrivateRoute>
-              {renderWithLayout(<HistoryPage isMobile={isMobile} />)}
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <PrivateRoute>
-              {renderWithLayout(<ProfilePage isMobile={isMobile} />)}
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/points-history" 
-          element={
-            <PrivateRoute>
-              {renderWithLayout(<PointsHistoryPage isMobile={isMobile} />)}
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/pricing" 
-          element={
-            <PrivateRoute>
-              {renderWithLayout(<PricingPage isMobile={isMobile} />)}
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/guide" 
-          element={
-            <PrivateRoute>
-              {renderWithLayout(<GuidePage isMobile={isMobile} />)}
-            </PrivateRoute>
-          } 
-        />
-        <Route 
-          path="/" 
-          element={
-            <PrivateRoute>
-              {renderWithLayout(isMobile ? <MobileHomePage /> : <HomePage isMobile={isMobile} />)}
-            </PrivateRoute>
-          } 
-        />
-      </Routes>
-    </Router>
+    <TutorialProvider>
+      <Router>
+        <AnnouncementModal />
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route 
+            path="/admin" 
+            element={
+              <PrivateRoute>
+                {renderWithLayout(<AdminPage isMobile={isMobile} />)}
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/history" 
+            element={
+              <PrivateRoute>
+                {renderWithLayout(<HistoryPage isMobile={isMobile} />)}
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <PrivateRoute>
+                {renderWithLayout(<ProfilePage isMobile={isMobile} />)}
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/points-history" 
+            element={
+              <PrivateRoute>
+                {renderWithLayout(<PointsHistoryPage isMobile={isMobile} />)}
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/pricing" 
+            element={
+              <PrivateRoute>
+                {renderWithLayout(<PricingPage isMobile={isMobile} />)}
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/guide" 
+            element={
+              <PrivateRoute>
+                {renderWithLayout(<GuidePage isMobile={isMobile} />)}
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/" 
+            element={
+              <PrivateRoute>
+                {renderWithLayout(isMobile ? <MobileHomePage /> : <HomePage isMobile={isMobile} />)}
+              </PrivateRoute>
+            } 
+          />
+        </Routes>
+      </Router>
+    </TutorialProvider>
   );
 }
 
