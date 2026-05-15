@@ -4,7 +4,8 @@ import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
 import { 
   ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock, 
-  RefreshCw, Copy, ExternalLink, MessageSquare, Download, Gift
+  RefreshCw, Copy, ExternalLink, MessageSquare, Download, Gift,
+  HelpCircle
 } from 'lucide-react';
 import { usePWA } from '../hooks/usePWA';
 import PWAIosGuideModal from '../components/PWAIosGuideModal';
@@ -180,6 +181,13 @@ const MobileProfilePage = ({ isMobile }) => {
     }
   };
 
+  const handleRestartGuide = () => {
+    if (window.confirm('确定要重新开始新手引导吗？')) {
+      localStorage.removeItem('visionary_guide_v1');
+      navigate('/');
+    }
+  };
+
   const handleCopyUID = () => {
     if (userInfo?.uid) {
       copyToClipboard(userInfo.uid, (msg) => setToast({ show: true, message: `UID ${msg}` }));
@@ -352,6 +360,28 @@ const MobileProfilePage = ({ isMobile }) => {
       {/* 设置列表 - 账户 */}
       <div style={{ padding: '0 20px' }}>
         <div style={{ fontSize: '12px', fontWeight: '600', color: '#8E8E93', marginBottom: '8px', paddingLeft: '10px' }}>账户设置</div>
+        
+        {/* 新手引导入口 */}
+        <div style={{ background: '#fff', borderRadius: '20px', marginBottom: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
+          <div 
+            onClick={handleRestartGuide}
+            style={{ 
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', cursor: 'pointer'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ color: '#007AFF' }}>
+                <HelpCircle size={20} />
+              </div>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: '600', color: '#1D1D1F' }}>新手引导</div>
+                <div style={{ fontSize: '11px', color: '#8E8E93', marginTop: '2px' }}>重新查看操作教程</div>
+              </div>
+            </div>
+            <ArrowRight size={16} color="#C4C4C6" />
+          </div>
+        </div>
+
         <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
           <SettingItem icon={<Wallet size={20} />} label="账单明细" sublabel="查看积分消费记录" onClick={() => navigate('/points-history')} />
           <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
