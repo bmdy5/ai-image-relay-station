@@ -119,7 +119,7 @@ const HomePage = () => {
     'master': 15
   });
 
-  const styles = [
+  const styles = useMemo(() => [
     // --- 第一梯队：全量基础 (All) ---
     { id: 'default', name: '默认风格', desc: '原生艺术呈现', icon: <Sparkles size={24} />, pts: 'All', hint: '描述你想生成的画面', placeholder: '主题：【在此输入你想生成的画面】' },
     { id: 'real', name: '极致写实', desc: '仿真现实模拟', icon: <Camera size={24} />, pts: 'All', hint: '描述人像或场景', placeholder: '主题：【在此输入人像或画面，支持多样化构图生成】' },
@@ -146,7 +146,7 @@ const HomePage = () => {
     { id: 'app_ui_design', name: 'APP UI 设计', desc: 'iOS 原生视觉全案', icon: <Smartphone size={24} />, pts: 'Master', hint: '如：健身社交、咖啡电商', placeholder: 'APP 主题：【在此输入】', recommendedRatio: '9:16' },
     { id: 'campaign_poster', name: '运营活动页', desc: '移动端运营海报', icon: <Flag size={24} />, pts: 'Master', hint: '如：618年中大促、新品首发', placeholder: '活动主题：【在此输入】', recommendedRatio: '9:16', img: '/showcase/master_commercial_equestrian.png' },
     { id: 'virtual_tryon', name: 'AI 试衣', desc: '人像+服饰→模特宣传照', icon: <User size={24} />, pts: 'Master', hint: '上传人像和服饰，AI自动合成为模特照', placeholder: 'AI试衣模式：请上传人像和服饰照片', requiresImage: true, recommendedRatio: '9:16' }
-  ];
+  ], []);
 
   // AI 润色白名单 (Task: Strict Whitelist)
   const ALLOWED_ENHANCE_STYLES = ['default', 'real', 'product', 'tech_poster'];
