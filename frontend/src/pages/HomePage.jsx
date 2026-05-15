@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import request from '../api/request';
@@ -105,12 +105,12 @@ const HomePage = () => {
   
 
   // 消息提示逻辑
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ visible: true, message, type });
     setTimeout(() => {
       setToast(prev => ({ ...prev, visible: false }));
     }, 5000);
-  };
+  }, []);
 
   // 积分计算矩阵 (V1.3 激进定价)
   const [pricingMap, setPricingMap] = useState({
@@ -185,23 +185,34 @@ const HomePage = () => {
     setRefineRootId(null);
   };
 
+  const fetchUserInfo = useCallback(async () => {
+    try {
+      const data = await request.get('/auth/me');
+      setUserInfo(data);
+    } catch {
+      // 忽略错误
+    }
+  }, []);
+
   useEffect(() => {
     const hasToken = !!localStorage.getItem('token');
     let guestFlag = localStorage.getItem('isGuest') === 'true';
     if (guestFlag && hasToken) {
-      localStorage.removeItem('isGuest'); // 已登录，清除残留游客标记
+      localStorage.removeItem('isGuest');
       guestFlag = false;
     }
-    setIsGuest(guestFlag);
-
-    if (!guestFlag) {
-      fetchUserInfo();
-    } else {
-      setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
-    }
-    fetchConfig();
-    checkPendingPrompt();
-    loadActiveJobs(); // 加载持久化任务
+    // 异步更新，避免 Effect 内同步 setState 级联渲染
+    Promise.resolve().then(() => {
+      setIsGuest(guestFlag);
+      if (!guestFlag) {
+        fetchUserInfo();
+      } else {
+        setUserInfo({ username: '游客用户', points: 0, uid: 'GUEST' });
+      }
+      fetchConfig();
+      checkPendingPrompt();
+      loadActiveJobs();
+    });
   }, [fetchConfig, checkPendingPrompt, loadActiveJobs, fetchUserInfo]);
 
   // 持久化：保存任务
@@ -216,33 +227,6 @@ const HomePage = () => {
     }
   }, [activeJobs]);
 
-  const loadActiveJobs = useCallback(() => {
-    const saved = localStorage.getItem('visionary_active_jobs');
-    if (saved) {
-      const { timestamp, jobs } = JSON.parse(saved);
-      if (Date.now() - timestamp < 7200000) {
-        // 超过 10 分钟的 pending/generating 任务标记为过期
-        const stale = Date.now() - timestamp > 600000;
-        const restored = jobs.map(job => {
-          if (stale && (job.status === 'pending' || job.status === 'generating')) {
-            return { ...job, status: 'failed', error: '任务已过期，请重新创作' };
-          }
-          return job;
-        });
-        setActiveJobs(restored);
-        if (restored.length > 0) setCurrentJobId(restored[0].id);
-
-        restored.forEach(job => {
-          if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
-            startPolling(job.id, job.taskId);
-          }
-        });
-      } else {
-        localStorage.removeItem('visionary_active_jobs');
-      }
-    }
-  }, [startPolling]);
-
   const startPolling = useCallback((jobId, taskId) => {
     if (pollTimers.current[jobId]) clearInterval(pollTimers.current[jobId]);
 
@@ -254,7 +238,7 @@ const HomePage = () => {
       pollCount++;
       try {
         const statusRes = await request.get(`/image/status/${taskId}`);
-        errors = 0; // 成功则重置错误计数
+        errors = 0;
         let targetProgress = internalProgress;
 
         if (statusRes.status === 'pending') targetProgress = Math.min(internalProgress + 2, 20);
@@ -292,6 +276,33 @@ const HomePage = () => {
     pollTimers.current[jobId] = timer;
   }, []);
 
+  const loadActiveJobs = useCallback(() => {
+    const saved = localStorage.getItem('visionary_active_jobs');
+    if (saved) {
+      const { timestamp, jobs } = JSON.parse(saved);
+      if (Date.now() - timestamp < 7200000) {
+        const stale = Date.now() - timestamp > 600000;
+        const restored = jobs.map(job => {
+          if (stale && (job.status === 'pending' || job.status === 'generating')) {
+            return { ...job, status: 'failed', error: '任务已过期，请重新创作' };
+          }
+          return job;
+        });
+        setActiveJobs(restored);
+        if (restored.length > 0) setCurrentJobId(restored[0].id);
+
+        restored.forEach(job => {
+          if ((job.status === 'pending' || job.status === 'generating') && job.taskId) {
+            startPolling(job.id, job.taskId);
+          }
+        });
+      } else {
+        localStorage.removeItem('visionary_active_jobs');
+      }
+    }
+  }, [startPolling]);
+
+
   const fetchConfig = useCallback(async () => {
     try {
       const data = await request.get('/image/config');
@@ -300,6 +311,16 @@ const HomePage = () => {
       // 忽略错误
     }
   }, []);
+
+  const focusInput = () => {
+    setTimeout(() => {
+      const textarea = document.querySelector('textarea');
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }, 100);
+  };
 
   const checkPendingPrompt = useCallback(() => {
     const pending = sessionStorage.getItem('pending_prompt');
@@ -315,11 +336,10 @@ const HomePage = () => {
       if (data.quality) setQuality(data.quality);
       if (data.ref_image_url) setRefImageUrl(data.ref_image_url);
       
-      // 捕获精修状态
       if (data.is_refining) {
         setIsRefining(true);
         setRefineParentId(data.parent_id);
-        setRefineRootId(data.root_id); // 捕获 root_id
+        setRefineRootId(data.root_id);
         const maxRefines = data.quality === 'master' ? 3 : (data.quality === 'hd' ? 2 : 0);
         setIterationInfo({ current: data.iteration || 1, max: maxRefines });
         showToast('✨ 已进入迭代精修模式，您可以修改提示词', 'success');
@@ -333,16 +353,6 @@ const HomePage = () => {
       focusInput();
     }
   }, [styles, showToast]);
-
-  const focusInput = () => {
-    setTimeout(() => {
-      const textarea = document.querySelector('textarea');
-      if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-      }
-    }, 100);
-  };
 
   const handleEnhance = async () => {
     if (!prompt.trim() || enhancing) return;
@@ -361,8 +371,8 @@ const HomePage = () => {
         setPrompt(res.enhanced);
         showToast('✨ 提示词已智能润色', 'success');
       }
-    } catch {
-      showToast(err.response?.data?.detail || 'AI 优化失败，请稍后重试', 'error');
+    } catch (e) {
+      showToast(e.response?.data?.detail || 'AI 优化失败，请稍后重试', 'error');
     } finally {
       setEnhancing(false);
     }
@@ -377,14 +387,6 @@ const HomePage = () => {
   };
 
 
-  const fetchUserInfo = useCallback(async () => {
-    try {
-      const data = await request.get('/auth/me');
-      setUserInfo(data);
-    } catch {
-      // 忽略错误
-    }
-  }, []);
 
   const handleGenerate = async (forceNew = false) => {
     if (isGuest) {
@@ -429,7 +431,7 @@ const HomePage = () => {
     setActiveJobs(prev => [newJob, ...prev]);
     setCurrentJobId(newJobId);
     setPrompt('');
-    setShowNotes(false);
+    // setShowNotes 已移除
     
     // 大师模式粒子流...
     
@@ -487,9 +489,9 @@ const HomePage = () => {
 
       startPolling(newJobId, taskId);
 
-    } catch {
+    } catch (e) {
       if (particleInterval) clearInterval(particleInterval);
-      setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, status: 'failed', error: err.response?.data?.detail || '提交失败' } : j));
+      setActiveJobs(prev => prev.map(j => j.id === newJobId ? { ...j, status: 'failed', error: e.response?.data?.detail || '提交失败' } : j));
       setParticles([]);
     }
   };
