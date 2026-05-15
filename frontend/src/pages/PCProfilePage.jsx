@@ -189,9 +189,9 @@ const PCProfilePage = () => {
   };
 
   const handleRestartGuide = () => {
-    if (window.confirm('确定要重新开始新手引导吗？系统将带您回到首页并开启教学模式。')) {
+    if (window.confirm('确定要重新开始新手引导吗？')) {
       localStorage.removeItem('visionary_guide_v1');
-      navigate('/');
+      window.location.href = '/';
     }
   };
 

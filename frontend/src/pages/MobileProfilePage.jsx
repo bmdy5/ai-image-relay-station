@@ -184,7 +184,7 @@ const MobileProfilePage = ({ isMobile }) => {
   const handleRestartGuide = () => {
     if (window.confirm('确定要重新开始新手引导吗？')) {
       localStorage.removeItem('visionary_guide_v1');
-      navigate('/');
+      window.location.href = '/';
     }
   };
 
