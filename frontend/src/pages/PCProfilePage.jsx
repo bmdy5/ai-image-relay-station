@@ -4,7 +4,8 @@ import request, { logout } from '../api/request';
 import RechargeModal from '../components/RechargeModal';
 import {
   ShieldCheck, ArrowRight, LogOut, Wallet, User, Lock,
-  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2, Download, Gift
+  RefreshCw, Copy, MessageSquare, CreditCard, ChevronRight, Users, Share2, Download, Gift,
+  HelpCircle
 } from 'lucide-react';
 import { usePWA } from '../hooks/usePWA';
 
@@ -187,6 +188,13 @@ const PCProfilePage = () => {
     }
   };
 
+  const handleRestartGuide = () => {
+    if (window.confirm('确定要重新开始新手引导吗？系统将带您回到首页并开启教学模式。')) {
+      localStorage.removeItem('visionary_guide_v1');
+      navigate('/');
+    }
+  };
+
   const SidebarItem = ({ id, icon, label }) => (
     <div 
       onClick={() => setActiveTab(id)}
@@ -297,6 +305,24 @@ const PCProfilePage = () => {
 
             {/* 快速操作 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+              <div 
+                onClick={handleRestartGuide}
+                style={{ 
+                  padding: '20px', borderRadius: '16px', background: 'white', border: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', transition: 'all 0.3s'
+                }}
+                onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.background = 'var(--primary-glow)'; }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'white'; }}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                  <HelpCircle size={20} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>新手引导</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>重新查看功能指引</div>
+                </div>
+              </div>
+
               <div 
                 onClick={() => navigate('/points-history')}
                 style={{ background: 'white', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)', cursor: 'pointer' }}
