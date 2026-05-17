@@ -10,6 +10,7 @@ from backend.core.config import get_config
 from backend.core.cos import upload_url_to_cos, upload_base64_to_cos
 from backend.core.prompt import wrap_prompt, TIER_CONFIG, COST_RMB
 from backend.core.clothing_analyzer import analyze_clothing, clothing_to_prompt
+from backend.core.errors import parse_friendly_error
 from starlette.concurrency import run_in_threadpool
 
 async def process_image_task(log_id: int, prompt: str, quality: str, style: str, cost: int, user_id: int, request_start_time: float, ref_image_url: str = None, aspect_ratio: str = "1:1", ref_image_url_2: str = None):
@@ -205,10 +206,11 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
 
     except Exception as e:
         error_msg = repr(e)
+        friendly_error_msg = parse_friendly_error(error_msg)
         print(f"--- [Task Error] ID:{log_id} | {error_msg} ---")
         with session_scope() as db:
             log = db.query(models.ImageLog).filter(models.ImageLog.id == log_id).first()
             user = db.query(models.User).filter(models.User.id == user_id).first()
             if log and user:
-                log.status, log.error_msg = "failed", error_msg
+                log.status, log.error_msg = "failed", friendly_error_msg
                 user.frozen_points = max(0, user.frozen_points - cost)
