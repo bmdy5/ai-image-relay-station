@@ -17,3 +17,5 @@ dist/
 openspec/changes/archive
 # Database
 *.db
+*.sql
+

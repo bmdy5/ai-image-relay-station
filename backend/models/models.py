@@ -22,6 +22,8 @@ class User(Base):
     has_install_reward = Column(Boolean, default=False)
     last_daily_reward = Column(DateTime, nullable=True)
     invited_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    wechat_openid = Column(String(100), unique=True, index=True, nullable=True)
+    wechat_unionid = Column(String(100), unique=True, index=True, nullable=True)
     created_at = Column(DateTime, default=get_beijing_time)
 
     image_logs = relationship("ImageLog", back_populates="owner")
@@ -131,3 +133,27 @@ class RedemptionRecord(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "code_id", name="uix_user_code"),
     )
+
+class WechatLoginSession(Base):
+    __tablename__ = "wechat_login_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scene_str = Column(String(64), unique=True, index=True, nullable=False)
+    status = Column(String(20), default="pending", index=True)
+    token = Column(String(500), nullable=True)
+    wechat_openid = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=get_beijing_time)
+    expires_at = Column(DateTime, nullable=False)
+
+
+class WechatLoginCode(Base):
+    __tablename__ = "wechat_login_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(10), unique=True, index=True, nullable=False)
+    wechat_openid = Column(String(100), index=True, nullable=False)
+    status = Column(String(20), default="pending", index=True)
+    created_at = Column(DateTime, default=get_beijing_time)
+    expires_at = Column(DateTime, nullable=False)
+
+

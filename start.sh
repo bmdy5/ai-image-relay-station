@@ -84,7 +84,7 @@ echo -e "\n${GREEN}数据库通路已建立！${NC}"
 # 4. 启动后端
 echo -e "${GREEN}正在启动后端服务 (FastAPI)...${NC}"
 export PYTHONPATH=$PYTHONPATH:.
-python3 -m uvicorn api.index:app --host 127.0.0.1 --port 8000 > $LOG_BACKEND 2>&1 &
+/opt/homebrew/bin/python3 -m uvicorn api.index:app --host 127.0.0.1 --port 8000 > $LOG_BACKEND 2>&1 &
 
 # 5. 启动前端
 echo -e "${GREEN}正在启动前端服务 (Vite)...${NC}"

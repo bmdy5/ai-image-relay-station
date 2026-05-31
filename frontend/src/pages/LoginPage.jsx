@@ -33,6 +33,44 @@ const LoginPage = () => {
   const [showTerms, setShowTerms] = useState(false);
   const [termsType, setTermsType] = useState('service');
 
+  // 微信扫码登录状态
+  const [wechatQrcodeUrl, setWechatQrcodeUrl] = useState('/wechat_qrcode.jpg');
+  const [wechatError, setWechatError] = useState('');
+  const [wechatPasscode, setWechatPasscode] = useState('');
+  const [wechatSubmitting, setWechatSubmitting] = useState(false);
+
+  const handleWechatLogin = async (e) => {
+    if (e) e.preventDefault();
+    if (!agreeTerms) {
+      setWechatError('请先阅读并勾选页面底部的用户服务协议与隐私政策');
+      return;
+    }
+    if (!wechatPasscode.trim()) {
+      setWechatError('请输入6位数字验证码');
+      return;
+    }
+    setWechatSubmitting(true);
+    setWechatError('');
+    try {
+      const res = await request.post('/auth/wechat/login-by-passcode', {
+        code: wechatPasscode.trim()
+      });
+      localStorage.setItem('token', res.data.access_token);
+      localStorage.removeItem('isGuest');
+      window.location.href = '/';
+    } catch (err) {
+      setWechatError(err.response?.data?.detail || '登录失败，请确认验证码是否正确或已过期');
+    } finally {
+      setWechatSubmitting(false);
+    }
+  };
+
+
+
+
+  // 微信登录状态轮询与倒计时生命周期管理
+
+
   const onCaptchaMatch = useCallback((matched) => {
     setCaptchaValid(matched);
     if (matched) setCaptchaError('');
@@ -76,6 +114,10 @@ const LoginPage = () => {
   // 验证码登录提交
   const handleCodeLogin = async (e) => {
     e.preventDefault();
+    if (!agreeTerms) {
+      setCodeLoginError('请先阅读并同意服务协议和隐私政策');
+      return;
+    }
     if (!codeEmail || !loginCode) return;
     setCodeLoginLoading(true);
     setCodeLoginError('');
@@ -116,11 +158,16 @@ const LoginPage = () => {
           {[
             { key: 'password', label: '密码登录' },
             { key: 'code', label: '验证码登录' },
+            { key: 'wechat', label: '微信登录' }
           ].map(tab => (
             <button
               key={tab.key}
               type="button"
-              onClick={() => { setLoginMode(tab.key); setCodeLoginError(''); }}
+              onClick={() => {
+                setLoginMode(tab.key);
+                setCodeLoginError('');
+                setWechatError('');
+              }}
               style={{
                 flex: 1, padding: '10px 0', border: 'none', background: 'none',
                 fontSize: '14px', fontWeight: loginMode === tab.key ? '600' : '400',
@@ -162,23 +209,6 @@ const LoginPage = () => {
             </div>
             <Captcha onMatch={onCaptchaMatch} />
             {(error || captchaError) && <p style={{ color: '#ff4d4f', fontSize: '14px', margin: 0 }}>{captchaError || error}</p>}
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input type="checkbox" id="agreeTerms" checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
-                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#e66b33' }}
-              />
-              <label htmlFor="agreeTerms" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>
-                我已阅读并同意
-                <span onClick={(e) => { e.preventDefault(); setTermsType('service'); setShowTerms(true); }}
-                  style={{ color: '#e66b33', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}
-                >《用户服务协议》</span>
-                与
-                <span onClick={(e) => { e.preventDefault(); setTermsType('privacy'); setShowTerms(true); }}
-                  style={{ color: '#e66b33', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}
-                >《隐私政策》</span>
-              </label>
-            </div>
 
             <div style={{ textAlign: 'right', marginTop: '-8px' }}>
               <Link to="/forgot-password" style={{ color: '#e66b33', fontSize: '13px', textDecoration: 'none', fontWeight: '500' }}>忘记密码？</Link>
@@ -222,6 +252,88 @@ const LoginPage = () => {
             </button>
           </form>
         )}
+
+        {/* 微信扫码登录表单 */}
+        {loginMode === 'wechat' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', width: '100%' }}>
+            
+            {/* 二维码卡片容器 */}
+            <div style={{
+              position: 'relative', width: '180px', height: '180px',
+              background: '#fff', padding: '8px',
+              borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+              border: '1px solid rgba(0,0,0,0.04)', overflow: 'hidden',
+              display: 'flex', justifyContent: 'center', alignItems: 'center'
+            }}>
+              <img
+                src={wechatQrcodeUrl}
+                alt="微信公众号二维码"
+                onError={(e) => {
+                  // 回退使用默认关注占位符
+                  e.target.src = "https://mp.weixin.qq.com/mp/qrcode?scene=10000004&size=102&block=1&type=10&key=0";
+                }}
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            </div>
+
+            {/* 引导指示 */}
+            <div style={{ textAlign: 'center', width: '100%', padding: '0 10px' }}>
+              <p style={{ color: '#1d1d1f', fontSize: '14px', fontWeight: '600', margin: '0 0 6px 0' }}>小肖不嚣张 官方公众号</p>
+              <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.6', background: 'rgba(230,107,51,0.05)', padding: '10px', borderRadius: '8px', border: '1px dashed rgba(230,107,51,0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', fontWeight: '500', color: '#e66b33', marginBottom: '2px' }}>
+                  <span>微信扫码关注 ➡️ 后台发送【 登录 】</span>
+                </div>
+                <span>即可获取6位数字登录验证码</span>
+              </div>
+            </div>
+
+            {/* 验证码输入框及登录按钮 */}
+            <form onSubmit={handleWechatLogin} style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+              <input
+                type="text"
+                placeholder="请输入6位数字验证码"
+                maxLength="6"
+                value={wechatPasscode}
+                onChange={(e) => setWechatPasscode(e.target.value.replace(/\D/g, ''))}
+                required
+                style={{ ...inputStyle, textAlign: 'center', letterSpacing: '2px', fontSize: '15px', fontWeight: '600' }}
+              />
+              
+              {wechatError && (
+                <p style={{ color: '#ff4d4f', fontSize: '13px', margin: '0', textAlign: 'center', fontWeight: '500' }}>
+                  {wechatError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="btn-primary"
+                style={{ width: '100%', padding: '12px 0', fontSize: '14px', fontWeight: '600' }}
+                disabled={wechatSubmitting}
+              >
+                {wechatSubmitting ? '登录中...' : '立即登录'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* 全局服务协议和隐私政策复选框 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '24px', marginBottom: '16px' }}>
+          <input type="checkbox" id="agreeTerms" checked={agreeTerms}
+            onChange={(e) => setAgreeTerms(e.target.checked)}
+            style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#e66b33' }}
+          />
+          <label htmlFor="agreeTerms" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>
+            我已阅读并同意
+            <span onClick={(e) => { e.preventDefault(); setTermsType('service'); setShowTerms(true); }}
+              style={{ color: '#e66b33', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}
+            >《用户服务协议》</span>
+            与
+            <span onClick={(e) => { e.preventDefault(); setTermsType('privacy'); setShowTerms(true); }}
+              style={{ color: '#e66b33', fontWeight: '600', cursor: 'pointer', textDecoration: 'underline' }}
+            >《隐私政策》</span>
+          </label>
+        </div>
 
         <p style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
           没有账号？ <Link to="/register" style={{ color: '#e66b33', fontWeight: '600', textDecoration: 'none' }}>立即注册</Link>
