@@ -49,6 +49,100 @@ const MobileProfilePage = ({ isMobile }) => {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [redeemCode, setRedeemCode] = useState('');
 
+  // 微信绑定状态
+  const [wechatBindQrUrl, setWechatBindQrUrl] = useState('');
+  const [wechatBindSceneStr, setWechatBindSceneStr] = useState('');
+  const [wechatBindLoading, setWechatBindLoading] = useState(false);
+  const [wechatBindCountdown, setWechatBindCountdown] = useState(0);
+  const [wechatBindExpired, setWechatBindExpired] = useState(false);
+
+  // 微信绑定二维码倒计时
+  useEffect(() => {
+    let timer;
+    if (wechatBindCountdown > 0) {
+      timer = setInterval(() => setWechatBindCountdown(c => c - 1), 1000);
+    } else if (wechatBindCountdown === 0 && wechatBindSceneStr) {
+      setWechatBindExpired(true);
+    }
+    return () => clearInterval(timer);
+  }, [wechatBindCountdown, wechatBindSceneStr]);
+
+  // 微信绑定状态轮询
+  useEffect(() => {
+    if (!wechatBindSceneStr || wechatBindExpired || activeDrawer !== 'bind-wechat') return;
+    
+    let pollInterval = setInterval(async () => {
+      try {
+        const res = await request.get('/auth/wechat/check-status', {
+          params: { scene_str: wechatBindSceneStr }
+        });
+        if (res.data.status === 'success') {
+          clearInterval(pollInterval);
+          alert('🎉 微信绑定成功！');
+          setWechatBindSceneStr('');
+          setWechatBindQrUrl('');
+          setActiveDrawer(null);
+          fetchData();
+        } else if (res.data.status === 'failed') {
+          clearInterval(pollInterval);
+          alert(`❌ 绑定失败: ${res.data.detail || '微信已被占用'}`);
+          setWechatBindSceneStr('');
+          setWechatBindQrUrl('');
+          setActiveDrawer(null);
+        } else if (res.data.status === 'expired') {
+          clearInterval(pollInterval);
+          setWechatBindExpired(true);
+        }
+      } catch (err) {
+        console.error('轮询绑定状态异常', err);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [wechatBindSceneStr, wechatBindExpired, activeDrawer]);
+
+  // 获取微信绑定临时二维码
+  const handleGetWechatBindQr = async () => {
+    setWechatBindLoading(true);
+    setWechatBindExpired(false);
+    setWechatBindQrUrl('');
+    try {
+      const res = await request.get('/auth/wechat/bind-qrcode');
+      setWechatBindQrUrl(res.data.qrcode_url);
+      setWechatBindSceneStr(res.data.scene_str);
+      setWechatBindCountdown(res.data.expires_in);
+    } catch (err) {
+      alert(err.response?.data?.detail || '获取绑定二维码失败，请重试');
+    } finally {
+      setWechatBindLoading(false);
+    }
+  };
+
+  // 微信解绑
+  const handleUnbindWechat = async () => {
+    if (!window.confirm('您确定要解绑微信吗？解绑后将无法使用该微信快捷登录。')) return;
+    setLoading(true);
+    try {
+      const res = await request.post('/auth/wechat/unbind');
+      alert(res.data?.message || '微信解绑成功！');
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.detail || '解绑失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 自动拉取绑定二维码
+  useEffect(() => {
+    if (activeDrawer === 'bind-wechat') {
+      handleGetWechatBindQr();
+    } else {
+      setWechatBindSceneStr('');
+      setWechatBindQrUrl('');
+    }
+  }, [activeDrawer]);
+
   const handleRedeem = async () => {
     if (!redeemCode) return;
     setLoading(true);
@@ -411,9 +505,23 @@ const MobileProfilePage = ({ isMobile }) => {
           <SettingItem 
             icon={<Wallet size={20} />} 
             label="手机绑定" 
-            sublabel={userInfo?.phone ? `已绑定: ${userInfo.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}` : "支持手机号登录"} 
+            sublabel={userInfo?.phone ? `已绑定: ${userInfo.phone.replace(/(\d{3})\d{4}(\d{2})/, '$1****$2')}` : "支持手机号登录"} 
             onClick={() => !userInfo?.phone && setActiveDrawer('bind-phone')} 
             color={userInfo?.phone ? '#FF9500' : '#1D1D1F'}
+          />
+          <div style={{ height: '1px', background: '#F2F2F7', marginLeft: '54px' }} />
+          <SettingItem 
+            icon={<ShieldCheck size={20} />} 
+            label="微信绑定" 
+            sublabel={userInfo?.wechat_openid ? "已绑定 (可微信扫码快捷登录)" : "支持微信快捷登录"} 
+            onClick={() => {
+              if (userInfo?.wechat_openid) {
+                handleUnbindWechat();
+              } else {
+                setActiveDrawer('bind-wechat');
+              }
+            }} 
+            color={userInfo?.wechat_openid ? '#22c55e' : '#1D1D1F'}
           />
         </div>
       </div>
@@ -611,6 +719,49 @@ const MobileProfilePage = ({ isMobile }) => {
           >
             {loading ? '处理中...' : '确认绑定'}
           </button>
+        </div>
+      </MobileDrawer>
+
+      {/* 抽屉：微信绑定 */}
+      <MobileDrawer isOpen={activeDrawer === 'bind-wechat'} onClose={() => setActiveDrawer(null)} title="绑定微信号">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', textAlign: 'center' }}>
+          <p style={{ fontSize: '13px', color: '#8E8E93', margin: 0 }}>扫码关注公众号，安全关联此微信号。</p>
+          {wechatBindLoading ? (
+            <p style={{ color: '#666', fontSize: '13px', padding: '40px 0' }}>正在加载安全二维码...</p>
+          ) : wechatBindExpired ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '20px 0' }}>
+              <p style={{ color: '#ff4d4f', fontSize: '13px', margin: 0 }}>二维码已过期</p>
+              <button 
+                type="button"
+                onClick={handleGetWechatBindQr}
+                style={{ padding: '8px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '14px', cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}
+              >
+                点击刷新
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={{
+                position: 'relative', width: '180px', height: '180px',
+                background: '#fff', padding: '8px', borderRadius: '16px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #E5E5EA'
+              }}>
+                {wechatBindQrUrl && (
+                  <img 
+                    src={wechatBindQrUrl} 
+                    alt="微信绑定二维码" 
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                )}
+              </div>
+              <div>
+                <p style={{ fontSize: '15px', fontWeight: '800', margin: '0 0 6px 0', color: '#1D1D1F' }}>请使用微信扫码关注</p>
+                <p style={{ fontSize: '12px', color: '#8E8E93', margin: 0 }}>
+                  二维码将在 {wechatBindCountdown} 秒后失效
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </MobileDrawer>
       {/* 抽屉：邀请好友详情 */}
