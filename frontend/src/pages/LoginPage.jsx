@@ -55,7 +55,7 @@ const LoginPage = () => {
       const res = await request.post('/auth/wechat/login-by-passcode', {
         code: wechatPasscode.trim()
       });
-      localStorage.setItem('token', res.data.access_token);
+      localStorage.setItem('token', res.access_token);
       localStorage.removeItem('isGuest');
       window.location.href = '/';
     } catch (err) {
@@ -123,7 +123,7 @@ const LoginPage = () => {
     setCodeLoginError('');
     try {
       const res = await request.post('/auth/login-by-code', { email: codeEmail, code: loginCode });
-      localStorage.setItem('token', res.data.access_token);
+      localStorage.setItem('token', res.access_token);
       localStorage.removeItem('isGuest');
       window.location.href = '/';
     } catch (err) {
