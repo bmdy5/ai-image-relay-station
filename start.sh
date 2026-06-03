@@ -49,7 +49,8 @@ start_tunnel() {
                 PID_OLD=$(lsof -t -i:3307)
                 [ ! -z "$PID_OLD" ] && kill -9 $PID_OLD
                 
-                ssh -o ServerAliveInterval=30 \
+                SSH_AUTH_SOCK="" ssh -o IdentityAgent=none \
+                    -o ServerAliveInterval=30 \
                     -o ServerAliveCountMax=3 \
                     -o ConnectTimeout=10 \
                     -o ExitOnForwardFailure=yes \
