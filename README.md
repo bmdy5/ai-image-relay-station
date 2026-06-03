@@ -39,6 +39,17 @@ Visionary 是一个基于 FastAPI 与 React 构建的高性能 AI 图像生成�
 
 ---
 
+## 微信小程序生态支持
+
+为了适配移动端多端场景，本项目已配套开发并开源了微信小程序全套系统，包含以下独立模块：
+
+* **微信小程序客户端**：[gpt-image2-wechat-frontend](https://github.com/bmdy5/gpt-image2-wechat-frontend)
+  基于原生微信小程序框架构建，集成 Token 无感静默续签、有状态异步生图轮询以及同层渲染 Canvas 2D 性能优化。
+* **微信小程序专属后端**：[gpt-image2-wechat-backend](https://github.com/bmdy5/gpt-image2-wechat-backend)
+  轻量化 FastAPI 服务，内置有状态 SQLite 本地存储，支持标准微信登录换码授权、用户积分记账流水以及生图失败回退机制。
+
+---
+
 ## 快速上手指南
 
 ### 1. 环境准备
