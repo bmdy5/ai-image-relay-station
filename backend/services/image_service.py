@@ -95,7 +95,7 @@ async def process_image_task(log_id: int, prompt: str, quality: str, style: str,
                     }
                     if not files:
                         data["response_format"] = "url"
-                        data["input_fidelity"] = "low"
+                        data["input_fidelity"] = "high"
 
                     # 分辨率强制合规
                     if aspect_ratio == "9:16": data["size"] = "1024x1536"
